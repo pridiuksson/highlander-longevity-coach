@@ -3,7 +3,8 @@
 `leak-gate.yml` is the leak gate as a GitHub Actions workflow. It is **active**: the same file is
 installed at `.github/workflows/leak-gate.yml` and runs on every push and pull request.
 
-It scans the tree, validates the skills tree, and scans the full git history. That matters because
+It scans the tree (with its secrets pass), validates the skills tree, scans the full history for
+identity/path/health patterns, and runs a separate full-history `gitleaks` pass. That matters because
 the pre-commit hook is client-side and bypassable with `--no-verify`; CI is the version that
 actually enforces anything.
 

@@ -67,10 +67,10 @@ Notes that matter:
   removed is missed by `gitleaks detect --source .` but caught with `--log-opts="--all"` — which is
   what gate 5 adds, so gate 5 is not redundant.
 - **If `gitleaks` is not installed**, gate 2 prints `gitleaks not found — secrets pass SKIPPED` and
-  can still exit 0 on a clean pattern pass — and gate 5 cannot run either. Install `gitleaks` so both
-  secrets passes are available, and until then report the secrets checks as **unverified**, never as
-  clean. CI does not fill the gap: its secrets pass has the same committed-content scope and will
-  not catch a removed secret.
+  can still exit 0 on a clean pattern pass — and gate 5 cannot run either. Install it so both secrets
+  passes are available locally; until then report the local secrets checks as **unverified**, never as
+  clean. CI runs both the tree and the full-history secrets passes, so the gap closes on the PR — but
+  a skipped local pass is still not a clean one.
 - **Gate 3 catches personal names in commit messages**, but it exempts the public committer handle
   and the template profile names. Check those yourself before committing — `@commit` Step 4 does.
 - Leak-scan exit codes: `0` clean, `1` hits, `2` setup error. Anything but `0` stops the push.
@@ -138,7 +138,7 @@ Fill **every** section — a missing section is a defect, not a style choice:
 - **Leak gate (tree)**: ✅ `./scripts/leak-scan.sh .` passed
 - **Leak gate (history)**: ✅ full-history scan passed
 - **Skill validation**: ✅ / ⏭ no skills changed
-- **Secrets (full history)**: ✅ `gitleaks --log-opts="--all"` passed / ⏭ not installed — local-only; CI does not run this
+- **Secrets (full history)**: ✅ `gitleaks --log-opts="--all"` passed / ⏭ not installed locally — CI runs it
 - **Peer review**: ⏭ not flagged / ⚠️ skills changed — review recommended
 
 ## Test plan
@@ -166,11 +166,10 @@ Fill **every** section — a missing section is a defect, not a style choice:
 gh pr create --title "<title>" --body "<body>" --base main --head <branch-name>
 ```
 
-Once active, CI (`.github/workflows/leak-gate.yml`) re-runs the tree gate (including its own
-`gitleaks` pass), the skill validator, and the history scan on every push and PR — server-side, so
-the local `--no-verify` bypass does not apply. It runs the repo's own `scripts/`, so treat it as a
-second opinion, not an independent auditor. It does **not** run a full-history `gitleaks` pass;
-gate 5 is local-only.
+CI (`.github/workflows/leak-gate.yml`) re-runs the tree gate (including its own `gitleaks` pass),
+the skill validator, the history identity scan, and a full-history `gitleaks` pass on every push and
+PR — server-side, so the local `--no-verify` bypass does not apply. It runs the repo's own
+`scripts/`, so treat it as a second opinion, not an independent auditor.
 
 ## Step 7 — Report
 

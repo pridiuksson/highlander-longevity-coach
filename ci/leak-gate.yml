@@ -25,7 +25,13 @@ jobs:
       - name: Validate the skills tree
         run: python3 scripts/validate-skills.py .
 
-      - name: Scan the full git history
+      - name: Scan the full git history (identity / path / health)
         run: |
           git log -p --all -- . ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
             | ./scripts/leak-scan.sh --no-gitleaks -
+
+      # Separate from the tree scan on purpose: `gitleaks detect` walks git history unless
+      # --no-git is passed, so the tree step above covers only what is on disk. History needs
+      # its own secrets pass, and a personal name in a commit message is public forever.
+      - name: Scan the full git history (secrets)
+        run: gitleaks detect --source . --log-opts="--all" --no-banner --redact

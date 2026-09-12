@@ -26,9 +26,9 @@ no hosts — in a skill body, a fixture, a commit message, or a branch name. Kee
 (`<USER>`, `<YOUR_HEALTH_DIR>`) and drop the values. `CONTRIBUTING.md` has the full rule.
 
 CI (`.github/workflows/leak-gate.yml`) re-runs the gate on every push and PR over the tree and the
-full history, so a red gate blocks the merge. The local hook and the `workflow/` skills exist so you
-never push something CI will reject. Note the gate walks with `find`, not `git`: gitignored
-`staging/` is scanned too.
+full history — including secrets over history — so a red gate blocks the merge. The local hook and
+the `workflow/` skills exist so you never push something CI will reject. Note the gate walks with
+`find`, not `git`: gitignored `staging/` is scanned too.
 
 ## Skill layout and discovery
 
