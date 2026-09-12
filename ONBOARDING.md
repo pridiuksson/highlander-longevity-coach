@@ -226,6 +226,31 @@ Quiet hours and timezone come from step 5 (`proactive.quiet_hours`, `proactive.t
 are configuration, not constants. Then expect silence most weeks: a silent sweep is a successful
 run, and `proactive-coach` exists to decide when *not* to speak.
 
+## 10. Let it learn you
+
+A fresh profile is a skeleton, and the kit is built to adapt to you — but it can only adapt to
+what it knows. `demo` is the onboarding skill that closes this gap by *doing*: it runs real
+skills on your own questions while it slowly learns the facts that make the rest of the kit
+yours (diet, city, sleep window, supplements — never more than 3 questions per session, and
+skip is always an option).
+
+Run it interactively right now:
+
+```
+demo
+```
+
+Or accept its daily suggestion instead (same `/suggestions` flow as step 9) — it will ask at
+most 1–2 casual questions per day, each answered with an immediately useful result (tell it
+your diet and it prices matching staples at your local store; give it your weight and it
+computes your protein range).
+
+Everything it learns lands where the rest of the kit already reads — `health.baseline_doc`
+(step 5) and `~/.hermes/memories/USER.md` — so skills pick it up with no extra wiring. When
+your profile is complete (or after ~30 days, whichever comes first), it says so once, wires
+the handoff to `proactive-coach`, and you never hear from it again. It holds no data of its
+own beyond a progress file in `$HERMES_HOME/data/demo/`.
+
 ## Updating
 
 The install is a copy, so an update is: pull, re-check, re-copy, restart.
@@ -261,6 +286,7 @@ is the failure the repo's versioning design exists to prevent.
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
 | The gate warns about INERT patterns | Expected on a fresh clone. The four `<YOUR_...>` rows in `scripts/leak-patterns.tsv` are the adopter's own identity denylist — fill them in (or delete the rows) and the warning goes away. Until then those specific checks catch nothing, and the verdict says so |
 | You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
+| `demo` keeps asking questions | Check `$HERMES_HOME/data/demo/state.json` — `budget_used` vs `budget_limit_asks`, `skip_streak`, and `stop_learning`. It must retire itself at 21 asks or 30 days; if it will not stop, say "stop learning" and verify `stop_learning` flips to `true` |
 
 ## Field note: adopting onto a box that already has skills (2026-09-12)
 
