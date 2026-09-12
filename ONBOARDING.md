@@ -259,3 +259,28 @@ is the failure the repo's versioning design exists to prevent.
 | The gateway ignores a new skill | It cached the catalogue — restart it |
 | The leak gate is red | **Do not proceed.** Read the report; it names the pattern and the line |
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
+| You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
+
+## Field note: adopting onto a box that already has skills (2026-09-12)
+
+Step 2's collision check tells you *that* a name collides. It cannot tell you *which side
+should win*, and it cannot see skills that live under a **renamed home** or under an **old
+name**. If your box predates this kit, or you maintain customized copies of these skills:
+
+1. Diff every collision before copying — do not assume "you are upgrading". One field test
+   found three stale local copies (upstream correctly won) AND one case where **upstream was
+   the stale side**: the local `plan` skill used a backend-aware relative path that an upstream
+   edit had regressed to `$HERMES_HOME/plans/`. Direction of "better" is per-skill, not global.
+2. Normalize placeholders before comparing (`<YOUR_...>`, `${HERMES_SKILL_DIR}` vs hardcoded
+   paths) — otherwise cosmetic differences mask real ones, and vice versa.
+3. Check `references/` and `scripts/` trees separately: a SKILL.md can be near-identical while
+   one side carries whole reference files the other lacks.
+4. A skill body that hardcodes instance paths is not "wrong" — it is pre-migration. Decide
+   whether its values belong in `config.yaml` (then adopt upstream) or are genuinely
+   instance-specific (then keep local and record the delta).
+5. Record the decision per skill — a diff you did not write down is a diff you will re-do.
+
+## Renames
+
+`swedish-groceries` → `swedish-food-nutrition` (2026-09). If you installed under the old name,
+retire it: the collision check in step 2 matches on `name:` and will not flag the leftover.
