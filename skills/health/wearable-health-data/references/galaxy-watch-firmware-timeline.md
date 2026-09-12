@@ -15,7 +15,7 @@ one far from every step weakens it.
 - **2024-07** — launch firmware: Wear OS 5 / One UI 6 Watch. "Advanced AI
   algorithm" sleep tracking, Energy Score computed from sleep + sleeping HR +
   sleeping HRV.
-- **2024-11-<value>→<value>-29** — Nov-2024 security patch AXK6; Korea → Europe (BT).
+- **2024-11** — Nov-2024 security patch AXK6; Korea → Europe (BT).
 - **2024-12-10** — Verizon US build (Oct-2024 patch level).
 - **2025-01-15** — L310XXU1AXL1, Europe; stability only.
 - **2025-03-28** — Samsung-confirmed bug: "sleep-related measurement values
@@ -34,22 +34,22 @@ one far from every step weakens it.
   mid/late Dec 2025 (LOW confidence — region date inferred).
 - **2026-03-03 / 03-10** — Feb-2026 patch Korea/global (BZB1/BZB4);
   changelog: "improves the device's behaviour" (unspecified).
-- **2026-06-<value>→<value>-16** — May-2026 patch Korea → US/Europe (L310XXS2BZE1).
+- **2026-06** — May-2026 patch Korea → US/Europe (L310XXS2BZE1).
 - **2026-07-06** — Jul-2026 patch.
 - Cadence: security patches ~quarterly; major One UI Watch updates land
   Sep–Dec. Expect ~2 patch windows + 0–1 major OS updates per 6 months.
 
 ## Verdict for the H2-2025 sleep anomaly (run-005)
 
-- Window (a) 2025-09-25..11-15 (REM <value>→<value> bouts, deep dip): One UI 8 Watch
+- Window (a) 2025-09-25..11-15 (REM-bout shift, deep dip): One UI 8 Watch
   hit Europe 2025-10-20, dead-center → firmware branch STRONG.
-- Window (b) 2025-12-10..01-07 (max-HR <value>→<value> on 12-24): only BYK1-EU
+- Window (b) 2025-12-10..01-07 (max-HR step on 12-24): only BYK1-EU
   candidate, undated → WEAK.
 - Window (c) 2026-02..06 (AT ladder): Mar-10 and Jun-8..16 patch windows align
   moderately; quarterly cadence makes partial alignment partly chance.
 
-Full sourced table + per-update notes + all URLs:
-`$HERMES_HOME/skills/deliberate/runs/run-005/fork-firmware-research.md`
+Full sourced table + per-update notes + all URLs: the `deliberate` skill's `run-005` research output
+(a historical artifact of the original authoring workspace; not shipped with this repo).
 
 ## Best sources for this class of question
 

@@ -2,7 +2,7 @@
 
 Session: PR #6 verification loop, iteration 2 (2026-08-16). Task: personally re-derive
 every number in the "Garmin-era Jul-Sep baselines" table of
-`<YOUR_HEALTH_DIR>/samsung-data/pre-draw-window-findings.md` before trusting it — deep medians,
+`health.health_dir/samsung-data/pre-draw-window-findings.md` before trusting it — deep medians,
 RHR means, run/ride counts, modality hours, and two prose claims.
 
 ## Setup (durable facts for re-runs)
@@ -10,7 +10,7 @@ RHR means, run/ride counts, modality hours, and two prose claims.
 - DB: `$HERMES_HOME/data/garmin.db` — tables `workout(1263)` `sleep_night(1898)`
   `daily_summary(1900)` `fit_session(1263, FIT-arbitrated ground truth)`.
 - Window: `>= 'YYYY-07-02' AND < 'YYYY-09-03'` — 63 days = exactly 9.0 weeks
-  (watch the divisor: an earlier script divided by 9 then ×<value>→<value>× inflated min/wk,
+  (watch the divisor: an earlier script's divisor inflated min/wk,
   self-caught and retracted in the doc).
 - `sleep_night.calendar_date` = WAKE date; `has_stages=1` gate for deep medians.
 - `rhr_snapshot`: 15,973 rows but only 8,751 DISTINCT readings — dedupe by
@@ -40,7 +40,7 @@ RHR means, run/ride counts, modality hours, and two prose claims.
 
 1. Run-median band edge off by 1: 2016 actual 30.45 (pub "31-35"); 2018 actual 15.56
    (pub "17-18"). Cause: prose bands rounded without re-checking; collapse conclusion
-   (30-<value>→<value>-18 min medians) unaffected. Doc fix: bands → "~30-34" and "~16-18".
+   (run-median bands) unaffected. Doc fix: bands → "~30-34" and "~16-18".
 2. Diff-parser bugs I introduced and fixed in the evidence script: `int()` crash on
    `None` deep cells for 2016/2017; false MISMATCH from comparing 18.35 unrounded
    against integer band "17-18". See SKILL.md "Diff-tool pitfalls".

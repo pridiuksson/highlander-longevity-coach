@@ -1,13 +1,13 @@
 ---
 name: find-evidence
 license: MIT
-description: "Find and verify evidence on health, nutrition, supplements, athletic performance, injury prevention, or coaching methods. Searches academic sources and reports confidence labels. Use when <USER> needs depth on these topics — not for quick factual lookups or schedule questions."
+description: "Find and verify evidence on health, nutrition, supplements, athletic performance, injury prevention, or coaching methods. Searches academic sources and reports confidence labels. Use when the user needs depth on these topics — not for quick factual lookups or schedule questions."
 version: 1.1
 ---
 
 # Find Evidence — Health & Performance Research
 
-**Trigger:** <USER> asks about supplements, nutrition, training methods,
+**Trigger:** the user asks about supplements, nutrition, training methods,
 recovery, injury prevention, dosage, or anything health-related.
 
 **Do NOT trigger for:** schedule questions, product prices, quick factual
@@ -31,7 +31,7 @@ lookups, or anything already in memory.
    landmark study. Sports science evolves fast — a 2015 creatine meta-analysis
    may have been superseded.
 
-5. **Clinical boundary.** If <USER> asks about a specific person's injury,
+5. **Clinical boundary.** If the user asks about a specific person's injury,
    condition, or treatment, give the evidence but end with: "For [name]'s
    specific case, consult a sports physician." Do not play doctor.
 

@@ -1,7 +1,7 @@
 # Worked case: dual night-key lineages manufactured a doc-internal inconsistency
 
 Session: PR #6 audit (Samsung-side pre-draw D2 control numbers), repo `highlander-longevity-coach`,
-`<YOUR_HEALTH_DIR>/samsung-data/`. Two PR#5-era tools computed "9-week pre-draw window" stats:
+`health.health_dir/samsung-data/`. Two PR#5-era tools computed "9-week pre-draw window" stats:
 `predraw_windows.py` and `seasonal_control.py`.
 
 ## The two lineages
@@ -26,7 +26,7 @@ datetime choice, not malformed strings.
 | seasonal date−18h (producing tool) | **73** (n=58) | **63** (n=56) | identical |
 
 - Training total min/wk is lineage-*free* (raw `substr(start_local,1,10)` window) — clean
-  MATCHes: D2 <value>→<value>, 2024 <value>→<value>, D1 <value>→<value>, hard-days <value>→<value>, RMSSD <value>→<value>.
+  MATCHes (values withheld).
 - The deep medians are lineage-*sensitive*. The findings doc cited D2 deep as **72**
   (summary table) AND **73** (reference table + retraction text) — both "right", each under
   a different tool. The 2024 control deep **63** reproduced ONLY under the producing tool's

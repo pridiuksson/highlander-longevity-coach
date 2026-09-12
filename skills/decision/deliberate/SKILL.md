@@ -5,9 +5,33 @@ description: "Use for complex questions spanning MULTIPLE domains with genuine t
 version: 1.0.0
 trigger: "Multiple domains pull in different directions and a single opinion won't resolve the tension."
 tags: [deliberation, debate, multi-expert, health, synthesis]
+metadata:
+  hermes:
+    config:
+      - key: health.health_dir
+        description: "Root of your health data: device exports, SQLite DB, verified-data docs"
+        default: "~/health"
+        prompt: "Root of your health data: device exports, SQLite DB, verified-data docs"
+      - key: health.baseline_doc
+        description: "Your baseline document — the single source of truth for every measured value"
+        default: "~/health/baseline.md"
+        prompt: "Your baseline document — the single source of truth for every measured value"
+      - key: health.training_plan
+        description: "Your training-plan document (strategy + operations)"
+        default: "~/health/training-plan.md"
+        prompt: "Your training-plan document (strategy + operations)"
+      - key: health.nutrition_plan
+        description: "Your nutrition-plan document"
+        default: "~/health/nutrition-plan.md"
+        prompt: "Your nutrition-plan document"
 ---
 
 # Deliberate — Multi-Expert Deliberation
+
+> **Config.** This skill reads its paths from `config.yaml`; the resolved values
+> arrive in the `[Skill config]` block injected when this skill loads. In the
+> commands below `$HEALTH_DIR` = `health.health_dir`, `$BASELINE_DOC` = `health.baseline_doc`, `$TRAINING_PLAN` = `health.training_plan`, `$NUTRITION_PLAN` = `health.nutrition_plan`.
+> Never hardcode a path — a clone can live anywhere, and `~/health` is only a default.
 
 Spawn domain experts. Let them disagree. Validate independently. Synthesize into one coherent answer. **You are the judge, not a dumb router.**
 
@@ -65,16 +89,16 @@ Before spawning any agent, answer these:
 
 1. **Decision question**: one sentence. What are we trying to answer?
 2. **Domain pack**: which `domains/<name>/` directory? (e.g., `health/`)
-3. **Data**: what file(s) do experts need? (e.g., `<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md`). For training/recovery/sleep questions ALSO generate a wearable-data brief from `$HERMES_HOME/data/health.db` (see `samsung-health-import` skill — schema + verified mappings): 4-week workout load by type, 2-week nightly RMSSD + RHR, sleep duration trend, latest body comp, and the data end-date. Experts get real series, not recollections. Tier rules apply: anchor on RMSSD/RHR/sleep-duration/workout-minutes; VO2max (watch estimate) is LOW-CONFIDENCE (contradicts RMSSD+RHR trends — suspect device re-estimation); stage splits are trend-indicative only.
+3. **Data**: what file(s) do experts need? (e.g., `health.baseline_doc`). For training/recovery/sleep questions ALSO generate a wearable-data brief from `$HERMES_HOME/data/health.db` (see `samsung-health-import` skill — schema + verified mappings): 4-week workout load by type, 2-week nightly RMSSD + RHR, sleep duration trend, latest body comp, and the data end-date. Experts get real series, not recollections. Tier rules apply: anchor on RMSSD/RHR/sleep-duration/workout-minutes; VO2max (watch estimate) is LOW-CONFIDENCE (contradicts RMSSD+RHR trends — suspect device re-estimation); stage splits are trend-indicative only.
 4. **Quality criteria**: how will I judge the output? (coverage, disagreement, actionability)
 
 ### Step 2: Create Run Directory
 
 ```bash
 # Find the next run number
-ls $HERMES_HOME/skills/deliberate/runs/ 2>/dev/null | grep 'run-' | sort -V | tail -1
+ls ${HERMES_SKILL_DIR}/runs/ 2>/dev/null | grep 'run-' | sort -V | tail -1
 # Create next
-mkdir -p $HERMES_HOME/skills/deliberate/runs/run-NNN
+mkdir -p ${HERMES_SKILL_DIR}/runs/run-NNN
 ```
 
 Initialize `debate.json`:
@@ -95,7 +119,7 @@ Read all persona files from `domains/<name>/`. Each persona prompt gets injected
 
 ### Step 4: Load Data
 
-Read the data file(s) (e.g., `<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md`). Every expert receives the full data.
+Read the data file(s) (e.g., `health.baseline_doc`). Every expert receives the full data.
 
 ## Parent probes + corrections ledger (validated runs 006/007, 2026-08-29)
 
@@ -221,7 +245,7 @@ Round 2: expert1 → expert2 → expert3 → expert4
 3. Expert makes ONE focused point (≤300 words)
 4. **Run the validator** via CLI:
    ```bash
-   $HERMES_HOME/skills/deliberate/scripts/deliberate-validator.sh "<validator_prompt>"
+   ${HERMES_SKILL_DIR}/scripts/deliberate-validator.sh "<validator_prompt>"
    ```
    Where `<validator_prompt>` is constructed from:
    - Validator persona (from `domains/<name>/validator.md`)
@@ -277,7 +301,7 @@ HIGH / MEDIUM / LOW
 Run via **CLI** (not delegate_task) for model independence:
 
 ```bash
-$HERMES_HOME/skills/deliberate/scripts/deliberate-validator.sh "<synthesis_prompt>"
+${HERMES_SKILL_DIR}/scripts/deliberate-validator.sh "<synthesis_prompt>"
 ```
 
 The synthesis prompt includes:
@@ -316,7 +340,7 @@ Append to `debate.json` as `phase5`.
 
 After Phase 5, Hermes evaluates the output. NOT a dumb router — use your own judgment.
 
-**Critical: Document verification AFTER deliberation.** Deliberation output will be written into reference documents (<YOUR_TRAINING_PLAN>.md, <YOUR_NUTRITION_PLAN>.md, etc.). These documents will be read by future sessions and treated as ground truth. **Any factual error in the synthesis that propagates into a document becomes invisible — it's surrounded by correct information and looks authoritative.** This is how the iron threshold error (run-003 food strategy deliberation was cited as the source for iron decisions that actually came from run-002) went undetected for days. After writing deliberation output to persistent documents, run an independent peer-review on EACH document separately, supplying the reviewer with key facts NOT in the document being reviewed. This catches cross-document contradictions and factual errors that a single-pass synthesis misses.
+**Critical: Document verification AFTER deliberation.** Deliberation output will be written into reference documents (health.training_plan, health.nutrition_plan, etc.). These documents will be read by future sessions and treated as ground truth. **Any factual error in the synthesis that propagates into a document becomes invisible — it's surrounded by correct information and looks authoritative.** This is how the iron threshold error (run-003 food strategy deliberation was cited as the source for iron decisions that actually came from run-002) went undetected for days. After writing deliberation output to persistent documents, run an independent peer-review on EACH document separately, supplying the reviewer with key facts NOT in the document being reviewed. This catches cross-document contradictions and factual errors that a single-pass synthesis misses.
 
 **Check these (in order):**
 
@@ -335,7 +359,7 @@ After Phase 5, Hermes evaluates the output. NOT a dumb router — use your own j
 - The synthesis (from Phase 5)
 - Debate quality: consensus level, disagreement count, validator findings
 - Your judgment: did this debate add value over a single opinion?
-- Full transcript: `$HERMES_HOME/skills/deliberate/runs/run-NNN/debate.json`
+- Full transcript: `${HERMES_SKILL_DIR}/runs/run-NNN/debate.json`
 
 ## Iterating on Personas
 

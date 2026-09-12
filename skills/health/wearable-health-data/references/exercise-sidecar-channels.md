@@ -43,5 +43,5 @@ element keys — never hardcode a full filename (export paths carry per-export t
 
 ## Parsed hand-analysis exemplar
 
-`<YOUR_HEALTH_DIR>/samsung-data/RUN_2026-08-23_HILL.md` — rep table, 198-bpm event
+`health.health_dir/samsung-data/RUN_2026-08-23_HILL.md` — rep table, 198-bpm event
 arbitration, HRmax re-anchoring table (7 maximal efforts), recovery-night section.

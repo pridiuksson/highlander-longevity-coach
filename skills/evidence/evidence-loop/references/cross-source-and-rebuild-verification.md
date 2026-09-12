@@ -14,7 +14,7 @@ Worked case: Samsung-era sleep and Garmin-era sleep overlapped at the device han
 (2021). The runbook claimed "both devices on night-table during transition week;
 ±2h window-interpretation difference between algorithms." Re-derivation showed the
 Samsung 2021-08-25 night and the Garmin 2021-08-26 row were **identical to the minute**:
-window 23:<value>→<value>:17, deep 184 min, light 217 min, wake 8 min. Samsung Health had imported
+same window edges, deep 184 min, light 217 min, wake 8 min. Samsung Health had imported
 the Garmin record from Garmin Connect on switch day. The "±2h difference" was a
 timezone misread: someone compared the session's `start_utc` (21:28) against its own
 `start_local` (23:28). There was never a second device.
@@ -42,7 +42,7 @@ Worked case: Garmin `sleepStartTimestampGMT` fields were proven to be *local dis
 time*, while that same export's workout `begin_gmt_ms` WERE genuine UTC (G11 gate,
 begin_local_ms − begin_gmt_ms = +1h winter / +2h summer, DST-aware). The sleep fields
 were not UTC. Reading them as UTC put every bedtime 2–3h late and inverted a decade
-narrative (claimed 25:<value>→<value>:47 when truth was 22:<value>→<value>:11).
+narrative (claimed just-after-midnight bedtimes when the truth was late-evening).
 
 How to validate the semantic of a timestamp column:
 - **Independent cross-source anchor:** the identical-content handoff night above pins the
@@ -58,7 +58,7 @@ How to validate the semantic of a timestamp column:
 ## 3. Provenance strata INSIDE one "source" — a trend may be a device shift
 
 A single source era can itself be two regimes. Samsung "era" 2021-2026 split at
-2022-10 (phone-staged sleep vs Galaxy-Watch-staged): deep 10%→<value>→<value>%, REM <value>→<value>→25%.
+2022-10 (phone-staged sleep vs Galaxy-Watch-staged): deep rose from 10% while REM climbed to 25%.
 Part of the apparent "rising deep/REM" across 2021-2024 was provenance shift, not
 physiology. Before reporting any trend that spans a device/adoption/handoff boundary,
 confirm the metric is measured identically on both sides.

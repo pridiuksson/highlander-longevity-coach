@@ -17,17 +17,17 @@ Before ANY Phase 1 dispatch on a predictive question, the parent must:
 If (1) shows MISSING predictive inputs: **DO NOT SPAWN EXPERTS**. Spawning 4 experts to invent a number is the run-008 failure mode reproduced. Halt at Phase 0, document the missing inputs, ask the user to supply them (or to confirm a non-quantified / targeted / lower-tier output), and produce a parent-derived synthesis with zero fabricated numbers.
 
 ## The 4 predictive inputs — gastric-cancer-risk example (run-009, verified 2026-09-11)
-Verified independently this session via grep across `<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md`, `<YOUR_NUTRITION_PLAN>.md`, `restaurant-reference.md`, `samsung-data/*.md`, and user profile / memory / session notes:
+Verified independently this session via grep across `health.baseline_doc`, `health.nutrition_plan`, `restaurant-reference.md`, `samsung-data/*.md`, and user profile / memory / session notes:
 
 | # | Predictive input | Data source expected | Verified state (run-009) | Evidence line / grep result |
 |---|---|---|---|---|
-| 1 | Family gastric-cancer history (first-degree; age; recurrence) | `<YOUR_BASELINE_DOC>.md` / user testimony | MISSING (0 hits) | `grep -ni family\|hered\|gastric.*cancer` → 0 hits |
-| 2 | H. pylori status (serology / breath / clinical) | `<YOUR_BASELINE_DOC>.md` / lab results | MISSING (0 hits) | `grep -ni helicobacter\|h\.pylori\|h\. pylori` → 0 hits |
-| 3 | Smoking / tobacco exposure (current/former/never; pack-years) | `<YOUR_BASELINE_DOC>.md` / user testimony | MISSING (tracking absent; alcohol L464 exists → selective tracking confirms absence is unverified) | `grep -ni smoke\|tobacco\|cigarette` → 0 hits (vs alcohol L464 present) |
+| 1 | Family gastric-cancer history (first-degree; age; recurrence) | `health.baseline_doc` / user testimony | MISSING (0 hits) | `grep -ni family\|hered\|gastric.*cancer` → 0 hits |
+| 2 | H. pylori status (serology / breath / clinical) | `health.baseline_doc` / lab results | MISSING (0 hits) | `grep -ni helicobacter\|h\.pylori\|h\. pylori` → 0 hits |
+| 3 | Smoking / tobacco exposure (current/former/never; pack-years) | `health.baseline_doc` / user testimony | MISSING (tracking absent; alcohol L464 exists → selective tracking confirms absence is unverified) | `grep -ni smoke\|tobacco\|cigarette` → 0 hits (vs alcohol L464 present) |
 | 4 | Predictive framework (GASTRIC / PLCO-style / epidemiology-only) | User specification / brief | MISSING (none specified, none applied) | None present; none requested |
 
 The ONLY verifiable gastric-cancer-relevant exposure found (independent grep + line-cited):
-- Smoked/cured salmon ≤5x/wk (`<YOUR_BASELINE_DOC>.md` L446 lunch + L455 dinner; `<YOUR_NUTRITION_PLAN>.md` L42/149 recommendation to rotate). IARC Group 3 "not classifiable" (Nordic smoked salmon) — NOT Group 1 (Chinese-style salted fish = Group 1). No dose-threshold model (`<YOUR_NUTRITION_PLAN>.md` L175: "IARC carcinogen dose-response for smoked fish at typical Nordic intake levels — no threshold data").
+- Smoked/cured salmon ≤5x/wk (`health.baseline_doc` L446 lunch + L455 dinner; `health.nutrition_plan` L42/149 recommendation to rotate). IARC Group 3 "not classifiable" (Nordic smoked salmon) — NOT Group 1 (Chinese-style salted fish = Group 1). No dose-threshold model (`health.nutrition_plan` L175: "IARC carcinogen dose-response for smoked fish at typical Nordic intake levels — no threshold data").
 
 - Profile factors to check for LOW-RISK-but-NOT-predictive status: dietary pattern, alcohol intake, vegetable/berry intake, body composition, iron status, homocysteine, and the standard metabolic/renal/liver/lipid panels. Read the user's actual status from their health file — never assume or invent it.
 

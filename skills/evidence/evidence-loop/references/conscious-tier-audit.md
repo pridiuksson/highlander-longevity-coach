@@ -1,8 +1,8 @@
 # Conscious-tier audit — worked example (2026-08-16)
 
 Full worked example of this skill applied to the Garmin/Samsung conscious-tier unification.
-Primary artifacts: `<YOUR_HEALTH_DIR>/garmin-data/conscious_tier.py` (90 lines), claim in commit
-30bbbd5 + `<YOUR_HEALTH_DIR>/samsung-data/pre-draw-window-findings.md`.
+Primary artifacts: `health.health_dir/garmin-data/conscious_tier.py` (90 lines), claim in commit
+30bbbd5 + `health.health_dir/samsung-data/pre-draw-window-findings.md`.
 
 ## Verified facts (read-only, literal outputs)
 
@@ -31,7 +31,7 @@ Primary artifacts: `<YOUR_HEALTH_DIR>/garmin-data/conscious_tier.py` (90 lines),
 
 - **2.6×** = 253/98 = 2.577. Samsung-conscious vs Samsung-conscious (same device) → immune
   to device-handoff confound by construction. Best finding type.
-- Ambience halved in same windows: aux <value>→<value>; auto-walk 1001 alone <value>→<value>.
+- Ambience halved in same windows: aux and auto-walk-1001-alone both fell by roughly half.
 - Full 2025 window = 253 proud + 277 ambient = 530 min/wk exactly (the reinterpretation base).
 - Frame check: 2.6× is 2025-over-2024, the WEAKEST non-artifact year (2023 was 146) →
   2025-vs-2023 = 1.73×. "Biggest since 2018" (253 vs 248 in 2019) is a cross-device marginal tie.

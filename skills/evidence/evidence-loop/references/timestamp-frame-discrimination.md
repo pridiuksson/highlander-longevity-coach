@@ -24,7 +24,7 @@ readings, and the peer-review loop that caught it.
 | # | Anchor | Result in worked case |
 |---|---|---|
 | a | **Epoch millis in sidecars** — absolute instants immune to labeling | Samsung side proven: `.liv`/`sleep_status` JSON epochs == CSV strings to the second |
-| b | **Same-instant multi-device overlap** — two sensors on one sleeper during a handoff week | Night 2021-08-<value>→<value>: Garmin 21:42 vs Samsung-native 22:18 both-as-UTC = 36 min apart (two algorithms, one sleeper). Local reading: Garmin detects sleep 3h36m BEFORE the other wrist — impossible |
+| b | **Same-instant multi-device overlap** — two sensors on one sleeper during a handoff week | Night in the 2021-08 handoff week: Garmin 21:42 vs Samsung-native 22:18 both-as-UTC = 36 min apart (two algorithms, one sleeper). Local reading: Garmin detects sleep 3h36m BEFORE the other wrist — impossible |
 | c | **User testimony** — known wake/event times | UTC reading → wakes 06:45–07:45 local ≈ user's reported ~06:40–08:00. Local reading → 04:00 wakes, contradicted |
 | d | **Downstream-impossibility** — compute a physical invariant under each hypothesis | Sleep-end → first-workout gap, n=228: UTC reading median **+1.48h** (min +0.40); local reading median **NEGATIVE** (workouts logged before sleep ended) for dozens of nights |
 | e | **DST seasonal-median** — sharpest, DST regions only | Winter-vs-summer medians of the RAW string column: UTC strings predict ~±1h seasonal shift (fixed local schedule, moving offset); local strings predict ~0h. Measured **+1.13h** (summer wake-strings 06:16 / winter 07:23; n=361/346) |
@@ -66,8 +66,8 @@ the importer's assumption. Genuinely independent sensors only (anchor b).
 ## Resolution
 
 Garmin `sleepStart/EndTimestampGMT` = TRUE UTC. Local = stored +2h winter/+3h summer
-(Vilnius EET/EEST era). Decade bedtimes: Garmin era drifted later 00:<value>→<value>:47 local;
-Samsung era earlier 01:<value>→<value>:07 — the ~1.5h lifestyle change is real. Evidence scripts:
-`<YOUR_HEALTH_DIR>/decade-sleep/tz_dst_discriminator.py`, `tz_overlap_anchors.py`,
-`tz_probe.py`; full saga in `<YOUR_HEALTH_DIR>/garmin-verified-data.md` §tz and
-`<YOUR_HEALTH_DIR>/decade-sleep/README.md` correction history items 5a–e.
+(Vilnius EET/EEST era). Decade bedtimes: Garmin era drifted later,
+Samsung era earlier — the ~1.5h lifestyle change is real. Evidence scripts:
+`health.health_dir/decade-sleep/tz_dst_discriminator.py`, `tz_overlap_anchors.py`,
+`tz_probe.py`; full saga in `health.health_dir/garmin-verified-data.md` §tz and
+`health.health_dir/decade-sleep/README.md` correction history items 5a–e.

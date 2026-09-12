@@ -3,11 +3,39 @@ name: nutrition-advisory
 license: MIT
 description: "Personalized nutrition and health research advisor. Filters research papers, supplement questions, and dietary advice through the user's blood biomarker profile. Use when: user shares a health/nutrition research paper (URL or PDF), asks about supplements (should I take X), asks about diet patterns (keto, Mediterranean, etc.), shares blood test results, or asks food-level questions. Applies profile-specific interpretation rules to prevent misreading biomarkers."
 version: 1.3.0
-author: <USER>
+author: the user
 tags: [nutrition, health, research, supplements, bloodwork, diet]
+metadata:
+  hermes:
+    config:
+      - key: health.health_dir
+        description: "Root of your health data: device exports, SQLite DB, verified-data docs"
+        default: "~/health"
+        prompt: "Root of your health data: device exports, SQLite DB, verified-data docs"
+      - key: health.baseline_doc
+        description: "Your baseline document — the single source of truth for every measured value"
+        default: "~/health/baseline.md"
+        prompt: "Your baseline document — the single source of truth for every measured value"
+      - key: health.training_plan
+        description: "Your training-plan document (strategy + operations)"
+        default: "~/health/training-plan.md"
+        prompt: "Your training-plan document (strategy + operations)"
+      - key: health.nutrition_plan
+        description: "Your nutrition-plan document"
+        default: "~/health/nutrition-plan.md"
+        prompt: "Your nutrition-plan document"
+      - key: health.food_guide
+        description: "Your food guide (restaurant/takeaway decisions)"
+        default: "~/health/food-guide.md"
+        prompt: "Your food guide (restaurant/takeaway decisions)"
 ---
 
 # Nutrition Advisory — Personalized Health Research Filter
+
+> **Config.** This skill reads its paths from `config.yaml`; the resolved values
+> arrive in the `[Skill config]` block injected when this skill loads. In the
+> commands below `$HEALTH_DIR` = `health.health_dir`, `$BASELINE_DOC` = `health.baseline_doc`, `$TRAINING_PLAN` = `health.training_plan`, `$NUTRITION_PLAN` = `health.nutrition_plan`, `$FOOD_GUIDE` = `health.food_guide`.
+> Never hardcode a path — a clone can live anywhere, and `~/health` is only a default.
 
 Every finding is evaluated against one question: does this apply to THIS person, with THESE markers, pursuing THESE goals? Generic nutrition advice is noise. The value is the PROFILE FILTER, not information retrieval.
 
@@ -24,21 +52,21 @@ Every finding is evaluated against one question: does this apply to THIS person,
 ## Process
 
 ### Step 1: Load Profile and History
-Read `<YOUR_HEALTH_DIR>/health-profile.md` IN FULL. This is the lens. Cross-check mem0 (search "health profile" / "bloods" / "supplements") for any updates or corrections newer than the reference file. The reference file is the stable interpretive frame; mem0 has the latest values.
+Read `health.health_dir/health-profile.md` IN FULL. This is the lens. Cross-check mem0 (search "health profile" / "bloods" / "supplements") for any updates or corrections newer than the reference file. The reference file is the stable interpretive frame; mem0 has the latest values.
 
-**Canonical source for supplement stack:** `$HERMES_HOME/$HERMES_HOME/personal/vitamins.md` (updated by the user's partner). The reference file's Supplement Stack section is a downstream COPY. If the user mentions supplement changes, or if the reference file seems stale, check the canonical source and sync both:
-1. `<YOUR_HEALTH_DIR>/health-profile.md` — the skill's data layer (Supplement Stack table + Supplement Review Verdict section)
-2. `<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md` — the full health profile (Supplements Stack section)
+**Canonical source for supplement stack:** `$HERMES_HOME/personal/vitamins.md` (updated by the user's partner). The reference file's Supplement Stack section is a downstream COPY. If the user mentions supplement changes, or if the reference file seems stale, check the canonical source and sync both:
+1. `health.health_dir/health-profile.md` — the skill's data layer (Supplement Stack table + Supplement Review Verdict section)
+2. `health.baseline_doc` — the full health profile (Supplements Stack section)
 
 When syncing: update the stack table AND the verdict section (move ADD items to ADDED, update DROP items, etc.). These are NOT symlinks — they are manual copies that drift.
 
-**Source-of-truth files:** The canonical raw data lives in `<YOUR_HEALTH_DIR>/`:
-- `<YOUR_BASELINE_DOC>.md` — original blood panels, supplement stack, fitness/sleep stats
-- `<YOUR_NUTRITION_PLAN>.md` — food priorities by biomarker target (output of this skill)
+**Source-of-truth files:** The canonical raw data lives in `health.health_dir/`:
+- `health.baseline_doc` — original blood panels, supplement stack, fitness/sleep stats
+- `health.nutrition_plan` — food priorities by biomarker target (output of this skill)
 
-`<YOUR_HEALTH_DIR>/health-profile.md` is a STRUCTURED COPY of that data. If they disagree, the reference file is the processed lens but `<YOUR_BASELINE_DOC>.md` may have newer raw data — reconcile by treating `<YOUR_BASELINE_DOC>.md` as ground truth for values and the reference file as ground truth for interpretation rules. See Step 2b for sync protocol.
+`health.health_dir/health-profile.md` is a STRUCTURED COPY of that data. If they disagree, the reference file is the processed lens but `health.baseline_doc` may have newer raw data — reconcile by treating `health.baseline_doc` as ground truth for values and the reference file as ground truth for interpretation rules. See Step 2b for sync protocol.
 
-Also scan `<YOUR_HEALTH_DIR>/research-log.md` entry headers for: (a) prior analysis of the same paper — if found, retrieve and confirm rather than re-analyzing from scratch; (b) prior conclusions on the same nutrient/biomarker/topic — required to populate the "Conflict with prior" field correctly and avoid contradictory mem0 entries.
+Also scan `health.health_dir/research-log.md` entry headers for: (a) prior analysis of the same paper — if found, retrieve and confirm rather than re-analyzing from scratch; (b) prior conclusions on the same nutrient/biomarker/topic — required to populate the "Conflict with prior" field correctly and avoid contradictory mem0 entries.
 
 **Food recommendation framework:** When the user needs meal structure (not just specific items), use `references/food-framework-no-cook.md` for the build-a-meal pattern (hunger tiers, category lists, day-type mapping, grocery staples). This is a reusable template, not session-specific data.
 
@@ -55,7 +83,7 @@ Required queries for a training question:
 
 Tier rules (advice-grade): RMSSD, RHR, sleep DURATION, workout minutes, body weight = TREND-RELIABLE (anchor advice here). VO2max (watch estimate) = LOW-CONFIDENCE — contradicts RMSSD+RHR trends; never advise from it alone. Stage splits = trend-indicative only. Zone thresholds (hr_threshold) drift month to month — read per-workout values, never assume.
 
-For query patterns (night-keys, bout reconstruction, quartile enrichment, device-revision checks) and hard-won sqlite traps: `references/samsung-analysis-patterns.md`. Canonical runbook + confidence tiers + audit residuals: `<YOUR_HEALTH_DIR>/samsung-verified-data.md` — read before first advice on a fresh rebuild.
+For query patterns (night-keys, bout reconstruction, quartile enrichment, device-revision checks) and hard-won sqlite traps: `references/samsung-analysis-patterns.md`. Canonical runbook + confidence tiers + audit residuals: `health.health_dir/samsung-verified-data.md` — read before first advice on a fresh rebuild.
 
 ### Step 2: Fetch Research (if analyzing a paper)
 
@@ -79,16 +107,16 @@ Extraction routing:
 ### Step 2b: If User Shares New Blood Test Results (not a paper)
 1. Compare each marker to prior values in health-profile.md — note deltas and trend direction (Rule 9).
 2. Check whether any Interpretation Rule's premise has changed (e.g., homocysteine now <10 → Rule 5 intervention succeeded; hsCRP now elevated → Rule 3 no longer fully applies).
-3. Update health-profile.md Blood Test Results section with new panel. Update Active Targets & Retest Schedule. **ALSO update `<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md`** — this is the canonical raw record. If you don't update both, they drift (this already happened once: supplement review updated the reference copy but <YOUR_BASELINE_DOC>.md kept the old stack).
+3. Update health-profile.md Blood Test Results section with new panel. Update Active Targets & Retest Schedule. **ALSO update `health.baseline_doc`** — this is the canonical raw record. If you don't update both, they drift (this already happened once: supplement review updated the reference copy but health.baseline_doc kept the old stack).
 4. Log to research-log.md with Type: "Blood panel update" and note any rules whose status changed.
-5. Write to mem0 ONLY if an interpretation rule's status changed (e.g., "TMG intervention succeeded — homocysteine <value>→<value> as of [date]").
+5. Write to mem0 ONLY if an interpretation rule's status changed (e.g., "TMG intervention succeeded — homocysteine fell as of [date]").
 
 ### Step 2c: If User Shares Actual Diet (Dietary Intake Assessment)
-This is fundamentally different from Step 2 (paper → prescription). This is mapping what the user ACTUALLY eats against their biomarker targets to find behavioral gaps. The prescription doc (`<YOUR_NUTRITION_PLAN>.md`) defines the target; this step measures the distance from it.
+This is fundamentally different from Step 2 (paper → prescription). This is mapping what the user ACTUALLY eats against their biomarker targets to find behavioral gaps. The prescription doc (`health.nutrition_plan`) defines the target; this step measures the distance from it.
 
-1. **Capture actual intake** — go meal by meal (breakfast → dinner). Store as an "Actual Diet — Observational Log" section in `<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md`. Self-reported, not tracked. Note meal timing (especially post-workout vs bedtime — these interact with recovery and sleep architecture).
+1. **Capture actual intake** — go meal by meal (breakfast → dinner). Store as an "Actual Diet — Observational Log" section in `health.baseline_doc`. Self-reported, not tracked. Note meal timing (especially post-workout vs bedtime — these interact with recovery and sleep architecture).
 
-2. **Map meals against biomarker targets** — for each meal, which of the 7 target categories (cognitive, ApoB, whole grains, methylation, magnesium, protein, iron) does it hit? Use the compression list from `<YOUR_NUTRITION_PLAN>.md` as the reference. Table format (meal × targets hit) reveals structural gaps instantly. Pattern matters more than individual foods: one strong meal doesn't cancel a protein vacuum at another.
+2. **Map meals against biomarker targets** — for each meal, which of the 7 target categories (cognitive, ApoB, whole grains, methylation, magnesium, protein, iron) does it hit? Use the compression list from `health.nutrition_plan` as the reference. Table format (meal × targets hit) reveals structural gaps instantly. Pattern matters more than individual foods: one strong meal doesn't cancel a protein vacuum at another.
 
 3. **Challenge self-prescribed diet restrictions BEFORE accepting them.** If the user states they follow an approach ("low-carb," "low-fat," "keto"), check it against their own biomarkers. A metabolically healthy profile with a high training load has no biomarker reason to restrict carbohydrates — post-workout carbs serve glycogen replenishment and recovery. Push back when the stated approach conflicts with the bloodwork. This is often the single highest-value intervention in a diet assessment.
 
@@ -120,7 +148,7 @@ The anti-pattern was already documented. It was violated anyway. Promoting it to
 **Step 2d.2 — Sum co-formulated actives across the WHOLE stack against upper limits.** Different products in the same stack often share an active, and each looks reasonable in isolation while the total exceeds the upper limit (B6 is the classic case: a B-complex plus a mineral capsule can cross the EFSA tolerable upper limit even though neither product is high-dose on its own). Do the upper-limit arithmetic on STACK TOTALS, never per-product. A dosing-frequency change (e.g. every-other-day) is a valid fix — but check that halving one active does not break the therapeutic dose of the OTHER actives in the same product.
 
 ### Step 3: Filter Through Profile
-Apply interpretation rules from `<YOUR_HEALTH_DIR>/health-profile.md` (Section: Interpretation Rules). Weigh evidence quality. Classify findings into action tiers.
+Apply interpretation rules from `health.health_dir/health-profile.md` (Section: Interpretation Rules). Weigh evidence quality. Classify findings into action tiers.
 
 ### Step 3b: Identify Missing Data (for comprehensive health assessments)
 When doing a full-profile review (not a single-paper analysis), use `peer-review` to stress-test for blind spots. Frame the prompt with the full profile context and ask: "what are the most important MISSING data points that would redirect strategy?" The peer catches gaps you're blind to (e.g., blood pressure — the #1 CV risk factor, never measured; training program structure; caffeine timing). Critically evaluate the peer's output — discard over-engineered claims (e.g., Lp(a) particle concentration when mass is already well below threshold) and keep genuinely redirecting insights. See the peer-review skill for the push-back protocol.
@@ -188,7 +216,7 @@ Each phase must be survivable if the user stops after it — no phase should dep
 
 ### Training Psychology — Account for Engagement
 
-When advising on training programs, account for the user's psychological need for intensity variety. An optimized polarized program (80% Zone 2 + 20% Zone 5) will fail if the user finds the easy days "very boring" and has no hard session to look forward to. The fix is not to eliminate easy days — it's to make the hard days genuinely hard (Norwegian 4×4 intervals, not lukewarm tempo). Frame the contrast explicitly: "Monday is your suffering day. Saturday being boring is what buys Monday's quality." Never prescribe a training structure where every day is medium-hard — that's the gray zone that produces fatigue without adaptation. CORRECTION (2026-08-15): this section previously claimed gray-zone training "caused VO2max decline from <value>→<value> in this user" — that decline was RESOLVED as a device artifact (Samsung max-HR re-anchoring <value>→<value>; cliff landed 60 min after a revision, same day, while RMSSD/RHR improved). Never cite the watch VO2max decline as evidence for any training claim; see `references/samsung-analysis-patterns.md`. The engagement principle stands on its own merits.
+When advising on training programs, account for the user's psychological need for intensity variety. An optimized polarized program (80% Zone 2 + 20% Zone 5) will fail if the user finds the easy days "very boring" and has no hard session to look forward to. The fix is not to eliminate easy days — it's to make the hard days genuinely hard (Norwegian 4×4 intervals, not lukewarm tempo). Frame the contrast explicitly: "Monday is your suffering day. Saturday being boring is what buys Monday's quality." Never prescribe a training structure where every day is medium-hard — that's the gray zone that produces fatigue without adaptation. CORRECTION (2026-08-15): this section previously claimed gray-zone training "caused a VO2max decline in this user" — that decline was RESOLVED as a device artifact (Samsung max-HR re-anchoring; cliff landed 60 min after a revision, same day, while RMSSD/RHR improved). Never cite the watch VO2max decline as evidence for any training claim; see `references/samsung-analysis-patterns.md`. The engagement principle stands on its own merits.
 
 ### Additional Output Elements
 
@@ -201,7 +229,7 @@ Tiers are heuristic defaults, not straitjackets. "This paper is noise for you" i
 ## Persistence Rules
 
 ### Step 1: Write to Research Log (ALWAYS)
-Append one entry to `<YOUR_HEALTH_DIR>/research-log.md` per paper analyzed. Format:
+Append one entry to `health.health_dir/research-log.md` per paper analyzed. Format:
 
 ```
 ## [Author lastname] [Year] — [Short title]
@@ -229,7 +257,7 @@ After writing to log, extract conclusions to mem0 ONLY if there are DO or KEEP i
 
 **No-evidence path:** if paper yields nothing in DO or KEEP, write ONLY the log entry. Do NOT write to mem0. Zero-signal entries degrade retrieval quality for everything else.
 
-**Format:** state the conclusion, the source, and why it applies to this profile. Example: "AHEI is <USER>'s reference diet pattern — Tessier 2025 (Nature Medicine, 105k cohort) showed AHEI outperformed Mediterranean/DASH/MIND for healthy aging."
+**Format:** state the conclusion, the source, and why it applies to this profile. Example: "AHEI is the user's reference diet pattern — Tessier 2025 (Nature Medicine, 105k cohort) showed AHEI outperformed Mediterranean/DASH/MIND for healthy aging."
 
 **Conflict cleanup:** when a new conclusion overturns a prior one (per the conflict resolution protocol), update the old mem0 fact rather than adding a contradictory one. Search mem0 for the old conclusion, replace it with the new one noting the supersession ("Supersedes prior recommendation from [source] — [date]").
 
@@ -248,7 +276,7 @@ After writing to log, extract conclusions to mem0 ONLY if there are DO or KEEP i
 - Do NOT conflate "same ingredient in two products" with "duplication" — check DOSES before calling something redundant. Two products can share an active ingredient at different doses serving different therapeutic purposes. Example from a 4-expert deliberation: the pragmatist recommended cutting a TMG standalone (500mg/cap) because "it duplicates the B-complex" — but the B-complex only has 200mg TMG. Cutting the standalone would have left the user at 200mg/day, which is ~10× below the 1.5g minimum effective dose for homocysteine lowering. The error was caught during Phase 2 critique and corrected. Rule: before calling two products duplicative, compare the actual mg of the shared active ingredient and the therapeutic dose range. Same ingredient ≠ same dose ≠ same purpose
 - Do NOT recommend foods requiring daily cooking — the user batch-cooks 2-3×/week (quinoa, grains, eggs) but will NOT cook on training days. "No-cook" applies to daily meal prep; batch-cooked fridge portions are fair game. Dry quinoa (batch-cooked) is preferred over expensive pre-cooked packs
 - Do NOT recommend antioxidants/anti-inflammatories without flagging the user has minimal inflammatory substrate. CRITICAL for athletes: high-dose antioxidants (vitamins C/E, curcumin) **blunt exercise adaptations** — they block training-induced mitochondrial biogenesis and insulin sensitization via mitohormesis (Ristow et al., PNAS 2009). This is the strongest argument against turmeric/curcumin for an athlete — stronger than "no inflammation signal." The adaptation-blunting rationale was lost during a document restructuring and had to be re-discovered. When cutting an antioxidant supplement, record the adaptation-blunting reason alongside the inflammation rationale — both arguments must be preserved or the decision gets re-litigated
-- Do NOT propose supplements without checking the current stack in `<YOUR_HEALTH_DIR>/health-profile.md` first
+- Do NOT propose supplements without checking the current stack in `health.health_dir/health-profile.md` first
 - Do NOT assume supplement stack inventory = daily consumption. A 13-product stash does not mean 13 products are taken daily. Before analyzing dosing, interactions, or gaps, ASK which products are actively consumed vs. sitting in stash. Building analyses (caffeine load, TMG dosing, redundancy) on products the user doesn't actually take produces confident-sounding nonsense and erodes trust. The user's correction: "You do not assume I mindlessly eat all the stuff every day." This was violated TWICE in one session (pre-workout caffeine theory built on stash-only product; TMG dosing analysis based on standalone product not yet in routine). The fix: explicitly ask "which of these do you actually take daily?" before ANY dosing analysis.
 - Do NOT build optimization protocols against consumer wearable data without flagging its accuracy limits. Samsung Galaxy Watch / similar wearables estimate sleep stages at 50–70% accuracy vs polysomnography. Deep sleep percentages, sleep latency, and REM estimation are SOFT data — they're trend-indicative but not precise enough to optimize against. An entire deep-sleep improvement protocol (temperature manipulation, timing changes) was built and then retracted because the underlying watch data wasn't reliable enough to support it. When using wearable data: trust total sleep time, HR, HRV as trend indicators. Do NOT trust stage-level breakdowns (deep %, REM %, latency) as optimization targets. If the user says their device may have accuracy issues, STOP building protocols against it immediately.
 - Do NOT reference activities or routines as ongoing without confirming they're current. A user who did hot yoga Jan–Mar and stopped in March was repeatedly told "your yoga practice" and had protocols built around ongoing yoga — twice — requiring user correction both times. Before referencing any activity pattern in advice, check whether the pattern is CURRENT or historical. Annual aggregate data (e.g., "23h hot yoga YTD") does NOT mean the activity is ongoing — it could all be front-loaded in a period that has ended. When in doubt, confirm: "Are you still doing X?"
@@ -277,7 +305,7 @@ When working with Samsung Galaxy Watch or similar consumer wearable data, consul
 
 This skill is Layer 2 in a three-layer architecture:
 
-- **Layer 1:** `<YOUR_HEALTH_DIR>/health-profile.md` — the data layer (bloods, supplements, fitness, interpretation rules). Continuously updated as new data arrives. This is a STRUCTURED COPY; the canonical raw source is `<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md`. Keep both in sync — see Step 2b.
+- **Layer 1:** `health.health_dir/health-profile.md` — the data layer (bloods, supplements, fitness, interpretation rules). Continuously updated as new data arrives. This is a STRUCTURED COPY; the canonical raw source is `health.baseline_doc`. Keep both in sync — see Step 2b.
 - **Layer 2:** This skill — the research filter for health/longevity questions.
 - **Layer 3:** Multi-agent orchestration for complex health questions. **Task shape determines the pattern** — see Layer 3 Decision Framework below.
 
@@ -291,7 +319,7 @@ Not all complex health questions need the same orchestration. The task shape det
 - "Drop Zone 2 and add intervals given my HRV trend?"
 - "Should I trust this Reddit protocol?"
 - Pattern: 4 experts independently → mutual critique → sequential discussion with validator → final positions → synthesis
-- Use: `deliberate` skill with health domain pack (`$HERMES_HOME/skills/deliberate/domains/health/` — the TOP-LEVEL deliberate copy; the `operations/deliberate` copy has no domain pack). This IS the ported health-coach — 4 personas + CLI validator, 5-phase protocol, eval-refined guardrails.
+- Use: `deliberate` skill with its health domain pack (`domains/health/`, inside the `deliberate` skill directory). This IS the ported health-coach — 4 personas + CLI validator, 5-phase protocol, eval-refined guardrails.
 
 **SYNTHESIS (2-stage pipeline, 5 agents)** — for prioritization and system-building:
 - "Draft a life operating system for my biomarkers"
@@ -312,11 +340,11 @@ The rule: **debate for decisions, synthesis for systems, single-agent for specif
 
 The health data architecture has been consolidated from 4 documents to 3 after this session's harmonization pass. The user explicitly said "Let's not overdocument." The final structure:
 
-1. **`<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md`** — **DATA ONLY.** Raw blood panels, body comp, sleep, skincare, factual intake logs (supplements taken, diet patterns observed). Strategy content has been stripped out and replaced with cross-references to the strategy doc.
-2. **`<YOUR_HEALTH_DIR>/<YOUR_TRAINING_PLAN>.md`** — **STRATEGY + OPERATIONS.** Training program, nutrition strategy, supplement protocol, food framework (including restaurant menu reference with verified nutrition data), biomarker monitoring schedule, phased implementation plan. This doc absorbed the now-deleted `<YOUR_FOOD_GUIDE>.md`.
-3. **`<YOUR_HEALTH_DIR>/<YOUR_NUTRITION_PLAN>.md`** — **FOOD-BIOMARKER REFERENCE.** Academic mapping of foods to biomarker targets, AHEI cross-check, compression list. Generated by this skill.
+1. **`health.baseline_doc`** — **DATA ONLY.** Raw blood panels, body comp, sleep, skincare, factual intake logs (supplements taken, diet patterns observed). Strategy content has been stripped out and replaced with cross-references to the strategy doc.
+2. **`health.training_plan`** — **STRATEGY + OPERATIONS.** Training program, nutrition strategy, supplement protocol, food framework (including restaurant menu reference with verified nutrition data), biomarker monitoring schedule, phased implementation plan. This doc absorbed the now-deleted `health.food_guide`.
+3. **`health.nutrition_plan`** — **FOOD-BIOMARKER REFERENCE.** Academic mapping of foods to biomarker targets, AHEI cross-check, compression list. Generated by this skill.
 
-**`<YOUR_FOOD_GUIDE>.md` was DELETED** — its content (Tunacado tiers, eat-before-home architecture, carb periodization, restaurant menus, decision tree) was fully folded into `<YOUR_TRAINING_PLAN>.md` §3 + §3.5.
+**`health.food_guide` was DELETED** — its content (Tunacado tiers, eat-before-home architecture, carb periodization, restaurant menus, decision tree) was fully folded into `health.training_plan` §3 + §3.5.
 
 **Discipline rule:** When a new health document is about to be created, check whether its content belongs in one of the 3 existing docs. A 4th document is almost always overdocumentation. The user flagged this explicitly.
 

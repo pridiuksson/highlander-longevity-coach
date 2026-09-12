@@ -6,20 +6,30 @@ author: Hermes Agent
 license: MIT
 metadata:
   hermes:
+    config:
+      - key: health.health_dir
+        description: "Root of your health data: device exports, SQLite DB, verified-data docs"
+        default: "~/health"
+        prompt: "Root of your health data: device exports, SQLite DB, verified-data docs"
     tags: [samsung, health, mcp, data-import, wearables]
     related_skills: [native-mcp, workspace-hygiene]
 ---
 
 # Samsung Health Import
 
+> **Config.** This skill reads its paths from `config.yaml`; the resolved values
+> arrive in the `[Skill config]` block injected when this skill loads. In the
+> commands below `$HEALTH_DIR` = `health.health_dir`.
+> Never hardcode a path — a clone can live anywhere, and `~/health` is only a default.
+
 ## When to Use
 
-- <USER> wants to refresh / re-import Samsung Health or Galaxy Watch data
+- the user wants to refresh / re-import Samsung Health or Galaxy Watch data
 - A new Samsung Health export zip needs to reach the server
 - The `samsung_health` MCP server or its tools fail, vanish, or return stale data
 - Researching alternatives for the daily-sync (Health Connect webhook) leg
 
-Pipeline that puts <USER>'s Galaxy Watch 7 / Samsung Health data on this server for trend analysis. Historical leg is LIVE (MCP over exports). Daily-sync leg (Health Connect webhook → SQLite receiver) is designed but not built — see references/tooling-landscape.md.
+Pipeline that puts the user's Galaxy Watch 7 / Samsung Health data on this server for trend analysis. Historical leg is LIVE (MCP over exports). Daily-sync leg (Health Connect webhook → SQLite receiver) is designed but not built — see references/tooling-landscape.md.
 
 ## Architecture (what exists)
 
@@ -30,21 +40,21 @@ Galaxy Watch → Samsung Health app → "Download personal data" export
 ```
 
 - MCP server: `samsung-health-mcp-unofficial@0.7.3` (davidmosiah, MIT), wired in `$HERMES_HOME/config.yaml` → `mcp_servers.samsung_health`. Version-pinned — do not float to latest (delx-wellness-hermes pattern).
-- Watch folder: `<YOUR_HEALTH_DIR>/samsung-exports/` (gitignored). Any `*samsung*health*.zip` dropped there auto-promotes to the active export, live and on restart. `samsung_health_reimport` MCP tool forces a rescan.
+- Watch folder: `health.health_dir/samsung-exports/` (gitignored). Any `*samsung*health*.zip` dropped there auto-promotes to the active export, live and on restart. `samsung_health_reimport` MCP tool forces a rescan.
 - Package-local config: `~/.samsung-health-mcp/config.json` — timezone `Europe/Stockholm` (setup writes UTC by default; leaving it splits sleep sessions at 01:00/02:00 local and mis-buckets daily summaries).
 - Research docs: `~/highlander-longevity-coach/Knowledge/Research/Tech/samsung-data-import-landscape.md` (round-2 survey + delx deep-dive), `samsung-health-data-export.md`, `samsung-health-webhook-audit.md`.
 
 ## Refresh procedure (new export)
 
 > **Daily/weekly incremental leg (2026-08-30, LIVE):** pull mode via Health Connect
-> webhook app on <USER>'s phone → runbook + collector:
-> `<YOUR_HEALTH_DIR>/samsung-data/hcwebhook/PHONE_SETUP.md` + `pull_hc.py` (+ `crossmatch_hc_vs_export.py`).
+> webhook app on the user's phone → runbook + collector:
+> `health.health_dir/samsung-data/hcwebhook/PHONE_SETUP.md` + `pull_hc.py` (+ `crossmatch_hc_vs_export.py`).
 > Covers sleep/stages, 1-min HR, steps, body-fat %, weight, exercise (HC codes 79=walk/
 > 8=bike/56=run), vo2_max scalar. NOT covered (export-only): HRV/RMSSD, 1 Hz sidecars,
-> skeletal muscle mass. Weekly-ish: <USER> launches the app's local server, agent runs
-> `python3 <YOUR_HEALTH_DIR>/samsung-data/hcwebhook/pull_hc.py --url '...?days=7'`, then crossmatch.
+> skeletal muscle mass. Weekly-ish: the user launches the app's local server, agent runs
+> `python3 health.health_dir/samsung-data/hcwebhook/pull_hc.py --url '...?days=7'`, then crossmatch.
 
-1. <USER> zips the export folder on the phone: My Files → long-press folder → Compress.
+1. the user zips the export folder on the phone: My Files → long-press folder → Compress.
 2. Transfer, ranked:
    - Google Drive link (any size, default): upload zip → share "anyone with link can view" → fetch server-side into `staging/` first (`uvx --from gdown gdown '<uc?id=FILEID>' -O staging/new_export.zip`) — run the superset gate BEFORE swapping into the watch folder (step 3).
    - scp (if at a machine with the SSH key): fetch to staging too.
@@ -53,7 +63,7 @@ Galaxy Watch → Samsung Health app → "Download personal data" export
 4. Swap the new zip in as `samsung_health_export.zip`, rebuild (step 6), then `samsung_health_reimport` + `data_inventory` to confirm the MCP cache reflects the new export (if it promotes the WRONG zip, fix the glob match and re-run — it re-promotes newest match).
 5. MCP is the INVENTORY probe, not the analysis source: `samsung_health_connection_status` → `samsung_health_data_inventory` to confirm date range. Its zero-workout/zero-sleep output is the known 2026-format gap, NOT missing data.
 6. Rebuild sqlite (the ANALYSIS source of truth): `parse_samsung_export.py` → `parse_samsung_extras.py` → `parse_samsung_age.py` (AGE/AGEs index — EXPLORATORY, see `samsung-data/AGE_DECODE.md`; never coach from it) → `test_parse_gates.py` — ALL gates must pass before any advice. Parsers resolve CSV filenames dynamically (export timestamp in filenames changes per export; `resolve()` fails loud — never reintroduce hardcoded `.<timestamp>.csv` names). The gates' G1 EXPECTED counts, extras X1 floors, and AGE A1 floors are baselines to update after each successful rebuild.
-7. Coaching handoff: `data_brief.py 28`. Full runbook + confidence tiers + audit residuals: `<YOUR_HEALTH_DIR>/samsung-verified-data.md` — read before first advice on a fresh rebuild.
+7. Coaching handoff: `data_brief.py 28`. Full runbook + confidence tiers + audit residuals: `health.health_dir/samsung-verified-data.md` — read before first advice on a fresh rebuild.
 
 ## Dual-timezone data (audit finding, 2026-08-15)
 
@@ -71,7 +81,7 @@ The watch recorded **Vilnius local time (EET, UTC+2/+3) until the 2025-09-08 mov
 
 ## SQLite parser (2026-format gap fill)
 
-The MCP indexes the 2026 export format only partially (0 workouts, 0 sleep, 217/50614 HR rows). Custom parser fills the gap: `<YOUR_HEALTH_DIR>/samsung-data/parse_samsung_export.py` → `$HERMES_HOME/data/health.db` (+ `test_parse_gates.py`, `queries.py`; sqlite gitignored). Run order: parse → gates (ALL must pass).
+The MCP indexes the 2026 export format only partially (0 workouts, 0 sleep, 217/50614 HR rows). Custom parser fills the gap: `health.health_dir/samsung-data/parse_samsung_export.py` → `$HERMES_HOME/data/health.db` (+ `test_parse_gates.py`, `queries.py`; sqlite gitignored). Run order: parse → gates (ALL must pass).
 
 Hard-won format facts:
 - 2026 format: row0 = format header, row1 = column names, data from row2. Columns may be `com.samsung.health.<type>.`-prefixed — check per file, don't assume.
@@ -96,7 +106,7 @@ Hard-won format facts:
 
 ## Reading the data (for coaching/advice queries)
 
-DB: `$HERMES_HOME/data/health.db` (gitignored). Rebuild: `parse_samsung_export.py` → `parse_samsung_extras.py` → `test_parse_gates.py` → `parse_samsung_rr_skin.py` → `parse_samsung_age.py` (ALL gates must pass before advice). Optional analysis pass: `build_vo2max_dataset.py` → `vo2max_est.py` (independent VO2max from run sidecars — see runbook finding 10; `<YOUR_HEALTH_DIR>/samsung-data/vo2max/` output dir is gitignored).
+DB: `$HERMES_HOME/data/health.db` (gitignored). Rebuild: `parse_samsung_export.py` → `parse_samsung_extras.py` → `test_parse_gates.py` → `parse_samsung_rr_skin.py` → `parse_samsung_age.py` (ALL gates must pass before advice). Optional analysis pass: `build_vo2max_dataset.py` → `vo2max_est.py` (independent VO2max from run sidecars — see runbook finding 10; `health.health_dir/samsung-data/vo2max/` output dir is gitignored).
 
 Tables: heart_rate (hourly bins), sleep_session, sleep_stage(+`sleep_stage_named` view, corrected mapping), workout, hr_threshold (per-workout AT/ANT/max — read per-date, they drift), hrv_window + hrv_sample (SDNN/RMSSD), body_composition (validated vs known), stress, spo2, rr_session + rr_bin (nightly RR, median ~12.9 br/min, decode-verified; see RR_SKIN_DECODE.md), skin_session (nightly skin temp + device baseline deviation; |dev|>5°C = off-skin nights), age_daily/age_raw_session/age_raw_bin (EXPLORATORY-ONLY).
 
@@ -111,7 +121,7 @@ Advice-safety rules: never advise from VO2max alone; anchor on RMSSD + RHR + sle
 
 - **NEVER display/interpret `*_utc` clock times as local** (2026-08-29 audit: this caused three wrong documented claims — BodyCombat "afternoon 15:13" [actually 17:13 local], Bikram "on-the-hour afternoon" [actually 16-19h local], e-bike "15-17h mode" [actually 17-21h local]). For any lived-clock statement use `*_local`; for day-level grouping night_key is safe because exercise/sleep hour spreads don't cross local midnight boundaries at these hours. The DB was always correct — ad-hoc probes were the bug.
 - Timezone defaults to UTC — always check `~/.samsung-health-mcp/config.json` after any re-setup.
-- Health data stays out of git: `<YOUR_HEALTH_DIR>/samsung-exports/` is gitignored (same convention as `<YOUR_HEALTH_DIR>/screenshots/`).
+- Health data stays out of git: `health.health_dir/samsung-exports/` is gitignored (same convention as `health.health_dir/screenshots/`).
 - VO2max IS covered by the mcnaveen webhook leg (`vo2_max` documented in its docs/webhook.md — verified in source despite one subagent claiming otherwise). Body composition (skeletal muscle, body water) does NOT sync via Health Connect — stays manual.
 - samsung-health-mcp is bus-factor-1 (sole author) but MIT and active; if it dies, fork — the parsing layer is small.
 

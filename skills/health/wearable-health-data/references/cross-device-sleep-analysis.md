@@ -2,7 +2,7 @@
 
 Session-verified rules for analyzing/cross-comparing the unified decade dataset
 ($HERMES_HOME/data/garmin.db + $HERMES_HOME/data/health.db). All verified 2026-08-16 against raw SQL;
-evidence scripts live in `highlander-longevity-coach/<YOUR_HEALTH_DIR>/decade-sleep/`
+evidence scripts live in `highlander-longevity-coach/health.health_dir/decade-sleep/`
 (`tz_dst_discriminator.py`, `tz_overlap_anchors.py`, `tz_probe.py`,
 `crossmatch3.py`, `scrutinize.py`).
 
@@ -16,7 +16,7 @@ evidence scripts live in `highlander-longevity-coach/<YOUR_HEALTH_DIR>/decade-sl
 | Samsung 2026-format CSV strings (ALL families) | **TRUE UTC**; `time_offset` = local offset | sidecar-json epoch millis == CSV strings (see `timestamp-timezone-truth.md`) |
 
 **Garmin-sleep anchors (2026-08-16 evening, survived adversarial peer review):**
-1. Overlap week: night 2021-08-<value>→<value>, both devices worn — Garmin 21:42 vs
+1. Overlap week: night in the 2021-08 handoff week, both devices worn — Garmin 21:42 vs
    Samsung-native 22:18 both-as-UTC = 36 min apart; under local reading Garmin
    detects sleep 3h36m BEFORE the other wrist (impossible).
 2. Wake testimony: strings-as-UTC → wakes 06:45–07:45 local (user ~06:40).

@@ -1,6 +1,6 @@
 # Vertical Gate Pattern — Session 2026-09-11
 
-Derived from `<YOUR_DESIGN_DOC>.md` (`P0-G1`→`G5`) and `phase1-plan.md` / `phase2-plan.md`.
+Derived from the design document (`P0-G1`→`G5`) and the phase-1 / phase-2 plans.
 
 Gate structure: each gate produces `VERIFIABLE ARTIFACT` (file on disk, `stat`-checked). Agent applies `direct observation` (subagent mechanism verified broken — `delegate_task list=0`); no subagent relay; evidence file-cited.
 

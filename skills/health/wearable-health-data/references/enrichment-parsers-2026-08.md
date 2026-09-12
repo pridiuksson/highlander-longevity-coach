@@ -1,6 +1,6 @@
 # Enrichment parser layer — verified 2026-08-29 (Samsung Health, this pipeline)
 
-Post-core ingestion layer for `<YOUR_HEALTH_DIR>/samsung-data/` (runbook:
+Post-core ingestion layer for `health.health_dir/samsung-data/` (runbook:
 `samsung-verified-data.md`, findings 11-12; IMPORT_PLAN.md is the plan-of-record).
 All parsers: dynamic filename resolution, fail-loud resolve(), idempotent
 (drop+recreate or ADD COLUMN if missing), gates mandatory before any advice.
@@ -38,7 +38,7 @@ shoe cadence), NOT duplicates, NOT phone-only runs. Do not delete them.
   summary max_hr (one workout: summary 165 vs curve 171, NO sidecar exists).
 - Semantics: runs hold drop_120 ≈ <YOUR_RESTING_HR_BPM> since 2022; all-workout year series
   (18/10/34/32/34) is a workout-MIX effect — never read as fitness trend.
-  Session-level reads (hill run 2026-08-23: <value>→<value>, drop 82 vs p90 52) are
+  Session-level reads (hill run 2026-08-23: drop 82 vs p90 52) are
   the actionable signal.
 
 ## Sleep-scoring backfill (`parse_samsung_sleep_scores.py`, gates S1-S6)

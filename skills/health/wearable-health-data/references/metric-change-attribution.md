@@ -7,7 +7,7 @@ gun" is demoted to hypothesis-only; GATE ZERO (input-series verification +
 testimony anchor) added; fragment contamination documented; percentages withdrawn
 in favor of co-leading hypotheses.
 
-Worked example: 2026-08-30 Aug deep-sleep collapse, weekly deep <value>→<value>→~30 min at
+Worked example: 2026-08-30 Aug deep-sleep collapse, weekly deep fell to ~30 min at
 flat efficiency/latency. Collapse REAL; original ranking (B restage 58-65% /
 A bedtime 20-22% / C load 15-20%) VOIDED; REV A verdict: B' (classifier
 re-label) / C (chronic load) co-lead, A eliminated, no percentages.
@@ -40,7 +40,7 @@ Testimony beats a buggy probe; a probe that reproduces beats testimony.
 ## Fingerprint hierarchy (post-REV A)
 - **RE-LABELING inside fully-staged nights** (deep share ↓ while light share ↑,
   staged total FLAT) = classifier relabel. The verified real-world fingerprint
-  (Aug 2026: deep share <value>→<value>%, light +35 min, REM +1.8 pp, total flat).
+  (Aug 2026: deep share fell, light +35 min, REM +1.8 pp, total flat).
   Biology redistributes; a RELABEL moves minutes between stage buckets without
   changing the total.
 - **UNSCORED-time emergence** (staged total falls at flat measured duration) is

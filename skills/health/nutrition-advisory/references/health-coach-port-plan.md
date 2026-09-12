@@ -61,7 +61,7 @@ The Claude Code version uses `spawn_agent` (internal sub-agent spawning). Hermes
 - Phase 1/2/4: parallel `delegate_task` calls (batch mode, up to 5 tasks)
 - Phase 3: sequential `delegate_task` calls (each turn depends on prior)
 - Phase 5: single `delegate_task` call
-- Each subagent receives: persona prompt + health data (<YOUR_BASELINE_DOC>.md) + prior phase JSONs
+- Each subagent receives: persona prompt + health data (health.baseline_doc) + prior phase JSONs
 - JSON state machine: same `debate.json` file pattern
 
 **Mode 2: Synthesis Pipeline** (for prioritization/system-building tasks)
@@ -72,11 +72,11 @@ The Claude Code version uses `spawn_agent` (internal sub-agent spawning). Hermes
 
 ### Persona Files — Can Be Reused As-Is
 
-The persona markdown files from highlander-longevity-coach are platform-agnostic. They describe roles, not orchestration. Copy directly to `$HERMES_HOME/skills/nutrition-advisory/personas/` (or wherever the Hermes health-coach skill lands).
+The persona markdown files from highlander-longevity-coach are platform-agnostic. They describe roles, not orchestration. Copy directly to `${HERMES_SKILL_DIR}/personas/` (or wherever the Hermes health-coach skill lands).
 
-### Health Data — <YOUR_BASELINE_DOC>.md Is the Shared Context
+### Health Data — health.baseline_doc Is the Shared Context
 
-Both modes pass `<YOUR_HEALTH_DIR>/<YOUR_BASELINE_DOC>.md` (or `<YOUR_HEALTH_DIR>/health-profile.md`) to every subagent. The file is ~600 lines — fits in every context window. No database needed.
+Both modes pass `health.baseline_doc` (or `health.health_dir/health-profile.md`) to every subagent. The file is ~600 lines — fits in every context window. No database needed.
 
 ## Decision: When to Build
 
@@ -96,8 +96,8 @@ Don't build preemptively. Let real questions drive the build. The first candidat
 | `Knowledge/Plans/health-skill-architecture.md` | Three-layer architecture history |
 | `Knowledge/Plans/evals-run-003.md` | Improvement plan, Phase 1-3 |
 | `Knowledge/Research/Tech/multi-agent-debate-frameworks.md` | Quorum, swarm-debate, agent-for-debate comparison |
-| `<YOUR_HEALTH_DIR>/evals/run-004/eval-report.md` | Latest eval report (199 lines) |
-| `<YOUR_HEALTH_DIR>/evals/run-004/debate.json` | Latest debate transcript |
+| `health.health_dir/evals/run-004/eval-report.md` | Latest eval report (199 lines) |
+| `health.health_dir/evals/run-004/debate.json` | Latest debate transcript |
 
 ## Key Anti-Patterns (from eval history)
 

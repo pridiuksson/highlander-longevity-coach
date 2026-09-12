@@ -7,11 +7,33 @@ license: MIT
 platforms: [linux]
 metadata:
   hermes:
+    config:
+      - key: proactive.quiet_hours
+        description: "Local window in which DIGEST messages may be delivered"
+        default: "08:00-21:00"
+        prompt: "Local window in which DIGEST messages may be delivered"
+      - key: proactive.timezone
+        description: "IANA timezone for quiet hours (never inferred from the host clock)"
+        default: ""
+        prompt: "IANA timezone for quiet hours (never inferred from the host clock)"
     tags: [health, coaching, proactivity, cron]
     source: "arXiv 2605.06717 — Agentic Coding Needs Proactivity, Not Just Autonomy (Bui & Evangelopoulos, Google Labs, 2026)"
+    blueprint:
+      schedule: "0 9 * * 1"
+      prompt: >-
+        Run the weekly proactive-coach crunch. Collect the period's data, verify every
+        number through evidence-loop before it drives an insight, compare against the
+        user's OWN baseline rather than a population norm, draft candidate insights,
+        gate each one adversarially in a fresh context, then emit at most ONE
+        classified message — or stay silent, which is the most common correct outcome.
+        Ledger what you sent and what you rejected, with the reason.
 ---
 
 # Proactive Coach
+
+> **Config.** This skill reads its settings from `config.yaml` (`proactive.quiet_hours`,
+> `proactive.timezone`). The resolved values arrive in the `[Skill config]` block
+> injected when this skill loads — use them, never a hardcoded window or timezone.
 
 ## What this is
 

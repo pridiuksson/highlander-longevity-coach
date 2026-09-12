@@ -1,7 +1,7 @@
 # HC Webhook Pull Leg — live architecture + verified semantics (built 2026-08-30)
 
 The continuous-sync leg of the Samsung pipeline, LIVE end-to-end. Mirrors the
-runbook `<YOUR_HEALTH_DIR>/samsung-data/hcwebhook/PHONE_SETUP.md` (plan of
+runbook `health.health_dir/samsung-data/hcwebhook/PHONE_SETUP.md` (plan of
 record); this reference holds the session-verified semantics and pitfalls.
 
 ## Architecture (PULL mode, ratified)
@@ -11,14 +11,14 @@ Galaxy Watch 7 → Samsung Health → Health Connect
     → mcnaveen/health-connect-webhook app (FOSS APK, local HTTP server :8787)
     → [server PULLS over Tailscale] curl 'http://olles-z-fold7.tailed21ea.ts.net:8787/?days=7'
     → POST loopback → wysie receiver (vendored, systemd hcwebhook-receiver, :8787)
-    → ~<YOUR_HEALTH_DB>
+    → ~$HEALTH_DB
     → crossmatch_hc_vs_export.py vs $HERMES_HOME/data/health.db (canonical truth)
 ```
 
 - Push (app→server) is viable over `https://hermes-lightsail.tailed21ea.ts.net`
   (Tailscale Serve, valid cert) but the FOSS APK **blocks cleartext HTTP** despite
   `usesCleartextTraffic="true"` in the manifest — its `network_security_config.xml`
-  overrides. Don't re-litigate; pull works and <USER> prefers it (launch server
+  overrides. Don't re-litigate; pull works and the user prefers it (launch server
   whenever, agent pulls; `?days=N` param extends past the 48 h default).
 - Collector: `hcwebhook/pull_hc.py` (GET phone → POST receiver, dedupe-safe);
   verifier: `hcwebhook/crossmatch_hc_vs_export.py`.
@@ -63,7 +63,7 @@ Galaxy Watch 7 → Samsung Health → Health Connect
 - `raw_events`: keyed on payload sha256 — identical re-pull still INSERTS (bytes
   differ via timestamp); correct, it's a byte-exact archive.
 - `vitals`/`sleep_sessions`: keyed on record identity — stay EXACTLY stable
-  across overlapping pulls (verified: raw_events <value>→<value>, vitals 36,794 unchanged).
+  across overlapping pulls (verified: raw_events grew, vitals 36,794 unchanged).
   Downstream analysis reads the normalized layer → no double-counting.
 - **CROSS-PAYLOAD session dedupe is MANDATORY in any parser** (2026-08-30, caught
   by gate H2 on the first parse run): every pull RE-SERVES the same sleep/exercise
@@ -80,7 +80,7 @@ Galaxy Watch 7 → Samsung Health → Health Connect
 - Play Store listing is a paid flavor; FOSS APK free from mcnaveen GitHub
   releases (`app-foss-release.apk`, v1.9.17 2026-08-28).
 - Receiver token: `~/.local/share/hcwebhook-receiver/webhook_token` (chmod 600);
-  endpoint `/health-connect/<USER>`; `X-Webhook-Token` header.
+  endpoint `/health-connect/the user`; `X-Webhook-Token` header.
 - `sudo tailscale serve --bg --https=443 http://127.0.0.1:8787` needs tailnet
   HTTPS certs ENABLED in the admin console (else `serve` hangs, "not enabled").
 - Approval-gate notes for this environment: server→phone curl may require user

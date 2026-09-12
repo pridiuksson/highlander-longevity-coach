@@ -29,7 +29,7 @@ Patterns worth keeping: (1) version-pin MCP packages, no floating `-y latest`; (
 
 ## Known data gaps (Samsung → Health Connect)
 
-NOT synced: body composition (skeletal muscle, body water), ECG, stress, floors, continuous watch HR (delayed — only manual measurements sync immediately). VO2max IS covered by the webhook. <USER>'s skeletal-mass tracking stays manual (periodic CSV export).
+NOT synced: body composition (skeletal muscle, body water), ECG, stress, floors, continuous watch HR (delayed — only manual measurements sync immediately). VO2max IS covered by the webhook. the user's skeletal-mass tracking stays manual (periodic CSV export).
 
 ## Research method that worked (reusable)
 

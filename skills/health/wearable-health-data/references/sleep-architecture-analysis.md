@@ -1,7 +1,7 @@
 # Sleep-architecture pattern mining — method v2 + verified 2026-08-29 results
 
 Session: deep-sleep strata (>50/>90 min), day-before drivers, deep↔REM coupling,
-2021-2026. Analyzer: `<YOUR_HEALTH_DIR>/samsung-data/deep_sleep_patterns.py`
+2021-2026. Analyzer: `health.health_dir/samsung-data/deep_sleep_patterns.py`
 (v2, peer-reviewed); deliberation brief `DEEP_SLEEP_DELIB_BRIEF.md` (5 corrections
 recorded); runbook finding 3 v2.1.
 
@@ -31,11 +31,11 @@ recorded); runbook finding 3 v2.1.
    tail is enriched (deep≥90: 6/43 run vs 5/196 non-run).
 7. **Multiplicity fair family**: correct only over the pre-registered strata
    (groups × thresholds actually hypothesized — here ×8 → p=0.039 survives),
-   report the exploratory family separately (×<value>→<value>). Never Bonferroni
+   report the exploratory family separately (uncorrected factor). Never Bonferroni
    over everything ever printed.
 8. **Era-stratify strata against known step dates.** 2026 strata straddled the
    Mar-2026 cohabitation step: 5/6 "run-tail" nights were pre-cohab, run-night
-   deep fell <value>→<value> across it while non-run fell only <value>→<value>. The
+   deep fell markedly across it while non-run fell only slightly. The
    "tail effect" was era-confounded (cohab suppresses exercise→SWS response,
    or Jan–Feb small-window luck, n=9). **Check every within-year contrast
    against the cohab/relocation/firmware step ledger before believing it.**
@@ -61,7 +61,7 @@ recorded); runbook finding 3 v2.1.
   duration-elastic stage — the 2024 REM<deep spike, 12% of nights, is
   short-night compression: those nights averaged 6.12h vs 6.54h year-mean,
   median flip only 12 min. Not firmware.)
-- Multi-year deep <value>→<value> min (2021→2025) at FLAT 6.5–7h duration is
+- Multi-year deep-minute growth (2021→2025) at FLAT 6.5–7h duration is
   share growth, but rides device-algorithm maturation (2021 deep share 5.8%
   physiologically implausible) — never treat pre-2023 absolute minutes as
   physiology; 2026 cohab step (−9) sits on that uncertain baseline.
