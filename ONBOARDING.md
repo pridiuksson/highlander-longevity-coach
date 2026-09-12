@@ -24,6 +24,7 @@ reaches out when — and only when — something is worth saying.
 | *optional* `sqlite3` CLI | poking at imported device databases by hand. The skills use Python's `sqlite3` stdlib, so this is a convenience, not a requirement |
 | *optional* `fitdecode` | parsing Garmin FIT files. `garmin-import` pins it into the skill's own venv |
 | *optional* `command-code` / `agy` | a **model-independent** peer for `peer-review`. Without one it falls back to a subagent — a second *context*, not a second *model* |
+| *optional* Honcho API key | the memory-overlay provider this kit is field-tested with — see step 5. Without it the kit runs on the local files alone |
 
 ## 1. Clone — and record what you cloned
 
@@ -94,6 +95,7 @@ Both must pass on a fresh clone. If either fails, do not trust the contents.
 ```bash
 ./scripts/leak-scan.sh .              # identity / path / health patterns + secrets (needs gitleaks)
 python3 scripts/validate-skills.py .  # frontmatter, names, references, config keys, tokens, compile
+hermes doctor                         # agent health; --fix migrates config versions
 ```
 
 Then verify what actually landed — `hermes skills list` alone is not enough, because it cannot
@@ -107,6 +109,8 @@ hermes skills list | grep -E '^[0-9]+ hub-installed' \
 
 `--installed` matters: without it the validator applies *this repo's* frontmatter and token rules to
 every unrelated third-party skill on the box, burying the one finding that matters in noise.
+`hermes doctor` covers the box itself — run it after installs and upgrades; `--fix` performs
+config-version migrations.
 
 ## 5. Configure — you do not edit the skills
 
@@ -138,6 +142,35 @@ When a skill loads, its resolved values are injected into the message as a `[Ski
 That is why nothing under `skills/` needs hand-editing: a clone can live anywhere, and no path is
 baked into an installed file.
 
+### Memory provider (optional)
+
+The kit's memory is three plain files — `SOUL.md`, `USER.md`, `MEMORY.md` (step 7) — plus your
+`health.baseline_doc`. A memory provider layers **on top of** those files; it never replaces them.
+This kit is field-tested with [Honcho](https://honcho.dev):
+
+```bash
+hermes config set memory.provider honcho
+# then add HONCHO_API_KEY to ~/.hermes/.env and restart the gateway
+```
+
+Honcho prefetches relevant memories each turn and mirrors writes back — an overlay on the local
+store, with **one workspace per Hermes profile** so two people on one box stay isolated. Without
+it, everything in this kit runs on the local files alone.
+
+Three field lessons (2026-08, a long-running install):
+
+- **Saturation, not sync, is the failure mode.** When `MEMORY.md` reaches `memory_char_limit`, the
+  memory tool refuses writes and the agent starts "forgetting". The rent rule in the profile
+  templates is the first defense; raising the cap is the second.
+- **Consoles snapshot config at launch.** After changing memory (or any) config, restart the
+  gateway *and* relaunch open `hermes` consoles — a resumed console keeps the old config.
+- **`hermes doctor` is the arbiter.** It reports provider/config problems; `--fix` migrates config
+  versions after upgrades.
+
+If you let the agent create skills of its own, consider `skills.guard_agent_created: true` —
+autonomous skills land in the same namespace this kit installed into; re-run the step-2 collision
+check whenever one appears.
+
 ## 6. Your data stays yours
 
 | What | Where |
@@ -145,6 +178,7 @@ baked into an installed file.
 | Baseline values (bloods, composition, goals) | `health.baseline_doc` — default `~/health/baseline.md` |
 | Imported device databases | `health.db` — default `$HERMES_HOME/data/health.db` |
 | Raw exports (Samsung / Garmin zips) | `health.health_dir/*-exports/` (gitignored) |
+| Mirrored memories (if a memory provider is configured) | the provider's store — outside this box. The local files stay the source of truth |
 
 Nothing in this repository contains anyone's health data, and it should stay that way. Do not
 commit your own data into a clone of it.
@@ -186,6 +220,11 @@ Then:
 
 Record where this profile came from, for later: the commit from step 1 and the template you forked
 (`derived_from: highlander-longevity-coach@<sha>`, `profile: Els`).
+
+A second person on the same box is a **Hermes profile**, not a second set of memory files: each
+profile under `~/.hermes/profiles/<name>/` carries its own `config.yaml`, state, gateway service,
+and local memory store. Instantiate the templates per profile rather than mixing two people's
+`USER.md` into one store.
 
 ## 8. First run
 
@@ -291,6 +330,7 @@ is the failure the repo's versioning design exists to prevent.
 | The verdict says `CONFIGURED BUT INERT` or `CONFIGURED BUT EMPTY` | The value layer exists and checks nothing: the entries are still `<YOUR_...>` placeholders, or the file has no entries. `./scripts/check-values-configured.sh` is the same check as a standalone command, and the pre-commit hook runs it |
 | You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
 | `demo` keeps asking questions | Check `$HERMES_HOME/data/demo/state.json` — `budget_used` vs `budget_limit_asks`, `skip_streak`, and `stop_learning`. It must retire itself at 21 asks or 30 days; if it will not stop, say "stop learning" and verify `stop_learning` flips to `true` |
+| The agent forgets things, or the memory tool refuses writes | `MEMORY.md` has saturated `memory_char_limit` — writes are refused at the cap. Apply the rent rule and raise the cap (`hermes config edit`), then restart the gateway. If a memory provider is configured, `hermes doctor` names half-configured pieces |
 
 ## Field note: adopting onto a box that already has skills (2026-09-12)
 
