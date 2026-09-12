@@ -1,5 +1,7 @@
 # highlander-longevity-coach
 
+![highlander logevity coach](/highlander.webp)
+
 A **health-coach kit** for the Hermes agent: reusable skills, the coaching loop that ties them
 together, and profile templates to instantiate.
 
