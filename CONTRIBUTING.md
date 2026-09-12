@@ -105,6 +105,7 @@ them, because it does not.
 skills/<stage>/<name>/     one skill, self-contained
 scripts/                   the leak gate + the structural validator
 Profile/                   profile templates
+Box/                       provider cookbooks: stand up a coach box, agent-executed
 .commandcode/              Command Code skill discovery
 .github/workflows/         the leak gate in CI
 ```

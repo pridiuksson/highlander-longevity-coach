@@ -9,7 +9,7 @@ A health-coach kit for the Hermes agent: reusable skills, the coaching loop that
 and profile templates to instantiate. It is a coach, not a dashboard — the skills collect and verify
 data; the loop decides what is worth saying and learns from whether it landed.
 
-**Publish boundary.** `skills/` is the published kit. `Profile/`, `scripts/`, and the root docs are
+**Publish boundary.** `skills/` is the published kit. `Box/`, `Profile/`, `scripts/`, and the root docs are
 scaffolding around it. The repo is intended to become public, so everything here is written as if it
 already is.
 
@@ -106,6 +106,7 @@ gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 | [ONBOARDING.md](./ONBOARDING.md) | From clone to a working coach |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | The gate, layout, and how to change a skill |
 | [Profile/README.md](./Profile/README.md) | The three profile templates |
+| [Box/Nebius/README.md](./Box/Nebius/README.md) | Stand up a coach box on Nebius via the `nebius` CLI, agent-executed |
 
 ## Do not
 
