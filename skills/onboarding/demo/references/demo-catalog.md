@@ -100,25 +100,51 @@ Every entry: what it shows, `min_facts` (needed before it can run for real), and
 
 ## State schema (`$HERMES_HOME/data/demo/state.json`)
 
+**No user facts live here.** The `facts` map is a *pointer ledger* only — where each fact was
+written and when it was asked. The value itself lives in exactly one place (baseline doc for
+health facts, USER.md for identity facts); state.json never stores the value, so there is no
+second source of truth, no PII duplicate, and no drift.
+
 ```json
 {
   "version": 1,
   "created": "<ISO-8601>",
-  "facts": {"diet": {"value": "...", "provenance": "declared", "ts": "..."},
-             "city": {"value": "unknown", "asked_at": "...", "skip_count": 1}},
+  "facts": {"diet": {"stored_in": "baseline_doc", "ts": "..."},
+             "city": {"stored_in": null, "asked_at": "...", "reoffer_at": null, "ask_count": 1,
+                       "unreachable": false},
+             "samsung-export-pitch": {"pitched_once": true, "ts": "..."}},
   "asked_log": [{"fact": "...", "ts": "...", "outcome": "answered|skipped"}],
   "skip_streak": 0,
   "backoff_until": null,
   "budget_used": 0,
   "budget_limit_asks": 21,
   "budget_limit_days": 30,
+  "daily_ask_cap": 3,
+  "tour_asks_today": {"date": "<YYYY-MM-DD>", "count": 0},
   "stop_learning": false,
-  "handoff": null
+  "handoff": null,
+  "terminal": null
 }
 ```
 
-Rules: write via temp-file + rename (atomic); every write carries `version` for future
-migration; `unknown` is explicit, never a default; `handoff` non-null = terminal state.
+Rules:
+- Write via temp-file + rename (atomic); every write carries `version` for future migration;
+  unknown is explicit, never a default.
+- **One terminal state**: `terminal` ∈ `graduated | stopped`, set together with `handoff` or
+  `stop_learning` respectively. `graduated` beats `stopped` if both are somehow set. Any
+  non-null `terminal` = the skill never asks again; `handoff`/`stop_learning` are kept only as
+  provenance.
+- `ask_count` per fact: a skipped question may be re-offered once — after 14 days, tracked via
+  `reoffer_at`; a second skip sets `unreachable: true` (never asked again).
+- **Tier-B pitches are tracked in the same facts map** with a `pitched_once` flag — each
+  shadow-pitch happens at most once ever, then only on explicit user request.
+- **Daily cap across modes**: tour questions and cron asks draw from the same
+  `daily_ask_cap` (default 3/day total, = `demo.daily_asks` config), counted in
+  `tour_asks_today` — so a tour session plus cron fires can never stack beyond the cap.
+- **Graduation honesty rule**: declare "I know enough" only when the profile is actually
+  complete (all facts in the ladder either stored or `unreachable`); if the budget expires
+  first, the farewell says exactly that — "my question budget ran out — say `demo` whenever you
+  want to continue" — never a false claim of completeness.
 
 ## Baseline doc contract
 

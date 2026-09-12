@@ -12,8 +12,8 @@ metadata:
     tags: [onboarding, demo, tour, personalization, cron, graduation]
     config:
       - key: demo.daily_asks
-        description: "Max learn-mode questions per day (cron fires 1-2x/day, one question each)"
-        default: "2"
+        description: "Max questions per day across BOTH modes (tour sessions + learn cron draw from the same cap)"
+        default: "3"
       - key: demo.quiet_hours
         description: "Local window in which learn-mode may NOT ask questions"
         default: "22:00-09:00"
@@ -34,7 +34,7 @@ Two modes:
 | Mode | When | What it does |
 |---|---|---|
 | **Tour** | user says `demo`, or ONBOARDING step 10 | ≤3 questions (skip allowed) → run 1-2 live demos on the user's own question → close with their personal unlock path |
-| **Learn** | daily cron (1-2 fires/day at random times) | ONE question per fire → instant useful reward computed from all facts known so far |
+| **Learn** | daily cron, 1-2 fires/day at random times, **one question per fire**. Each fire: (1) load state; if `terminal` set, budget spent, `backoff_until` in the future, quiet hours, or the daily cap (`daily_ask_cap`, default 3/day shared with tour sessions) is reached → stay silent, silence is a successful run; (2) pick the highest-value unfilled, not-`unreachable` fact whose declared reward is computable from facts-so-far; (3) ask casually, offer skip; (4) on answer: write the fact to its single home (rule 2), then run the reward immediately. Examples: |
 
 ## Hard rules (all modes)
 
@@ -43,13 +43,20 @@ Two modes:
    what the output will look like (structure, not numbers), then show the exact command the user
    runs when they have the real export.
 2. **Facts go where other skills read — nowhere else.** Health facts (weight, diet, constraints,
-   sleep window, supplements, goals) → `health.baseline_doc` (default `~/health/baseline.md`),
-   using its existing section structure; unknowns stay `<unknown>` — never a guess.
+   sleep window, supplements, goals) → `health.baseline_doc` (default `~/health/baseline.md`,
+   or wherever `skills.config.health.baseline_doc` points — read the config, don't assume the
+   default), using its existing section structure; unknowns stay `<unknown>` — never a guess.
    Identity/preference facts (city, language, role, reply style) → `~/.hermes/memories/USER.md`.
-   Demo's own plumbing (budget, asked-log, skip-streak, handoff) → `$HERMES_HOME/data/demo/state.json`.
-   **Nothing user-specific ever lands inside the skill directory or this repo.**
+   Demo's own plumbing — a **pointer ledger only** (which fact lives where, ask timestamps,
+   budget) — goes to `$HERMES_HOME/data/demo/state.json`; fact **values** are never duplicated
+   into state.json, so there is exactly one source of truth and no PII copy outside the homes
+   the kit already uses. **Nothing user-specific ever lands inside the skill directory or this
+   repo.**
 3. **Max 3 questions per session, skip always an option.** A skipped question is recorded as
    `unknown` with the date — it may be re-offered once after 14 days, never twice.
+   3b. **Daily cap across both modes**: tour questions and learn-cron asks draw from one shared
+   cap (`demo.daily_asks`, default 3/day), counted in state — a tour session plus cron fires can
+   never stack beyond it.
 4. **No reward, no ask.** If no useful result is computable from facts-so-far, do not ask.
 5. **Learn budget: 21 asks or 30 days**, whichever comes first, then stop — regardless of profile
    completeness. 3 consecutive skips → silent for 7 days. The user can always say
@@ -64,7 +71,7 @@ Pick demos by what the user reveals. Full recipes with commands: `references/dem
 | Tier | Skills | Demo style |
 |---|---|---|
 | **A — live** | swedish-food-nutrition, find-evidence, supplement-spec-verification, nutrition-advisory, meal-planning, deliberate, grill, peer-review, loop, plan, ticket/commit/create-pr/work, schedule-management | Run for real on the user's own question. Swedish grocery APIs work with no auth — this is the flagship "it just works" demo |
-| **B — shadow** | garmin-import, samsung-health-import, wearable-health-data, evidence-loop, proactive-coach, eval-health | Show the pipeline + redacted reference docs; name the one export/command that turns it live. Label it clearly: "this runs when you have X" |
+| **B — shadow** | garmin-import, samsung-health-import, wearable-health-data, evidence-loop, proactive-coach, eval-health | Show the pipeline + redacted reference docs; name the one export/command that turns it live. Label it clearly: "this runs when you have X". **Pitch each Tier-B skill at most once ever** (tracked via the facts map's `pitched_once` flag, catalog §state) — after that, only if the user asks about it |
 
 Tour session shape:
 
@@ -78,10 +85,16 @@ Tour session shape:
 
 ## Learn mode — the cron
 
+The cron schedule itself is wired once during setup (ONBOARDING step 10): 1-2 fires/day. The
+fire times are jittered by the scheduling agent — the rule is: never two asks within 4 hours of
+each other, never outside quiet hours. `demo.daily_asks` is the total daily ask cap shared by
+both modes (see rule 3b).
+
 Each fire (one question max):
 
-1. Load state; if budget spent, skip-streak backoff active, quiet hours, or "stop learning" set →
-   stay silent. Silence is a successful run.
+1. Load state; if `terminal` set, budget spent, skip-streak backoff active, quiet hours, or the
+   daily cap (shared with tour sessions, `daily_ask_cap`) reached → stay silent. Silence is a
+   successful run.
 2. Pick the highest-value unfilled fact whose **declared reward** is computable from facts-so-far
    (catalog: `min_facts` → `reward`).
 3. Ask casually, offer skip.
@@ -94,14 +107,18 @@ Each fire (one question max):
 
 ## Graduation — the handoff contract
 
-Profile complete **or** budget spent → write to state:
+The **terminal state** is written when the profile is complete (every ladder fact stored or
+`unreachable`) or the budget is spent — with an honesty rule: declare "I know enough" only if
+the profile really is complete; if the budget ran out first, the farewell says that plainly
+("my question budget ran out — say `demo` whenever you want to continue"). Write to state:
 
 ```json
-"handoff": {"to": "proactive-coach", "ts": "<ISO-8601>", "facts": {"...": "..."}}
+"terminal": "graduated",
+"handoff": {"to": "proactive-coach", "ts": "<ISO-8601>"}
 ```
 
-…tell the user **once** ("I know enough — from here you get the weekly digest instead of
-questions"), and stop. Never re-ask anything after handoff. `proactive-coach` reads
+(or `"terminal": "stopped", "stop_learning": true` if the user opted out). Tell the user **once**,
+and stop — never re-ask anything after a terminal state. `proactive-coach` reads
 `health.baseline_doc` and the imported databases directly — it needs no state from this skill,
 so the contract is one-way and stateless on purpose.
 
