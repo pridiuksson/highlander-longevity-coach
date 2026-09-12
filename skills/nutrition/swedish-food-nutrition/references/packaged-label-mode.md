@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [Research, Nutrition, Sweden, Food-Label, Groceries]
-    related_skills: [swedish-cafe-nutrition, swedish-groceries, find-evidence]
+    related_skills: [swedish-food-nutrition, find-evidence]
 ---
 
 # Swedish Packaged-Food Nutrition Lookup
@@ -24,8 +24,9 @@ no-estimation reporting.
   (health tracking, meal planning).
 - Tasks that demand source tiers (official/retailer/secondary) and forbid estimation.
 
-**Use instead:** café/restaurant-chain items → `swedish-cafe-nutrition`; shopping lists, prices,
-recipes, or store price APIs → `swedish-groceries`.
+**Use instead:** shopping lists, prices, recipes, or store price APIs → the parent
+skill `swedish-food-nutrition` (its Axfood/ICA scripts cover Willys, Hemköp and ICA
+recipe lookups). Café/restaurant-chain nutrition is out of scope for this kit.
 
 ## The funnel (work in this order, stop at first authoritative hit, cross-check with one more)
 
@@ -57,7 +58,7 @@ recipes, or store price APIs → `swedish-groceries`.
      via web_search to get the product ID first. A failed ICA *search* does NOT mean ICA product
      pages are blocked.
    - willys.se, coop.se, mathem.se: HTML search and guessed `/api/...` paths were blocked to curl
-     (2026-08-29). If ICA fails, try the swedish-groceries Axfood scripts (Willys/Hemköp JSON API)
+     (2026-08-29). If ICA fails, try the swedish-food-nutrition Axfood scripts (Willys/Hemköp JSON API)
      before giving up on the retailer tier.
 5. **Wholesale/distributor shops** — Torebrings, OutOfHome (outofhome.se), Matsmart, godis wholesalers.
    They reproduce the legal declaration verbatim and confirm net weight; excellent independent

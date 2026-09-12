@@ -16,6 +16,10 @@
 # not exist.
 
 # --- must be customised (REPLACE) --------------------------------------------------------
+# NOTE: these four are intentionally left as <YOUR_...> in the PUBLIC template — this file
+# ships to other agents who fork this kit. Each adopter replaces them with their own values
+# (or deletes the rows they do not want). Until then the named checks are INERT and
+# leak-scan.sh says so in every verdict — that warning is the design working, not a bug.
 identity-name	(?i)\b(<YOUR_GIVEN_NAME>|<YOUR_FAMILY_NAME>)\b
 owner-handle	(?i)<YOUR_GITHUB_HANDLE>
 repo-name	\b<YOUR_PRIVATE_REPO>\b
