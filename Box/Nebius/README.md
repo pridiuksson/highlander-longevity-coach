@@ -196,8 +196,11 @@ Two live-verified gotchas:
 - **`--cloud-init-user-data file://…` is silently not expanded.** The CLI accepts it, but the
   *URL string itself* is stored as the VM's user-data (visible in the instance spec) — the box
   boots with no user and no SSH key, and every later SSH attempt gets `Permission denied
-  (publickey)`. Pass the YAML **inline**: define it as a single quoted shell variable
-  (`USER_DATA='#cloud-config …'`) and pass `"$USER_DATA"`. Verified working end-to-end.
+  (publickey)`. This cost a box in each of two independent executions before it was caught. The
+  CLI only expands a path for explicitly-named path flags (`--service-account-file-path`);
+  `--cloud-init-user-data` is not one of them. Pass the YAML **inline**: define it as a single
+  quoted shell variable (`USER_DATA='#cloud-config …'`) and pass `"$USER_DATA"`. Verified
+  working end-to-end.
 - Managed-disk names are **unique per project** — sharing a project with another box means
   suffixing the instance and disk names (`…already exists within parent` is this collision).
 
@@ -404,7 +407,8 @@ secrets, but a stale IP/ID pair invites confusion later.
 | `create` fails with `compute.instance.non-gpu.vcpu (limit 0, …)` | fresh-tenant quota — A5b, request the raise in the console and re-run |
 | `no image of family "…" in region …` | you passed `--boot-disk-managed-disk-source-image-family-parent-id` — drop it; public families resolve without it (A6) |
 | A flag from this file is rejected | flag drift — re-run `--help` and re-resolve (A6 rule) |
-| `ssh` refused right after A7 | cloud-init is still provisioning — wait ~1 min and retry; serial console if it persists |
+| `ssh` refused (publickey) and waiting does not fix it | **check the user-data first:** `instance get` → `spec.cloud_init_user_data` must be your YAML, not a `file://` string (A6 gotcha — the CLI stores URLs unexpanded) |
+| `ssh`: connection refused / port closed right after A7 | first boot can take **~4 minutes** to open the port — wait, retry, then escalate; do not re-create the instance on this alone |
 | `leak-scan.sh` exits `2` | gitleaks missing on the box — go back to B1 |
 | Gateway ignores newly installed skills | catalogue cache — `hermes gateway restart` (ONBOARDING step 3) |
 | `git clone` 404s | credential lacks repo read — B4, not networking |
