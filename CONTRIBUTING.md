@@ -9,8 +9,10 @@
 ```
 
 That checks the tree for identity, path and health patterns and delegates secrets to `gitleaks`.
-It does **not** read history, and a personal name in a commit message is public forever — so check
-that separately, before you open a PR:
+**gitleaks is required, not optional:** if it is missing the scan exits `2` instead of printing a
+PASS, because a pass that never ran the secrets check is not evidence of anything. It does **not**
+read history, and a personal name in a commit message is public forever — so check that separately,
+before you open a PR:
 
 ```bash
 git log -p --all -- . \
@@ -25,9 +27,14 @@ gitleaks is mostly noise; run the secrets pass over history directly instead.
 Two more pre-push checks:
 
 ```bash
-python3 scripts/validate-skills.py .            # frontmatter, name/dir match, refs, py_compile
+python3 scripts/validate-skills.py .            # frontmatter, unique names, refs, config keys,
+                                               # token taxonomy, py_compile, doc consistency
 gitleaks detect --source . --log-opts="--all"   # secrets, over every commit
 ```
+
+`validate-skills.py` is worth knowing in full, because it enforces the conventions on this page. It
+also works against an **install root** — `python3 scripts/validate-skills.py --installed ~/.hermes` —
+which is how you check a box for shadowed skill names.
 
 **CI enforces the gate.** `.github/workflows/leak-gate.yml` runs on every push and pull request:
 the tree scan (with its secrets pass), the skill validator, the full-history identity scan, and a
@@ -50,9 +57,31 @@ publish it, and git history is forever. Do not put personal health data into it,
 - not into a commit message
 - not into a branch name
 
-Use placeholders (`<YOUR_WEIGHT_KG>`, `<USER>`, `<YOUR_HEALTH_DIR>`) and keep the *shape* of an
-example while discarding the values. If a value is genuinely load-bearing for a test, put it in a
-config file with an example default rather than hardcoding it.
+Keep the *shape* of an example while discarding the values — but use the right kind of placeholder.
+There are three, and `validate-skills.py` enforces the difference:
+
+| Class | Example | Rule |
+|---|---|---|
+| **Substitution** | `<YOUR_HEALTH_DIR>`, `<USER>`, `<YOUR_BASELINE_DOC>` | **Never.** These read as an instruction to the reader but resolve to nothing at load time. A path the user owns belongs in `metadata.hermes.config` (below); a file inside the skill belongs to `${HERMES_SKILL_DIR}` |
+| **Redaction** | `<value>`, `<YOUR_WEIGHT_KG>`, `<YOUR_RESTING_HR_BPM>` | Allowed, and visible on purpose — a measurement removed because it was a person's. **Never glued to a number or an arrow:** `<value>→<value>` is a broken expression, not a redaction. Excise the fragment so the sentence still says something true |
+| **Syntax** | `<uuid>`, `<prompt>`, `<YYYYMMDDHHMMSS>` | Allowed. Metavariables in usage strings and filename patterns |
+
+Paths come from `config.yaml`, not from the reader doing find-and-replace on an installed skill. A
+skill declares what it needs in its frontmatter, and Hermes injects the resolved values when the
+skill loads:
+
+```yaml
+metadata:
+  hermes:
+    config:
+      - key: health.health_dir
+        description: Root of your health data (exports, SQLite DB, verified docs)
+        default: "~/health"
+```
+
+**Declare every key the skill uses.** An undeclared key is never injected — the agent is left
+guessing — and the validator fails the build if you forget one. `hermes config migrate` prompts the
+user for anything unset.
 
 ## Layout
 

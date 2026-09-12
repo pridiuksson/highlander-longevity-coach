@@ -48,8 +48,9 @@ See **[ONBOARDING.md](./ONBOARDING.md)**.
 
 ## Privacy
 
-Nothing in this repository contains personal health data. Skills use placeholders
-(`<YOUR_WEIGHT_KG>`, `<USER>`, `<YOUR_HEALTH_DIR>`) and expect your data to live in your own files.
+Nothing in this repository contains personal health data. Skills take the paths they need from
+`config.yaml` (`skills.config.*`, injected at load) instead of baked-in placeholders, and the
+reference docs carry deliberate `<value>` redactions where the authors' measurements were removed.
 The gate below enforces that over the working tree; the identity/path/health patterns also run over
 every commit (the history **secrets** pass is a separate `gitleaks --log-opts="--all"` — see
 [CONTRIBUTING.md](./CONTRIBUTING.md)):
@@ -66,7 +67,8 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the rest of the pre-push checks.
 
 ## Status
 
-Private, pre-release. Validated against Hermes Agent v0.21.0 (2026.8.31).
+Private, pre-release. **No tagged release yet** — pin by commit (`git rev-parse HEAD`) rather than
+by `main`, which moves. Validated against Hermes Agent v0.21.0 (2026.8.31).
 
 The sanitization method and the per-file dispositions are recorded in the authoring workspace,
 which is not published.
