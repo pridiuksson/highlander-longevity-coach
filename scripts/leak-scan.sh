@@ -180,8 +180,11 @@ INERT_NOTE=""
 # Commit messages are scanned as a pseudo-path. The committer identity is the deliberately
 # public noreply handle, so the owner handle is allowed there but nothing else is relaxed.
 OWNER_ALLOW='(^|/)(README|ONBOARDING|CONTRIBUTING)\.md$|(^|/)LICENSE$|(^|/)\.github/|^COMMIT_MSG$'
-# Substrings that make a match benign (public, non-identifying addresses).
-GLOBAL_ALLOW='noreply@|users\.noreply\.github\.com|git@github\.com|example\.com|@example\.org'
+# Substrings that make a match benign (public, non-identifying addresses). The two owner role
+# addresses are allowlisted together with the authorship gate's ALLOW
+# (scripts/check-git-identities.sh): role addresses, already public on merged history, judged
+# harmless by design - safe to publish forever.
+GLOBAL_ALLOW='noreply@|users\.noreply\.github\.com|git@github\.com|example\.com|@example\.org|olle.pridiuksson@qa.tech|devrel.events@gmail.com'
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 HITS="$WORK/hits.tsv"; : > "$HITS"

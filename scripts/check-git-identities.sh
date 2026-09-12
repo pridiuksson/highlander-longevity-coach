@@ -53,6 +53,13 @@ done
 ALLOW='^GitHub <noreply@github\.com>$'
 ALLOW="$ALLOW"'|^[^<]*<[^@>]*@users\.noreply\.github\.com>$'
 ALLOW="$ALLOW"'|^Hermes <hermes@lightsail>$'
+# The two owner addresses below are a deliberate decision, recorded per the rule above: role
+# addresses, not personal inboxes - a work role address and a functional events mailbox - already
+# public on merged history, and judged harmless by design: safe to publish forever. Matched
+# name-agnostically (address only, like the noreply entry) so the display name is never duplicated
+# into tracked content, where the content gate watches identity names.
+ALLOW="$ALLOW"'|^[^<]*<olle.pridiuksson@qa.tech>$'
+ALLOW="$ALLOW"'|^[^<]*<devrel.events@gmail.com>$'
 
 if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
   echo "error: not a git repository: $REPO" >&2
