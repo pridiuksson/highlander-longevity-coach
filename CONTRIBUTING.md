@@ -29,10 +29,16 @@ python3 scripts/validate-skills.py .            # frontmatter, name/dir match, r
 gitleaks detect --source . --log-opts="--all"   # secrets, over every commit
 ```
 
-**CI is not active yet.** `ci/leak-gate.yml` is shipped but has to be enabled — activating a
-workflow needs a token with the `workflow` scope, which the publishing automation deliberately does
-not hold. See [ci/README.md](./ci/README.md) for the one-line step. **Until it is enabled, you are
-the enforcement.** The pre-commit hook is a convenience and is bypassable with `--no-verify`.
+**CI enforces the gate.** `.github/workflows/leak-gate.yml` runs on every push and pull request:
+the tree scan (with its secrets pass), the skill validator, the full-history identity scan, and a
+full-history `gitleaks` pass. The pre-commit hook is a convenience and is bypassable with
+`--no-verify`; CI is the version that actually enforces anything.
+
+It is the only copy — edit the workflow in place. It once shipped inert as `ci/leak-gate.yml`
+because activating a workflow needs a token with the `workflow` scope, and GitHub refuses to let a
+token without it create or update anything under `.github/workflows/`. The automation that first
+populated this repo did not hold that scope, which is also why the copy was removed once CI was
+enabled for real: two copies drift.
 
 ## Privacy — the part that is not negotiable
 
@@ -54,10 +60,14 @@ config file with an example default rather than hardcoding it.
 skills/<stage>/<name>/     one skill, self-contained
 scripts/                   the leak gate + the structural validator
 Profile/                   profile templates
+.commandcode/              Command Code skill discovery
+.github/workflows/         the leak gate in CI
 ```
 
 Skills are grouped by the stage of the coaching loop they serve — `decision/`, `health/`,
-`evidence/`, `nutrition/`, `planning/`, `proactive/`, `quality/`.
+`evidence/`, `nutrition/`, `planning/`, `proactive/`, `quality/` — plus `workflow/`, which holds the
+contribution skills (`commit`, `create-pr`, `ticket`, `work`) and serves the repo rather than the
+coaching loop.
 
 **Skills never import across their own boundary.** Duplicate a small reference, or point at the
 owning skill's path. Shared state is how two skills drift apart.
@@ -68,6 +78,9 @@ owning skill's path. Shared state is how two skills drift apart.
 a contributor lane with the conventions above. It is a template: copy it, do not edit it in place.
 
 ## Changing a skill
+
+The `workflow/` skills run this loop for you — `@ticket` to file the work, `@work` to execute an
+issue end-to-end, `@commit` then `@create-pr` to ship. By hand:
 
 1. Branch.
 2. Edit **inside that skill's directory**. If a change is needed in two skills, make the case for

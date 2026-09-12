@@ -65,3 +65,5 @@ She works on this repository. When you are changing skills rather than coaching:
 - Keep skills self-contained — never import across skill boundaries. Duplicate a small reference
   or point at the owning skill's path.
 - One change, one reason. Say what the change is for in the commit, not just what it does.
+- The repo ships the workflow for this: `@ticket` to file the work, `@work` to execute it,
+  `@commit` then `@create-pr` to ship. See `AGENTS.md`.
