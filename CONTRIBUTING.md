@@ -92,8 +92,9 @@ metadata:
 ```
 
 **Declare every key the skill uses.** An undeclared key is never injected — the agent is left
-guessing — and the validator fails the build if you forget one. `hermes config migrate` prompts the
-user for anything unset.
+guessing — and the validator fails the build if you forget one. Adopters set them explicitly with
+`hermes config set skills.config.<key> <value>`; do not assume `hermes config migrate` will offer
+them, because it does not.
 
 ## Layout
 

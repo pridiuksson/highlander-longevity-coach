@@ -107,14 +107,7 @@ every unrelated third-party skill on the box, burying the one finding that matte
 
 ## 5. Configure — you do not edit the skills
 
-The skills read their settings from `config.yaml`. `hermes config migrate` walks every enabled
-skill, finds the settings it declares, and prompts for the ones that are unset:
-
-```bash
-hermes config migrate
-```
-
-Or set them directly:
+The skills read their settings from `config.yaml`, under `skills.config.*`. Set them explicitly:
 
 ```bash
 hermes config set skills.config.health.health_dir   ~/health
@@ -123,7 +116,22 @@ hermes config set skills.config.proactive.timezone  Europe/Stockholm
 hermes config set skills.config.proactive.quiet_hours "08:00-21:00"
 ```
 
-When a skill loads, its resolved values are injected into the message as a `[Skill config]` block.
+It will warn that `skills.config.…` is "not a recognized config key" and save it anyway. That
+notice is expected — skill-declared keys are not in the static schema — and it writes to exactly the
+path the skills read. Do not skip the write because of the warning.
+
+**Do not rely on `hermes config migrate` here.** It prompts for environment-style keys, not for
+`metadata.hermes.config` settings, and `hermes config show` does not list skill settings at all —
+verified on v0.21.0 with a skill installed and enabled. Setting them explicitly is the reliable path.
+
+When a skill loads, its resolved values are injected into the message as a `[Skill config]` block:
+
+```
+[Skill config (from ~/.hermes/config.yaml):
+  health.health_dir = /srv/health
+]
+```
+
 That is why nothing under `skills/` needs hand-editing: a clone can live anywhere, and no path is
 baked into an installed file.
 
