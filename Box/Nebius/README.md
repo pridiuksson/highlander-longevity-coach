@@ -132,7 +132,8 @@ The list omits the limit; the console shows it. In the console → **Quotas** (r
 `<REGION>`), request an increase for **`compute.instance.non-gpu.vcpu`** (8 covers this box with
 headroom) and **`compute.instance.count`** (4) — both usually granted quickly for small amounts.
 This gate is ⛔-adjacent: the raise is a human console action, so the agent stops here if the
-quota is not confirmed.
+quota is not confirmed. **Do not trust the VM creation form as quota evidence** — it renders
+happily even at limit 0; the API rejects at submit.
 
 ### A6 — create the VM
 
