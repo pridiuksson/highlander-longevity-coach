@@ -42,6 +42,15 @@ done
 [ -n "$TARGET" ] || { echo "usage: leak-scan.sh [options] <dir|->" >&2; exit 2; }
 [ -f "$PATTERNS" ] || { echo "pattern file not found: $PATTERNS" >&2; exit 2; }
 
+# A pattern still containing a <YOUR_...> placeholder matches that literal string and
+# nothing else, so the check it names is silently INERT. That is the same shape of bug as
+# a secrets pass that never runs, so it is reported in the verdict rather than left for
+# the reader to infer from a PASS.
+INERT=$(grep -v '^[[:space:]]*#' "$PATTERNS" 2>/dev/null | grep -c '<YOUR_' || true)
+INERT=${INERT:-0}
+INERT_NOTE=""
+[ "$INERT" -gt 0 ] && INERT_NOTE="; WARNING: $INERT unreplaced pattern(s) are INERT"
+
 # Commit messages are scanned as a pseudo-path. The committer identity is the deliberately
 # public noreply handle, so the owner handle is allowed there but nothing else is relaxed.
 OWNER_ALLOW='(^|/)(README|ONBOARDING|CONTRIBUTING)\.md$|(^|/)LICENSE$|(^|/)\.github/|^COMMIT_MSG$'
@@ -143,7 +152,11 @@ GITLEAKS_RC=0
 GITLEAKS_STATE="skipped (stdin mode — diffs are not a secret surface)"
 if [ "$USE_GITLEAKS" -eq 1 ] && [ "$STDIN_MODE" -eq 0 ]; then
   if command -v gitleaks >/dev/null 2>&1; then
-    gitleaks detect --source "$SCAN_ROOT" --no-banner --redact --exit-code 1 >"$WORK/gitleaks.txt" 2>&1
+    # --no-git is load-bearing: without it `gitleaks detect` walks the GIT HISTORY of the
+    # source repo, not the working tree, so a "tree scan" was silently a second history
+    # scan and files not yet committed were never checked. History is scanned separately
+    # (see CONTRIBUTING.md and ci/leak-gate.yml).
+    gitleaks detect --source "$SCAN_ROOT" --no-git --no-banner --redact --exit-code 1 >"$WORK/gitleaks.txt" 2>&1
     GITLEAKS_RC=$?
     if [ "$GITLEAKS_RC" -ne 0 ]; then
       GITLEAKS_STATE="FAILED (rc=$GITLEAKS_RC)"
@@ -189,9 +202,15 @@ if [ -n "$EXPECT" ]; then
   echo "OK: fixture — all expected hits found ($NHITS total)"
 fi
 
+if [ "$INERT" -gt 0 ]; then
+  echo "warn: $INERT pattern(s) in $PATTERNS still contain <YOUR_...> placeholders." >&2
+  echo "      They match the literal placeholder text, so those checks are INERT — they" >&2
+  echo "      cannot catch the identity/repo data they exist to catch. Replace them." >&2
+fi
+
 if [ "$NHITS" -gt 0 ] || [ "$GITLEAKS_RC" -ne 0 ]; then
-  echo "FAIL: $NHITS identity/path/health hit(s); secrets pass: $GITLEAKS_STATE"
+  echo "FAIL: $NHITS identity/path/health hit(s); secrets pass: $GITLEAKS_STATE$INERT_NOTE"
   exit 1
 fi
-echo "PASS: no identity/path/health hits; secrets pass: $GITLEAKS_STATE"
+echo "PASS: no identity/path/health hits; secrets pass: $GITLEAKS_STATE$INERT_NOTE"
 exit 0
