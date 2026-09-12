@@ -259,6 +259,7 @@ is the failure the repo's versioning design exists to prevent.
 | The gateway ignores a new skill | It cached the catalogue — restart it |
 | The leak gate is red | **Do not proceed.** Read the report; it names the pattern and the line |
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
+| The gate warns about INERT patterns | Expected on a fresh clone. The four `<YOUR_...>` rows in `scripts/leak-patterns.tsv` are the adopter's own identity denylist — fill them in (or delete the rows) and the warning goes away. Until then those specific checks catch nothing, and the verdict says so |
 | You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
 
 ## Field note: adopting onto a box that already has skills (2026-09-12)
