@@ -184,7 +184,7 @@ below, and it is the one this cookbook was executed with:
   --boot-disk-managed-disk-source-image-family-image-family ubuntu24.04-driverless \
   --resources-platform cpu-d3 \
   --resources-preset 2vcpu-8gb \
-  --cloud-init-user-data file://<ABSOLUTE_PATH_TO_CLOUD_INIT_YAML> \
+  --cloud-init-user-data "$USER_DATA" \
   --network-interfaces '[{"name":"nic0","subnet_id":"<SUBNET_ID>","ip_address":{},"public_ip_address":{"static":false}}]'
 ```
 
@@ -193,8 +193,13 @@ Two live-verified gotchas:
 - **Do not pass `--boot-disk-managed-disk-source-image-family-parent-id`.** Pointing it at your
   own project fails with `no image of family "ubuntu24.04-driverless" in region …` — public
   families resolve from Nebius' public project without the flag.
-- `--cloud-init-user-data` accepts `file://` URLs — write the user-data to a scratch file rather
-  than inlining YAML.
+- **`--cloud-init-user-data file://…` is silently not expanded.** The CLI accepts it, but the
+  *URL string itself* is stored as the VM's user-data (visible in the instance spec) — the box
+  boots with no user and no SSH key, and every later SSH attempt gets `Permission denied
+  (publickey)`. Pass the YAML **inline**: define it as a single quoted shell variable
+  (`USER_DATA='#cloud-config …'`) and pass `"$USER_DATA"`. Verified working end-to-end.
+- Managed-disk names are **unique per project** — sharing a project with another box means
+  suffixing the instance and disk names (`…already exists within parent` is this collision).
 
 The cloud-init user-data creates user `<VM_USERNAME>` with the A4 public key:
 
@@ -263,13 +268,26 @@ non-interactive shells, so `ssh host 'source ~/.bashrc && …'` silently skips P
 ### B1 — base packages + gitleaks
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y curl git xz-utils jq
+sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl git xz-utils jq
+
+# gitleaks - pin a version, verify against the release's own checksums.txt.
+# Asset names drift (the bare gitleaks-linux-amd64 URL 404s on current releases):
+# download under the CANONICAL asset name - renaming breaks the checksum check.
+GL_VER=8.30.1
+curl -fsSL -o /tmp/gitleaks_${GL_VER}_linux_x64.tar.gz \
+  https://github.com/gitleaks/gitleaks/releases/download/v${GL_VER}/gitleaks_${GL_VER}_linux_x64.tar.gz
+curl -fsSL -o /tmp/gitleaks_${GL_VER}_checksums.txt \
+  https://github.com/gitleaks/gitleaks/releases/download/v${GL_VER}/gitleaks_${GL_VER}_checksums.txt
+(cd /tmp && grep linux_x64 gitleaks_${GL_VER}_checksums.txt | sha256sum -c - \
+  && tar -xzf gitleaks_${GL_VER}_linux_x64.tar.gz)
+sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+gitleaks version
 ```
 
-Install `gitleaks` from the official GitHub release binary (pin a major, verify the checksum
-against the release's `checksums.txt`). Verify: `gitleaks version` — ONBOARDING step 4's leak gate
-exits `2` without it, and an exit-2 "clean" is not a clean.
+`gitleaks version` must print the pinned version — ONBOARDING step 4's leak gate exits `2`
+without it, and an exit-2 "clean" is not a clean. (`DEBIAN_FRONTEND=noninteractive` keeps apt
+quiet in non-interactive shells.)
 
 ### B2 — install Hermes, headlessly
 
@@ -282,19 +300,34 @@ Require **≥ 0.21.2**: the kit is validated on v0.21.0, but 0.21.0 has a known 
 fixed in 0.21.2 — no reason to ship a new box on the older one. Install reference:
 [Hermes installation](https://hermes-agent.nousresearch.com/docs/getting-started/installation/).
 
-### B3 — ⛔ model credentials (human: browser or key)
+Then install the gateway — a fresh install does **not** register it (verified on v0.21.2), and
+ONBOARDING steps 3 and 9 assume it exists:
 
-The box has no browser; the human does. Pick **one**:
+```bash
+bash -lc 'hermes gateway install'   # user service; enabled; linger on - survives SSH logout
+bash -lc 'hermes gateway status'    # expect: active (running)
+```
 
-| Option | How |
-|---|---|
-| **Nous Portal** (recommended first box) | agent runs `hermes setup --portal`; it prints an OAuth URL — **open it on your laptop**, approve, return |
-| **Bring your own** | run `hermes model` and follow its prompts (interactive; fine over SSH) |
-| **Nebius Token Factory** | human creates an API key in the Nebius console and pastes it once at the stop-point into `~/.hermes/.env` as `NEBIUS_API_KEY`, then `hermes model` to select the provider |
+### B3 — ⛔ model credentials (human: interactive, from your own terminal)
 
-Keys are typed by the human at the stop-point; they are never echoed into logs, the runbook, or
-this file. Then Hermes' own first-run rule — **one clean chat** before anything else. If it does
-not respond cleanly, `hermes doctor` before touching anything else.
+The agent **cannot** run this step: `hermes setup --portal` requires an interactive TTY and
+refuses to start otherwise (verified on v0.21.2). The **human** runs it from their own terminal:
+
+```bash
+ssh -t -i <SSH_KEY_PATH> <VM_USERNAME>@<PUBLIC_IP> hermes setup --portal
+```
+
+- The OAuth URL may print instead of opening (headless box) — copy it into your laptop's browser
+  and approve.
+- If the login callback fails (it may target the box's localhost), fall back at the stop-point to
+  a key in `~/.hermes/.env` (`OPENROUTER_API_KEY` or `OPENAI_API_KEY`, then `hermes model`), or
+  `hermes config set model.provider custom` + `model.base_url` + `model.default` for your own
+  endpoint. On this box the Nebius option is `NEBIUS_API_KEY` in `~/.hermes/.env` + `hermes
+  model` (Nebius Token Factory is a listed provider).
+
+Keys are typed by the human; they are never echoed into logs, the runbook, or this file. Then
+Hermes' own first-run rule — **one clean chat** before anything else, in the same interactive
+session (`hermes`). If it does not respond cleanly, `hermes doctor` before touching anything else.
 Quickstart: [getting started](https://hermes-agent.nousresearch.com/docs/getting-started/quickstart/).
 
 ### B4 — ⛔ clone the kit (human: one credential decision, made at preflight)
