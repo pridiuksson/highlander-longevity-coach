@@ -88,6 +88,11 @@ step-by-step interactive prompts are for humans in their own terminal — an age
 the flags above. Configuration reference:
 [docs.nebius.com/cli/configure](https://docs.nebius.com/cli/configure/).
 
+On a **headless host** (no browser, no desktop), the login callback cannot reach localhost — use
+the no-browser flow instead:
+[docs.nebius.com/cli/no-browser](https://docs.nebius.com/cli/no-browser/). Live-tested: an agent
+on a headless Ubuntu box completed this step with it.
+
 Verify before moving on:
 
 ```bash
@@ -120,28 +125,42 @@ Record nothing yet — A7 writes the state file.
 
 ### A5b — quota gate (do not skip)
 
-A fresh Nebius tenant has **zero** non-GPU vCPU quota — A6 fails with
-`compute.instance.non-gpu.vcpu (limit 0, requested 2)` until quota exists. Quota is enforced
-**top-down**: the tenant ceiling caps the project allowance, and the create only succeeds when
-both are non-zero. Live-verified paths, in order:
+A fresh project can have **zero** non-GPU vCPU quota — A6 fails with
+`compute.instance.non-gpu.vcpu (limit 0, requested 2)` until quota exists. Two live-verified
+facts decide the fix:
 
-1. **Project-level self-serve** (no approval needed for a tenant owner):  
+- **Quota is scoped per region.** A Nebius account gets a **default project per region**
+  (`default-project-<region>`), each with its own quota container. One region can be blocked at 0
+  while a sibling region works — this runbook itself was executed in a second region after the
+  first stalled on a pending raise.
+- **Project-level allowances are self-serve** for a tenant owner; the tenant-level override is
+  not (and is refused outright while a support request on the same quota is open).
+
+In order:
+
+1. **Switch region (fastest).** List the tenant's projects, pick a region with capacity, and
+   point the run at it:
+   ```bash
+   ~/.nebius/bin/nebius iam v2 tenant list
+   ~/.nebius/bin/nebius iam v2 project list --parent-id <TENANT_ID> --all
+   ```
+   Set `<PROJECT_ID>` and `<REGION>` to that region's project, then **re-run A5** — networks and
+   subnets are regional, so the subnet id changes with it. Then go straight to A6.
+2. **Self-serve the allowance in the region you want**:
    ```bash
    ~/.nebius/bin/nebius quotas quota-allowance create --parent-id <PROJECT_ID> \
      --name compute.instance.non-gpu.vcpu --limit 8 --region <REGION>
    ~/.nebius/bin/nebius quotas quota-allowance create --parent-id <PROJECT_ID> \
      --name compute.instance.count --limit 4 --region <REGION>
    ```
-2. **Tenant-level raise** (the binding ceiling): same command with `--parent-id <TENANT_ID>`. A
-   tenant owner cannot self-serve this one — and if a quota request is already open the CLI says
-   so: `…because there is an open quota request supportissue-…`. File or track it in the console
-   (**Quotas → Request increase**), then wait for the approval email; `create` keeps failing with
-   `(limit 0, requested 2)` until it lands. There is no CLI to poll the request's status.
-3. **The API is the only truth.** The console VM form renders happily at limit 0 and rejects (or
-   misleads) at submit — never read a rendered form as a green light. Re-run A6 to re-check.
+3. **Request a raise** for the region you actually want (console → Quotas → Request increase).
+   While the request is open, the CLI refuses overrides on that quota:
+   `…because there is an open quota request supportissue-…`. There is no CLI to poll it.
+4. **The API is the only truth.** The console VM form renders happily at limit 0 and rejects at
+   submit — never read a rendered form as a green light. Re-run A6 to re-check.
 
-This gate is ⛔-adjacent: if the tenant ceiling is still 0, the agent stops and the human waits
-for approval.
+This gate is ⛔-adjacent: if every available region is at 0, the agent stops and the human waits
+for an approval.
 
 ### A6 — create the VM
 
