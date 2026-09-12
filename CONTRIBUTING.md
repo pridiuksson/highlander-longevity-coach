@@ -74,6 +74,9 @@ There are three, and `validate-skills.py` enforces the difference:
 | **Redaction** | `<value>`, `<YOUR_WEIGHT_KG>`, `<YOUR_RESTING_HR_BPM>` | Allowed, and visible on purpose — a measurement removed because it was a person's. **Never glued to a number or an arrow:** `<value>→<value>` is a broken expression, not a redaction. Excise the fragment so the sentence still says something true |
 | **Syntax** | `<uuid>`, `<prompt>`, `<YYYYMMDDHHMMSS>` | Allowed. Metavariables in usage strings and filename patterns |
 
+This table is the canonical vocabulary — point at it rather than restating the list in a skill,
+because restated lists drift.
+
 The three classes apply to **skills**. In a *profile* template they invert: `<USER>`, `<AGE>` and
 `<CITY>` are fields the adopter fills in, and there is no config mechanism behind them — see
 ONBOARDING step 7. Do not "fix" a profile by resolving its angle brackets for the reader.

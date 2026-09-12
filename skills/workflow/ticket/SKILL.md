@@ -47,7 +47,8 @@ An agent picking this up should not have to rediscover facts. Collect them now:
 - **Repo constraints** — a new skill must be named in `README.md` (`validate-skills.py` enforces
   it) and carry `license:` frontmatter; a new stage must also be added to the stage list in
   `CONTRIBUTING.md`; the leak gate must pass. Put the ones that apply into the issue.
-- **Privacy** — issue bodies are public forever. Use placeholders (`<USER>`, `<YOUR_WEIGHT_KG>`);
+- **Privacy** — issue bodies are public forever. Use the placeholder vocabulary in
+  `CONTRIBUTING.md`;
   never paste a real name, handle, host, or health value. Nothing scans GitHub for you.
 
 ## Step 3 — Draft the body

@@ -99,7 +99,7 @@ show you a shadowed duplicate:
 ```bash
 python3 scripts/validate-skills.py --installed ~/.hermes   # this kit's checks, not other people's
 hermes skills list | grep -E '^[0-9]+ hub-installed' \
-  || echo "could not read the summary — run \`hermes skills list\` by hand (expect 17 local)"
+  || echo "could not read the summary — run \`hermes skills list\` by hand (expect 21 local: 17 coaching + 4 workflow)"
 ```
 
 `--installed` matters: without it the validator applies *this repo's* frontmatter and token rules to
