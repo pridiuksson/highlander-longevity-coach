@@ -121,19 +121,27 @@ Record nothing yet — A7 writes the state file.
 ### A5b — quota gate (do not skip)
 
 A fresh Nebius tenant has **zero** non-GPU vCPU quota — A6 fails with
-`compute.instance.non-gpu.vcpu (limit 0, requested 2)` until you raise it. Check:
+`compute.instance.non-gpu.vcpu (limit 0, requested 2)` until quota exists. Quota is enforced
+**top-down**: the tenant ceiling caps the project allowance, and the create only succeeds when
+both are non-zero. Live-verified paths, in order:
 
-```bash
-~/.nebius/bin/nebius quotas quota-allowance list --parent-id <PROJECT_ID> \
-  | grep -A3 "name: compute.instance.non-gpu"
-```
+1. **Project-level self-serve** (no approval needed for a tenant owner):  
+   ```bash
+   ~/.nebius/bin/nebius quotas quota-allowance create --parent-id <PROJECT_ID> \
+     --name compute.instance.non-gpu.vcpu --limit 8 --region <REGION>
+   ~/.nebius/bin/nebius quotas quota-allowance create --parent-id <PROJECT_ID> \
+     --name compute.instance.count --limit 4 --region <REGION>
+   ```
+2. **Tenant-level raise** (the binding ceiling): same command with `--parent-id <TENANT_ID>`. A
+   tenant owner cannot self-serve this one — and if a quota request is already open the CLI says
+   so: `…because there is an open quota request supportissue-…`. File or track it in the console
+   (**Quotas → Request increase**), then wait for the approval email; `create` keeps failing with
+   `(limit 0, requested 2)` until it lands. There is no CLI to poll the request's status.
+3. **The API is the only truth.** The console VM form renders happily at limit 0 and rejects (or
+   misleads) at submit — never read a rendered form as a green light. Re-run A6 to re-check.
 
-The list omits the limit; the console shows it. In the console → **Quotas** (region
-`<REGION>`), request an increase for **`compute.instance.non-gpu.vcpu`** (8 covers this box with
-headroom) and **`compute.instance.count`** (4) — both usually granted quickly for small amounts.
-This gate is ⛔-adjacent: the raise is a human console action, so the agent stops here if the
-quota is not confirmed. **Do not trust the VM creation form as quota evidence** — it renders
-happily even at limit 0; the API rejects at submit.
+This gate is ⛔-adjacent: if the tenant ceiling is still 0, the agent stops and the human waits
+for approval.
 
 ### A6 — create the VM
 
