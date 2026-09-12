@@ -30,18 +30,22 @@ $HERMES_HOME/skills/peer-review/scripts/peer-review.sh "<YOUR_PROMPT>"
 
 Use the **terminal** tool to run the script. Set a **5-minute timeout** (300 seconds).
 
-### Fallback chain (automatic in script, manual for tier 3)
+### Fallback chain (automatic in the script; tier 3 is yours to run)
 
 | Exit code | Meaning | Action |
 |-----------|---------|--------|
 | 0 | Success — a CLI returned a response | Read stdout, proceed to evaluation |
-| 1 | No prompt provided OR script error | Usage error: fix and retry. If prompt WAS provided, check for script bugs (e.g., `set -e` regression killing the fallback loop). |
-| 2 | No CLI found at all | Report error, stop |
-| 3 | All CLIs failed (command-code + agy + mimo) | **Use native subagent fallback** (below) |
+| 1 | No prompt provided OR script error | Usage error: fix and retry. If a prompt WAS provided, check for script bugs (e.g., a `set -e` regression killing the fallback loop). |
+| 3 | **No peer CLI available** — none installed, or all installed ones failed | **Use the native subagent fallback** (below). This is the expected path on a fresh box. |
+
+There is no exit 2. **A missing CLI is not an error — it is the signal to delegate.** The chain is
+`command-code → agy → mimo → exit 3`, and "none of them is installed" lands in exactly the same place as
+"all of them failed", because the correct response is identical: run the peer as a subagent.
 
 ### Tier 3: Native subagent fallback
 
-If the script exits **3**, spawn a subagent as the peer:
+If the script exits **3** — which includes the case where no CLI is installed at all — spawn a subagent
+as the peer:
 
 ```
 delegate_task(
@@ -50,7 +54,13 @@ delegate_task(
 )
 ```
 
-The subagent uses Hermes's own model (different from command-code/agy), so it's a genuine second perspective. It can read files and search the web if the question benefits from verification.
+The subagent can read files and search the web if the question benefits from verification.
+
+**Be honest about which tier you are actually in.** With a CLI installed, the subagent runs on a different
+model from command-code/agy, so it is a genuine second opinion. With **no** CLI installed it runs on
+Hermes's own model — that is a second *context*, not a second *model*: good at catching what you
+overlooked, weaker at catching assumptions you both share. Still worth running (a second context beats no
+review), but install at least one CLI when the decision is consequential enough to want real independence.
 
 ### After the peer replies
 

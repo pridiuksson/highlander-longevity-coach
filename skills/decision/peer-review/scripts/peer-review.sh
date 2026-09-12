@@ -6,7 +6,8 @@
 #   1. command-code (primary)
 #   2. agy (fallback)
 #   3. mimo (fallback)
-#   4. Exit 3 → signals the agent to use a native delegate_task subagent
+#   4. Exit 3 → signals the agent to run the peer as a native delegate_task subagent
+#      (also the outcome when NO cli is installed — a missing CLI is not an error)
 #
 # Usage:
 #   scripts/peer-review.sh "<prompt>"
@@ -14,7 +15,8 @@
 #
 # Override the workspace dir: PEER_REVIEW_WORKDIR=/path/to/repo peer-review.sh
 #
-# Exit codes: 0 success | 1 no prompt | 3 all CLIs failed (use delegate_task fallback)
+# Exit codes: 0 success | 1 no prompt | 3 no usable CLI — none installed, or all failed
+#             (either way: run the peer as a delegate_task subagent)
 
 set -uo pipefail
 
@@ -84,7 +86,17 @@ for CLI in command-code agy mimo; do
 done
 set -e
 
-# ── All CLIs failed → signal agent to use native subagent ─────────────────
+# ── No usable CLI → signal the agent to run the peer as a subagent ────────
+# A missing CLI is not an error: it carries the same instruction as "all failed".
 
-echo "Error: All CLIs failed. Use native delegate_task subagent as fallback." >&2
+INSTALLED=0
+for CLI in command-code agy mimo; do
+    command -v "$CLI" &>/dev/null && INSTALLED=$((INSTALLED + 1))
+done
+
+if [ "$INSTALLED" -eq 0 ]; then
+    echo "No peer CLI installed (checked: command-code, agy, mimo). Use the native delegate_task subagent as the peer." >&2
+else
+    echo "All $INSTALLED installed peer CLI(s) failed. Use the native delegate_task subagent as the peer." >&2
+fi
 exit 3

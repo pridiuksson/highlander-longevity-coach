@@ -15,7 +15,7 @@ reaches out when — and only when — something is worth saying.
 | `sqlite3` CLI | inspecting imported device databases by hand |
 | *optional* `fitdecode` | parsing Garmin FIT files |
 | *optional* `gitleaks` | the leak gate's secrets pass |
-| *optional* `command-code` / `agy` | model-independent peer review |
+| *optional* `command-code` / `agy` | a **model-independent** peer. Without one, `peer-review` falls back to a subagent — a second *context*, not a second *model* |
 
 ## 1. Clone
 
