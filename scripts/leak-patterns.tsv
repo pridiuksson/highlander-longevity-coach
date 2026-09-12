@@ -1,31 +1,39 @@
-# leak-patterns.tsv — the denylist the leak gate applies to this repo.
+# leak-patterns.tsv — the SHAPE denylist the leak gate applies to this repo.
 #
 # Format: NAME<TAB>EXTENDED_REGEX   ('#' comments and blank lines ignored). PCRE, so inline
 # flags like (?i) work.
 #
-# VALUE-FREE BY DESIGN. This file is public, so it must not list the identifiers it exists to
-# catch — a denylist that names your Telegram chat id has itself leaked it. The patterns below
-# describe the SHAPE of identifying data instead. Shape patterns are also strictly stronger:
-# they catch a second host, account or key that a value list never knew about.
+# VALUE-FREE BY DESIGN, and now value-free in fact. This file is public, so it must not list the
+# identifiers it exists to catch — a denylist that names your Telegram chat id has itself leaked
+# it. The patterns below describe the SHAPE of identifying data instead, and shape patterns are
+# strictly stronger: they catch a second host, account or key that a value list never knew about.
 #
-# Only the entries marked REPLACE need editing.
+# The identifiers themselves — your name, your handle — are the VALUE LAYER, and they live
+# OUTSIDE this repository. See scripts/leak-patterns.local.example.tsv and the leak-gate section
+# of CONTRIBUTING.md. They cannot live here: a tracked file naming them IS the leak, which is why
+# this file no longer carries the four REPLACE entries it once did.
 #
-# They are INERT until you do: a pattern still containing `<YOUR_...>` matches that literal
-# placeholder text and nothing else, so the check it names catches nothing. leak-scan.sh
-# counts them and says so in its verdict, so a PASS is never read as coverage that does
-# not exist.
+# ADOPTING THIS KIT? Those four rows — identity-name, owner-handle, repo-name, profile-path — are
+# still yours to add, and scripts/leak-patterns.local.example.tsv is the template for them. Add
+# them OUTSIDE the tree rather than in this file: anything committed here lands in the history of
+# a repo whose whole purpose is to be publishable, and it would carry your name and handle with
+# it. ./scripts/check-values-configured.sh reports which of the two states you are in.
+#
+# Every verdict reports the value layer's state. "NOT-CONFIGURED" means the shape layer ran alone:
+# the PASS is real, but it is not identity coverage, and the report says so rather than implying
+# it.
 
-# --- must be customised (REPLACE) --------------------------------------------------------
-# NOTE: these four are intentionally left as <YOUR_...> in the PUBLIC template — this file
-# ships to other agents who fork this kit. Each adopter replaces them with their own values
-# (or deletes the rows they do not want). Until then the named checks are INERT and
-# leak-scan.sh says so in every verdict — that warning is the design working, not a bug.
-identity-name	(?i)\b(<YOUR_GIVEN_NAME>|<YOUR_FAMILY_NAME>)\b
-owner-handle	(?i)<YOUR_GITHUB_HANDLE>
-repo-name	\b<YOUR_PRIVATE_REPO>\b
-profile-path	profiles/<YOUR_PROFILE_NAME>
+# --- shape-based: identifier slots -------------------------------------------------------
+# A real name used as free prose cannot be caught by shape — no regex decides "is this a human
+# name?" without a dictionary that also matches places and products. What CAN be caught is the
+# slots a name actually appears in, and those are checked here and by the value layer.
+#
+# profile-path is a shape rather than a value list, so it also catches a profile name nobody
+# thought to enumerate. The three template names (Olle/Maria/Els) are public and are allowed
+# inside Profile/; anything else is a hit.
+profile-path	(?i)\bprofiles/[a-z0-9_-]+
 
-# --- shape-based, work as shipped --------------------------------------------------------
+# --- shape-based: work as shipped --------------------------------------------------------
 # Deliberately NOT included: a generic IPv4 pattern (it matches version strings such as
 # 6.30.5.105) and a generic *.sqlite pattern (not identifying on its own). A shape pattern has
 # to be both identifying AND precise — a noisy gate gets switched off, which is worse than none.

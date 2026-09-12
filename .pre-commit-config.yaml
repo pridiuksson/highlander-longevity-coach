@@ -8,3 +8,13 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      # The shape layer above enforces itself. The value layer is local config that can be
+      # silently absent, so it gets its own check: it fails when the layer is set up but inert
+      # or pointing at a missing file, and passes with a notice when it was never configured.
+      # Failing on simple absence would block contributors for a condition they cannot fix.
+      - id: leak-gate-values
+        name: leak gate (value layer configured)
+        entry: scripts/check-values-configured.sh
+        language: script
+        pass_filenames: false
+        always_run: true
