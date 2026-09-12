@@ -23,6 +23,18 @@ It does **not** read history, and a personal name in a commit message is public 
 that separately, before you open a PR:
 
 ```bash
+git log -p HEAD -- . \
+  ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
+  | ./scripts/leak-scan.sh --no-gitleaks -
+```
+
+`HEAD`, not `--all`, and the difference matters. `--all` reaches every branch the clone knows about,
+so one branch's content can fail another branch's build, and the same commit can pass or fail
+depending only on what else existed at the time. A check whose answer changes when someone pushes to
+an unrelated branch is not a check. Before a **release or a public flip**, scan everything on
+purpose — that is the moment when every branch is your responsibility:
+
+```bash
 git log -p --all -- . \
   ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
   | ./scripts/leak-scan.sh --no-gitleaks -
