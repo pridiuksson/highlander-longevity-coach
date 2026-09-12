@@ -6,15 +6,27 @@ author: Hermes Agent
 license: MIT
 metadata:
   hermes:
+    config:
+      - key: health.health_dir
+        description: "Root of your health data: device exports, SQLite DB, verified-data docs"
+        default: "~/health"
+        prompt: "Root of your health data: device exports, SQLite DB, verified-data docs"
     tags: [garmin, health, data-import, fit, sqlite, wearables]
     related_skills: [samsung-health-import, workspace-hygiene]
 ---
 
 # Garmin Health Import
 
+> **Config.** This skill reads its paths from `config.yaml`; the resolved values
+> arrive in the `[Skill config]` block injected when this skill loads. In the
+> commands below `$HEALTH_DIR` = `health.health_dir`.
+> The `$VARS` above are shorthands for the keys, not environment variables — Hermes injects the
+> values into the message, so substitute the resolved path. Never hardcode one: a clone can
+> live anywhere, and `~/health` is only a default.
+
 ## When to Use
 
-- <USER> provides a Garmin "Export Your Data" account-export zip (2016-2021 era)
+- the user provides a Garmin "Export Your Data" account-export zip (2016-2021 era)
 - Rebuilding / re-importing the Garmin sqlite pipeline
 - Any cross-source analysis that needs both Garmin (2016-2021) and Samsung (2021-2027) data together
 - Extending a trend series (VO2max, RHR, workouts, sleep) back before the Galaxy Watch
@@ -31,11 +43,11 @@ Garmin "Export Your Data" zip → garmin-exports/garmin_connect_export.zip
   → queries.py  (cross-source: ATTACH $HERMES_HOME/data/health.db read-only; era|overlap|summary|vo2)
 ```
 
-- Parser paths: `<YOUR_HEALTH_DIR>/garmin-data/` (sibling of `samsung-data/`).
-- Zip: `<YOUR_HEALTH_DIR>/garmin-exports/garmin_connect_export.zip` (gitignored).
-- FIT cache: `<YOUR_HEALTH_DIR>/garmin-exports/fit-cache/` — extracted inner `UploadedFiles_*.zip` (~10.5k `.fit`); gitignored.
+- Parser paths: `health.health_dir/garmin-data/` (sibling of `samsung-data/`).
+- Zip: `health.health_dir/garmin-exports/garmin_connect_export.zip` (gitignored).
+- FIT cache: `health.health_dir/garmin-exports/fit-cache/` — extracted inner `UploadedFiles_*.zip` (~10.5k `.fit`); gitignored.
 - venv: `garmin-data/.venv` (`uv venv` + `uv pip install fitdecode`); gitignored. fitdecode 0.11.0 pinned.
-- Runbook (confidence tiers, gaps, unit correction, era facts): `<YOUR_HEALTH_DIR>/garmin-verified-data.md` — read before first advice.
+- Runbook (confidence tiers, gaps, unit correction, era facts): `health.health_dir/garmin-verified-data.md` — read before first advice.
 - Plan + research: `$HERMES_HOME/plans/2026-08-16-garmin-import.md`, `Knowledge/Research/Tech/garmin-data-import.md`.
 
 ## Rebuild procedure
@@ -58,7 +70,7 @@ Garmin "Export Your Data" zip → garmin-exports/garmin_connect_export.zip
 - **No REM, no continuous HR, no HRV, no SpO2, no stress series** in Garmin 2016-2021 export. **Device = Fenix 3 HR (owner-confirmed): NO REM is a hardware certainty** — this generation pre-dates Garmin's HR-based Advanced Sleep Monitoring and stages sleep from movement only; sleep deep/light are coarse classes, weaker than the Chinoy-2021-validated later Garmins. Those series stay Samsung-only.
 - `rhr_snapshot` (monitoring FITs) = 15,973 timestamped RHR readings — finer than daily_summary RHR.
 - **Sleep total rule**: `total_s := sleepTimeSeconds` when present, else `deep+light`. NEVER include `awake` in totals (garmin-grafana's `calculate_sleeping_seconds` omits REM and includes awake — verified bug, not ported).
-- **Sleep timestamp frame (RESOLVED 2026-08-16 evening, four mechanical anchors — was misread as local-display for one morning):** `sleepStart/EndTimestampGMT` are **TRUE UTC**. Anchors: overlap-week (Garmin 21:42 vs Samsung-native 22:18, both-UTC, 36 min apart), wake testimony, workout-gap (+1.48h median, n=228; negative under local), DST seasonal shift (+1.13h winter-vs-summer wake medians — 0h if local). Local = stored + 2h winter/+3h summer (Vilnius EET/EEST era). Full chain: `<YOUR_HEALTH_DIR>/garmin-verified-data.md` §tz + `<YOUR_HEALTH_DIR>/decade-sleep/tz_dst_discriminator.py`.
+- **Sleep timestamp frame (RESOLVED 2026-08-16 evening, four mechanical anchors — was misread as local-display for one morning):** `sleepStart/EndTimestampGMT` are **TRUE UTC**. Anchors: overlap-week (Garmin 21:42 vs Samsung-native 22:18, both-UTC, 36 min apart), wake testimony, workout-gap (+1.48h median, n=228; negative under local), DST seasonal shift (+1.13h winter-vs-summer wake medians — 0h if local). Local = stored + 2h winter/+3h summer (Vilnius EET/EEST era). Full chain: `health.health_dir/garmin-verified-data.md` §tz + `health.health_dir/decade-sleep/tz_dst_discriminator.py`.
 - Garmin `calendarDate` = wake-date anchor ≈ Samsung night-key (start − 18h → date). **Handoff-night note (corrected 2026-08-16):** the Samsung 2021-08-25 NK night is the SAME measurement as Garmin's 2021-08-26 row (imported via Samsung Health ← Garmin Connect; identical 184/217/8 min, identical window) — there was no two-device overlap at the handoff. Any cross-era join must exclude or de-duplicate that night.
 - `monitoring_hr_data` message = resting_heart_rate + current_day_resting_heart_rate snapshots (not continuous HR).
 
@@ -70,7 +82,7 @@ Garmin "Export Your Data" zip → garmin-exports/garmin_connect_export.zip
 - `fitdecode` lives only in `.venv` — run FIT legs with `.venv/bin/python`, not bare `python3`.
 - FIT pass is long (~2-4 min) and was once SIGTERM'd mid-run — the `fit_progress` checkpoint makes it resumable; don't be alarmed by a partial run, just re-run.
 - Health data stays out of git: `garmin-exports/` (incl. fit-cache) + `$HERMES_HOME/data/garmin.db` + `.venv` are all gitignored.
-- Garmin export layouts drift (classic `DI-CONNECT-FIT-EXPORTS` vs camelCase `DI_CONNECT`). Parser + runbook target the camelCase layout of this export; P0 inventory probe (`<YOUR_HEALTH_DIR>/garmin-data/garmin_inventory.py`) classifies any future zip before trusting paths.
+- Garmin export layouts drift (classic `DI-CONNECT-FIT-EXPORTS` vs camelCase `DI_CONNECT`). Parser + runbook target the camelCase layout of this export; P0 inventory probe (`health.health_dir/garmin-data/garmin_inventory.py`) classifies any future zip before trusting paths.
 
 ## Cross-source analysis (Samsung + Garmin)
 

@@ -25,7 +25,7 @@ Frame the user's request as a prompt. The act of writing the prompt forces you t
 The peer runs from `$HOME` and has file access to everything under it (including project repos like `~/highlander-longevity-coach`). To scope the peer to a specific repo, set `PEER_REVIEW_WORKDIR=/path/to/repo` before calling the script. Reference files by absolute path when helpful.
 
 ```bash
-$HERMES_HOME/skills/peer-review/scripts/peer-review.sh "<YOUR_PROMPT>"
+${HERMES_SKILL_DIR}/scripts/peer-review.sh "your prompt here"
 ```
 
 Use the **terminal** tool to run the script. Set a **5-minute timeout** (300 seconds).
@@ -114,7 +114,7 @@ When updating, installing, or debugging any CLI in the fallback chain (command-c
 sudo mv /usr/local/bin/command-code /tmp/cc.bak
 sudo mv ~/.local/bin/agy /tmp/agy.bak
 export PATH="$HOME/.mimocode/bin:$PATH"   # if mimo (only on ~/.bashrc PATH)
-timeout 60 $HERMES_HOME/skills/peer-review/scripts/peer-review.sh "Reply with exactly: TIER_OK"
+timeout 60 ${HERMES_SKILL_DIR}/scripts/peer-review.sh "Reply with exactly: TIER_OK"
 sudo mv /tmp/cc.bak /usr/local/bin/command-code
 sudo mv /tmp/agy.bak ~/.local/bin/agy
 ```
@@ -140,7 +140,7 @@ Specific triggers:
 - Before committing to a technology or architecture choice
 - When reviewing skill or process changes
 - **Before building or porting skills** — peer-review each candidate skill separately before doing the work.
-- **Before implementing architecture-level changes (multi-profile isolation, skills derivation, data restructure)** — produce a `Knowledge/Plans/<topic>-research.md` document FIRST (design-first discipline, validated 2026-09-10 session). The multi-profile session did NOT build; it produced `<YOUR_DESIGN_DOC>.md` with 3 parallel peer-reviews (R1 manifest audit, R2 HEALTH restructure, R4 divergence tracking) before any file was moved. Only after synthesis did real gaps surface: missing reconciliation mechanism (R4), premature restructure sequence (R2), contradiction between self-encapsulation and divergence tracking (R4). A design doc with peer-reviewed synthesis is the gate — build nothing until that synthesis exists and is verified against deliverable files.
+- **Before implementing architecture-level changes (multi-profile isolation, skills derivation, data restructure)** — produce a `Knowledge/Plans/<topic>-research.md` document FIRST (design-first discipline, validated 2026-09-10 session). The multi-profile session did NOT build; it produced a design document with 3 parallel peer-reviews (R1 manifest audit, R2 HEALTH restructure, R4 divergence tracking) before any file was moved. Only after synthesis did real gaps surface: missing reconciliation mechanism (R4), premature restructure sequence (R2), contradiction between self-encapsulation and divergence tracking (R4). A design doc with peer-reviewed synthesis is the gate — build nothing until that synthesis exists and is verified against deliverable files.
 - **For complex plans (architecture, multi-skill design, system design)** — run peer-review AND grill in parallel. They catch different things: peer-review catches architecture/UX issues, grill catches value/ROI issues. **Reflect on each separately before revising.** When both identify the same problem from different angles, it's real. When they diverge, the disagreement itself reveals a blind spot. This composition pattern was validated across multiple design iterations in a single session and consistently produced sharper thinking than either alone.
 - **After building or porting skills** — peer-review each delivered skill separately. The "before" pass catches design issues; the "after" pass catches implementation bugs (broken scripts, contradictions, missing steps). This session: the "after" pass caught a broken adversary script (5 bugs), over-stuffed skill description, and methodology stitched into a tool reference. Every reviewed skill needed iteration. The double-pass pattern (review before + review after) has a 100% hit rate across 4 skills tested.
 

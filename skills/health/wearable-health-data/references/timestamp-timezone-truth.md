@@ -1,7 +1,7 @@
 # Samsung Health CSV Timestamp Timezone — TRUE UTC (epoch-proven)
 
 **Verdict (2026-08-16, epoch-anchored, resolved via subagent deep-dive in
-`<YOUR_HEALTH_DIR>/`):** every Samsung Health 2026-format raw CSV
+`health.health_dir/`):** every Samsung Health 2026-format raw CSV
 `start_time` / `end_time` string is a **TRUE UTC naive** — NOT local. This applies
 uniformly to exercise, heart_rate, sleep session, sleep stage, sleep_data, and
 hr_threshold alike. The `time_offset` column ('UTC+0300') records the LOCAL offset.
@@ -49,7 +49,7 @@ disjoint from the user's stated wake + morning-workout testimony.
 Samsung's detector. Its `'2021-08-25 23:28'` string is **local-display** (= Garmin's
 local display), which is why it matches the Garmin row to-the-minute. Keep it excluded
 from Samsung-native sleep stats (Garmin-side data in a Samsung wrapper), as
-`<YOUR_HEALTH_DIR>/garmin-verified-data.md` already instructs. This is why an earlier
+`health.health_dir/garmin-verified-data.md` already instructs. This is why an earlier
 "sleep differs from exercise" hypothesis looked plausible — it was reading this one
 importer-written row.
 

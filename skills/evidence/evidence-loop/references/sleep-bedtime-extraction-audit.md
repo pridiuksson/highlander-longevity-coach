@@ -1,6 +1,6 @@
 # Worked case: auditing sleep-extraction bedtime math + medians (2026-08-16)
 
-Repo `highlander-longevity-coach`, `<YOUR_HEALTH_DIR>/`. Ten-year sleep "pattern" extraction: `sleep_extract.py`
+Repo `highlander-longevity-coach`, `health.health_dir/`. Ten-year sleep "pattern" extraction: `sleep_extract.py`
 + `fix_p3.py` (Samsung stage-minutes recompute) feed `sleep_patterns.json`. This audit
 checked **calculation correctness only** (chart out of scope), read-only against:
 `$HERMES_HOME/data/garmin.db` (sleep_night, mode=ro) and `$HERMES_HOME/data/health.db` (sleep_session, sleep_stage).
@@ -37,7 +37,7 @@ dragging that month's bed median 388 → **438** (+50 min). Garmin-era yearly be
 
 ## Framing caveat (not a defect)
 Samsung data begins **2021-08**, so "year 2021" stats are Aug–Dec 2021 only — the
-23:<value>→<value>:16 trend compares a partial year vs full years. Quote with the caveat.
+bedtime trend compares a partial year vs full years. Quote with the caveat.
 
 ## Probe pitfalls self-caught this session (see SKILL.md section)
 - `min(bed(fragment))` vs `bm_nk(min(m))` — wrap must be applied per-fragment then min'd;

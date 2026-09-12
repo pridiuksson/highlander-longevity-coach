@@ -1,6 +1,6 @@
 # Samsung Health 2026 Export Format — Parsing Reference
 
-Condensed from the verified pipeline built 2026-08-15 (`<YOUR_HEALTH_DIR>/samsung-data/`, adversarially audited — probes in `audit-2026-08-15/`). This is the "how the data actually looks" file; the SKILL.md carries the procedure.
+Condensed from the verified pipeline built 2026-08-15 (`health.health_dir/samsung-data/`, adversarially audited — probes in `audit-2026-08-15/`). This is the "how the data actually looks" file; the SKILL.md carries the procedure.
 
 ## Zip layout
 
@@ -41,7 +41,7 @@ CSV shape (all files): row0 = `com.samsung.health.<type>,7000107,<ver>` format h
 - **sleep** (2,110 rows): one row per session FRAGMENT (watch + phone each write). sleep_combined (234 rows) = night-level scores + explicit per-stage totals (total_rem_duration, total_light_duration, sleep_duration — MINUTES). Use combined as ground truth for validation, sessions for spans.
 - **sleep_stage** (92k): codes 40001=awake 40002=light 40003=DEEP 40004=REM — VALIDATED by correlation vs combined explicit totals (71 nights: light r=+.90, REM r=+0.99) AND independently by population-norm analysis (auditor). Beware: shares alone (9/55/13/23%) are plausible under the WRONG mapping too.
 - **exercise** (7,679): per-session metrics incl mean/max/min HR, vo2_max (runs only, 101 rows), calorie, distance, cadence. title column is EMPTY; type codes from workout_list blob, identity TESTIMONY-CORRELATED 2026-08-15 (1001 auto-walk, 1002 run, 11007 cycling-if-distance / e-bike-commute-if-no-distance-Stockholm, 15002 gym strength, 9002 hot Bikram yoga, 0 = uncatalogued (EXCLUDE from type analyses, n=56). Full map + evidence: SKILL.md.
-- **exercise.hr_zone / max_heart_rate**: at/ant/max_hr per date — Samsung revises continuously (DB-verified full ladder: AT <value>→<value>, AnT <value>→<value>, max <value>→<value>, 2024-03→2026-06); the 2025-12-24 revision was a routine ~monthly ratchet step (Sep-Dec 2025: <value>→<value>→<value>→<value>; Dec 24 overdue at 53d), not a one-time event. Never assume fixed zones; read per-date.
+- **exercise.hr_zone / max_heart_rate**: at/ant/max_hr per date — Samsung revises continuously (DB-verified full ladder: AT, AnT and max each stepped in sequence, 2024-03→2026-06); the 2025-12-24 revision was a routine ~monthly ratchet step (Sep-Dec 2025: ratcheted ~monthly; Dec 24 overdue at 53d), not a one-time event. Never assume fixed zones; read per-date.
 - **sleep_stage / sleep / sleep_combined carry per-row `create_sh_ver` + `pkg_name` columns** (Samsung Health app-version stamps, DROPPED by our sqlite parser as of 2026-08-15): first-record date per version = install proxy; 29 dated transitions 2021-2026 (e.g. 63051050=6.30.5.105 first seen 2025-09-25). Use for software-vs-physiology arbitration; TODO: capture in parser (parked follow-up, run-005 Addendum 3).
 - **hrv**: hourly windows, values in binning JSONs `[{"start_time": <ms>, "sdnn": x, "rmssd": y}, ...]` — resolve JSON path by BASENAME against a set of all zip entries (never path-join; subdirs vary). Watch 7 records continuously (day+night).
 - **weight**: full BIA body composition (weight, body_fat_mass, skeletal_muscle_mass, muscle_mass, fat_free_mass, bmr). Reproduces known profile values (<YOUR_WEIGHT_KG> / <YOUR_SKELETAL_MUSCLE_KG> skeletal) — the strongest parse validation available.

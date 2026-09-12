@@ -10,7 +10,7 @@ Empirical findings from debugging the peer-review fallback chain (2026-06-13; up
 
 command-code restricts file access to its current working directory. There is no `--cwd` or `--workspace` flag. The `--add-dir <dir>` flag *extends* access beyond cwd but does not replace it. This means:
 
-- If the script `cd`s to `$HERMES_HOME/`, the peer literally cannot read `$HOME/highlander-longevity-coach/` or any project files outside that tree.
+- If the script `cd`s to `$HERMES_HOME/`, the peer literally cannot read a project directory outside that tree (e.g. your checkout of this repo).
 - This was the root cause of the original peer-review bug: the old script did `cd "$SCRIPT_DIR/../../.."` which resolved to `$HERMES_HOME/` on Hermes (the path math was designed for a Claude Code project layout).
 - **Fix:** `cd "$HOME"` by default, overridable via `PEER_REVIEW_WORKDIR`.
 

@@ -7,10 +7,30 @@ license: MIT
 platforms: [linux]
 metadata:
   hermes:
+    config:
+      - key: health.health_dir
+        description: "Root of your health data: device exports, SQLite DB, verified-data docs"
+        default: "~/health"
+        prompt: "Root of your health data: device exports, SQLite DB, verified-data docs"
+      - key: health.baseline_doc
+        description: "Your baseline document — the single source of truth for every measured value"
+        default: "~/health/baseline.md"
+        prompt: "Your baseline document — the single source of truth for every measured value"
+      - key: health.db
+        description: "SQLite database holding the imported, normalized device data"
+        default: "${HERMES_HOME}/data/health.db"
+        prompt: "SQLite database holding the imported, normalized device data"
     tags: [health, quantified-self, samsung-health, wearables, data-ingestion]
 ---
 
 # Wearable Health Data Ingestion
+
+> **Config.** This skill reads its paths from `config.yaml`; the resolved values
+> arrive in the `[Skill config]` block injected when this skill loads. In the
+> commands below `$HEALTH_DIR` = `health.health_dir`, `$BASELINE_DOC` = `health.baseline_doc`, `$HEALTH_DB` = `health.db`.
+> The `$VARS` above are shorthands for the keys, not environment variables — Hermes injects the
+> values into the message, so substitute the resolved path. Never hardcode one: a clone can
+> live anywhere, and `~/health` is only a default.
 
 Importing training/wellness data (HR, HRV, sleep, exercise, VO2max, steps) from
 consumer wearables into storage on the Hermes Linux server (headless, no Android).
@@ -138,7 +158,7 @@ device-side software changes:
    Limit: data only as fresh as the user's manual export; the ONLY source for HRV,
    1 Hz sidecars, skeletal muscle mass.
 2. **Health Connect bridges — best for freshness; LIVE in this pipeline (2026-08-30).**
-   Continuous sync via an Android phone in the loop. <USER>'s leg: PULL-mode (user launches
+   Continuous sync via an Android phone in the loop. the user's leg: PULL-mode (user launches
    the app's local HTTP server whenever; agent pulls over Tailscale) — user chose pull
    over push ("you'd have much better control"). Read `references/hc-webhook-pull-leg.md`.
    Working pattern worth copying: a stdlib receiver service with two-layer dedupe
@@ -157,7 +177,7 @@ device-side software changes:
 
 - Obtained in-app: Settings → Download personal data (arrives as ZIP).
 - **VERIFIED 2026-08-15 against a real 280MB export** (full parsing reference incl. column maps, unit traps, binning-JSON layouts, dual-timezone handling: `samsung-health-import` skill → `references/2026-format-parsing.md`). Headlines: files are `com.samsung.health.<type>.<one-export-timestamp>.csv` (NOT monthly splits); every CSV has TWO header rows (row0 format header, row1 column names, data from row2); column names may be bare or `com.samsung.health.<type>.`-prefixed within the SAME file; `exercise.duration` is MILLISECONDS; HR bins are HOURLY; HRV values live in sidecar binning JSONs under `jsons/`.
-- **The davidmosiah MCP server (the landscape pick) does NOT fully parse the 2026 format** — 0 workouts, 0 sleep, 217/50614 HR rows indexed. A local stdlib parser fills the gap (`<YOUR_HEALTH_DIR>/samsung-data/`); treat the MCP as inventory probe, sqlite as analysis source.
+- **The davidmosiah MCP server (the landscape pick) does NOT fully parse the 2026 format** — 0 workouts, 0 sleep, 217/50614 HR rows indexed. A local stdlib parser fills the gap (`health.health_dir/samsung-data/`); treat the MCP as inventory probe, sqlite as analysis source.
 - **Format drift**: newer exports add `exercise.extension`, `exercise.route`, `exercise.weather` sidecar files and changed daily-calorie date formats. Parsers last touched before ~2024 may silently miss data — prefer parsers updated within a year, and verify against the newest export before trusting completeness.
 
 ## Verified tool landscape (checked 2026-08-15)
@@ -181,7 +201,7 @@ Headlines:
   confirmed in payload 2026-08-30**, the earlier "no VO2max" note was wrong) or
   **owen282000/life-dashboard-companion-app** (36★, MIT, 25 data types + HMAC signing);
   server receiver **wysie/health-connect-webhook-receiver** (stdlib Python → SQLite).
-  **THIS LEG IS LIVE for <USER>** (2026-08-30, pull-mode over Tailscale; verified stage/
+  **THIS LEG IS LIVE for the user** (2026-08-30, pull-mode over Tailscale; verified stage/
   exercise-code semantics, dedupe behavior, coverage gaps): read
   `references/hc-webhook-pull-leg.md` FIRST before any work on it.
 
@@ -214,10 +234,11 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   SAME session. Precedent (2026-08-16): the Samsung parser's tz inversion was found,
   fixed, and rebuilt in the evening — and `samsung-health-import/SKILL.md` + its
   parsing reference still taught the inverted conversion (`UTC = local − offset`)
-  hours later, caught only by an explicit end-of-session sweep. Skills here are
-  symlinks into `~/highlander-longevity-coach/Skills/` — edit there, commit via the normal PR flow.
+  hours later, caught only by an explicit end-of-session sweep. Keep the installed copy and this
+  repo in sync deliberately — symlinks are NOT a versioning mechanism here (a symlink carries no
+  recorded revision, so drift is undetectable); re-copy and record the commit instead.
 - **Timestamp timezone: ALL Samsung Health 2026-format CSV strings are TRUE UTC (epoch-proven 2026-08-16).** `start_time`/`end_time` in exercise, heart_rate, sleep session, sleep stage, sleep_data, and hr_threshold are UTC naives; `time_offset` ('UTC+0300') is the LOCAL offset. Correct conversion is `utc = string as-is`, `local = string + offset`. The parser's `to_utc()` helper assumes naive-LOCAL and SUBTRACTS offset, so it STORES the UTC value as-if-local and writes `start_utc` = UTC−offset (double-subtracted) — both columns wrong for every family. **Epoch arbiter that settled it:** sidecar jsons under `jsons/com.samsung.health.<type>/<hex>/<uuid>.{liv,binning_data,sleep_status}.json` carry absolute ms epochs — verified for ALL families (exercise `.liv` 1744865076251→04:44:36 UTC == CSV `'2025-04-17 04:44:36'`; heart_rate binning json first/last bin UTC == CSV start/end string; sleep_data `sleep_status` json epoch 1631057760000 == sleep session CSV `'2021-09-07 23:36:00'` and the sleep_stage rows span exactly the session's UTC bounds). **No family uses a different/local convention.** Prior note that "sleep appears local" was retracted — the Garmin-handoff night (healthsync app, pkg `nl.appyhapps.healthsync`, offset +0200) is the ONLY exception because it was IMPORTED from Garmin (local-display) rather than recorded by Samsung's detector; keep it excluded from native sleeps. Full proof + per-family fix + repair note: `references/timestamp-timezone-truth.md`. Correct repair: `fix_utc = current_ts_local`, `fix_local = current_ts_local + offset`. **FIX LANDED 2026-08-16 evening: parser rebuilt (`to_utc` = raw as-is; new `to_local` = raw + offset), all gates re-pass, $HERMES_HOME/data/health.db md5 638da6ad.** Scope correction 2026-08-29: that fix covered ONLY `parse_samsung_export.py` — `parse_samsung_extras.py` still carried the inverted `to_utc` and was missed by the 08-16 sweep; discovered via a DB-vs-raw min-timestamp check (body_composition ts_utc 04:38 vs raw CSV 07:38 = −3h), fixed + full rebuild same day (md5 5ffe93cc). Pre-2026-08-29 analyses touching extras tables (hrv_window, body_composition, stress, spo2) by ts_utc may need re-checking; hrv_sample epoch path was always correct. Lesson: "fix landed" claims must enumerate EVERY affected artifact, and sweeps verify per-artifact (e.g. DB min-timestamp vs raw CSV), not by trusting prior fix prose. Extras X1 gates are now self-consistent (DB counts == ingested counts; no frozen export-size numbers) and both parsers resolve CSV filenames dynamically (`resolve()`, fails loud) — export filenames carry a per-export 14-digit timestamp, never hardcode it.**
-- **Garmin sleep frame: ALSO TRUE UTC (resolved 2026-08-16 evening, peer-reviewed + DST-anchor fourth line).** `sleepStart/EndTimestampGMT` meant what it said. Four independent mechanical anchors, worked protocol incl. the DST seasonal-median test and the import-copy circularity trap: `references/timestamp-frame-discrimination.md` (owned by this skill). Discriminator = the overlap week: night 2021-08-<value>→<value> Garmin 21:42 vs Samsung-native 22:18 both-as-UTC = 36 min apart (two algorithms, one sleeper); the intermediate "local-display" reading was CIRCULAR — it anchored Samsung-as-local to prove Garmin-as-local on the very morning the Samsung parser inversion was found, and its "interleaving proof" was a date-pairing join bug. **Frame-discrimination rule (the day's core lesson): settle timestamp conventions ONLY with mechanical anchors — epoch millis in sidecars, same-night multi-device overlap, user testimony on known wake times, downstream-impossibility tests (e.g. negative sleep→workout gaps under a hypothesis), or DST seasonal-shift medians in DST regions (winter-vs-summer string medians shift ~1h iff strings are UTC; measured +1.13h here) — never with another column whose own convention is unproven, never from field-name semantics, and never from a verbatim import-copy (a minute-identical row in a UTC column proves the IMPORTER assumed UTC, not that the source emitted it — flagged circular by peer review 2026-08-16 evening).** When a published number has already flipped twice, don't flip a third time without a NEW mechanical anchor: freeze the artifact, name the missing discriminator, resolve it (peer-review loop: hand the peer primary data + inference chain, demand it name the weakest anchor, execute its demanded mitigation, publish the negatives — e.g. RHR-in-window containment was weak at 13.2% vs 10.0% and is recorded as non-decisive). Consequence: decade bedtimes Garmin 00:<value>→<value>:47 (later, Vilnius era) → Samsung **02:<value>→<value>:10** (earlier; REV B 2026-08-30 via `health_time.py` — the earlier 01:<value>→<value>:07 reading was biased ~2.5h early by fragment starts on 223 nights; the drift conclusion SURVIVES, slightly stronger); handoff-week cross-device agreement 18 min validates the join.
+- **Garmin sleep frame: ALSO TRUE UTC (resolved 2026-08-16 evening, peer-reviewed + DST-anchor fourth line).** `sleepStart/EndTimestampGMT` meant what it said. Four independent mechanical anchors, worked protocol incl. the DST seasonal-median test and the import-copy circularity trap: `references/timestamp-frame-discrimination.md` (owned by this skill). Discriminator = the overlap week: Garmin 21:42 vs Samsung-native 22:18 both-as-UTC = 36 min apart (two algorithms, one sleeper); the intermediate "local-display" reading was CIRCULAR — it anchored Samsung-as-local to prove Garmin-as-local on the very morning the Samsung parser inversion was found, and its "interleaving proof" was a date-pairing join bug. **Frame-discrimination rule (the day's core lesson): settle timestamp conventions ONLY with mechanical anchors — epoch millis in sidecars, same-night multi-device overlap, user testimony on known wake times, downstream-impossibility tests (e.g. negative sleep→workout gaps under a hypothesis), or DST seasonal-shift medians in DST regions (winter-vs-summer string medians shift ~1h iff strings are UTC; measured +1.13h here) — never with another column whose own convention is unproven, never from field-name semantics, and never from a verbatim import-copy (a minute-identical row in a UTC column proves the IMPORTER assumed UTC, not that the source emitted it — flagged circular by peer review 2026-08-16 evening).** When a published number has already flipped twice, don't flip a third time without a NEW mechanical anchor: freeze the artifact, name the missing discriminator, resolve it (peer-review loop: hand the peer primary data + inference chain, demand it name the weakest anchor, execute its demanded mitigation, publish the negatives — e.g. RHR-in-window containment was weak at 13.2% vs 10.0% and is recorded as non-decisive). Consequence: decade bedtimes drifted later in the Garmin/Vilnius era, then back earlier in the Samsung era (REV B 2026-08-30 via `health_time.py` — the earlier reading was biased ~2.5h early by fragment starts on 223 nights; the drift conclusion SURVIVES, slightly stronger); handoff-week cross-device agreement 18 min validates the join.
 - **A date-paired "interleaving" show-probe can silently pair the WRONG nights** (2026-08-16): matching sleep fragments to exercise sessions by *start* date (instead of the night the exercise belongs to) fabricated a "workout 30 min before sleep end" that never existed. When proving two series interleave, match on the *night-key* (start−18h → date) of the non-sleep series, not its raw calendar date.
 - **GarminDB does NOT parse the account-export zip** (GPL-2.0, login/USB import
   only — verified by grep, zero DI_CONNECT refs). For offline Garmin export:
@@ -309,17 +330,17 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   latency read used this to exclude fragmentation in the Aug-2026 deep collapse).
   Memory of a schema is not the schema — `PRAGMA table_info()` first.
 - **Canonical time tooling or nothing (2026-08-30, third timing incident).** All
-  time-of-day statistics MUST route through `<YOUR_HEALTH_DIR>/health_time.py` (zoneinfo
+  time-of-day statistics MUST route through `health.health_dir/health_time.py` (zoneinfo
   lived clock Vilnius→Stockholm @2025-09-08, exact DST, circular 18:00-anchored
   medians, longest-≥3h-session bedtime, `median_clock()`; regression-tested in
-  `<YOUR_HEALTH_DIR>/test_health_time.py` — 22/22, one test class per real incident). Three
+  `health.health_dir/test_health_time.py` — 22/22, one test class per real incident). Three
   fabricated claims in one month came from ad-hoc probe code: BC "afternoon"
   (utc-as-local), Bikram hours (utc-as-local), and a fake "4-month bedtime
   advance" (naive clock-string median + sub-3h fragments — a midnight-straddling
   week errs 90 min on realistic data; see test T2). Naive `statistics.median` on
   clock strings is BANNED; `min(session starts)` as bedtime is BANNED (evening
   fragments poisoned 223 nights ~2.5h early in the decade pipeline — REV A's
-  Samsung 01:<value>→<value>:07 became 02:<value>→<value>:10 under the module; trend survived,
+  Samsung bedtimes shifted ~1 h later under the module; trend survived,
   slightly stronger). New time-series code without a regression test is how the
   next incident gets born.
 - **Sub-3h sleep sessions are fragments, NOT naps (2026-08-30, user testimony:

@@ -141,7 +141,8 @@ runs before pushing.
 
 Everything committed is treated as public, because the intent is to publish and history is forever.
 Never commit personal health data — not in a skill body, a fixture, a commit message, or a branch
-name. Keep placeholders (`<USER>`, `<YOUR_WEIGHT_KG>`, `<YOUR_HEALTH_DIR>`) and drop the values. The
+name. Keep the *shape* of an example and drop the values, using the token vocabulary in
+`CONTRIBUTING.md`. The
 gates enforce the mechanical part; the judgement is yours.
 
 ## Cross-thread isolation

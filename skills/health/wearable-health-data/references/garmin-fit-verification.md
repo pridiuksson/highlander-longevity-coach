@@ -4,7 +4,7 @@ Read-only, independent re-derivation of the FIT parser's ground-truth claims fro
 `$HERMES_HOME/data/garmin.db` (does NOT depend on re-running parse_garmin_fit.py).
 Reproducible numbers for future checks / sanity gates.
 
-Scope: `<YOUR_HEALTH_DIR>/garmin-data/parse_garmin_fit.py` + the
+Scope: `health.health_dir/garmin-data/parse_garmin_fit.py` + the
 `fit_session` / `rhr_snapshot` / `fit_progress` tables it produces.
 
 ## Workout ↔ FIT session join
@@ -19,7 +19,7 @@ Time-only join `ABS((julianday(f.start_utc) - julianday(w.start_utc))*86400.0) <
   not merely "within ±300s". The tolerance window is a red herring: start_utc
   equality is the real arbiter.
 - distinct start_utc on each side = 1263 (no degenerate duplicate-timestamp join).
-- smallest gap between distinct fit_session starts = **516s** (2016-09-11 11:57:<value>→<value>:05:51) — larger than the ±300s window, so interval-workout collisions are
+- smallest gap between distinct fit_session starts = **516s** (2016-09-11) — larger than the ±300s window, so interval-workout collisions are
   impossible even if timestamps were merely near rather than exact.
 - Reverse idempotency check: `DISTINCT fit_file` in fit_session = 1263 (one
   session row per file).

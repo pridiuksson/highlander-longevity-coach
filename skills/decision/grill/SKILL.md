@@ -107,7 +107,7 @@ State the simplest alternative for each idea. Rate the cost of undoing each
 recommendation (LOW/MEDIUM/HIGH). Be specific — cite file paths, line numbers,
 and concrete risks."
 
-RESULT=$($HERMES_HOME/skills/software-development/grill/scripts/grill-adversary.sh "$ADVERSARY_PROMPT")
+RESULT=$(${HERMES_SKILL_DIR}/scripts/grill-adversary.sh "$ADVERSARY_PROMPT")
 ```
 
 If the script returns "NO_CLI_FOUND" (exit 3), fall back to delegate_task with

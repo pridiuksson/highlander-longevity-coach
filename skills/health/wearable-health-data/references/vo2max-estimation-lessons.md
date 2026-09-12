@@ -3,15 +3,15 @@
 Context: anchored estimate 48.9 [42.5–55.2] @ HRmax prior N(205.5, 2.5) from 112
 steady-state 1 Hz segments / 79 runs, ACSM demand + individual HR→VO2 line
 (fitted: VO2 = 26.18 + 0.1108·HR), cluster bootstrap over runs, ±5% economy term.
-Full memo with citations: `<YOUR_HEALTH_DIR>/samsung-data/VO2MAX_MEMO.md`;
+Full memo with citations: `health.health_dir/samsung-data/VO2MAX_MEMO.md`;
 runbook finding 10. These are the transferable method lessons, not the number.
 
 ## 1. Sensitivity-analyze a contested anchor BEFORE debating it
 
 When a prior (HRmax 205±2.5) is questioned ("is it really 205, or declining to
 198?"), compute d(estimate)/d(prior) first. Here the estimate IS the fitted line
-evaluated at HRmax, so sensitivity is linear and tiny: <value>→<value> moves the estimate
-only −0.8 (<value>→<value>); ±<YOUR_RESTING_HR_BPM> = ±0.55; prior sd 2.5 = ±0.28. The whole
+evaluated at HRmax, so sensitivity is linear and tiny: shifting HRmax across the contested range moves the estimate
+only −0.8; ±<YOUR_RESTING_HR_BPM> = ±0.55; prior sd 2.5 = ±0.28. The whole
 "HRmax completeness" debate was empirically inert — CI width is dominated by
 slope (r=0.31; +38% slope → +2.1) and economy bounds (→ +8.1). Kill weak
 controversies with arithmetic before spending subagents on them.
@@ -42,7 +42,7 @@ Tanaka age-predicted HRmax (179.3 at age 41) is off by <YOUR_RESTING_HR_BPM> aga
 sidecar-verified maximal plateaus (195–205, each cross-checked summary ≡ 1 Hz
 sidecar). Population formulas are priors of last resort for an instrumented
 subject — the individual's own measured ceiling outranks any age equation.
-Related: the WATCH's own internal HRmax ladder (<value>→<value> revisions) was the root
+Related: the WATCH's own internal HRmax ladder (repeated revisions) was the root
 of the quarantined VO2max slide — device re-anchoring artifacts, not
 physiology (runbook finding 2).
 

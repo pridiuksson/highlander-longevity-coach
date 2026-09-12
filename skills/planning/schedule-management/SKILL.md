@@ -1,10 +1,10 @@
 ---
 name: schedule-management
 license: MIT
-description: "Parse schedule input (CSV, XLS, paste, photo, Doc link), sync to Google Calendar with conflict detection, and learn <USER>'s patterns over time. Self-evolving v1."
+description: "Parse schedule input (CSV, XLS, paste, photo, Doc link), sync to Google Calendar with conflict detection, and learn the user's patterns over time. Self-evolving v1."
 category: productivity
 version: 0.1.0
-author: <USER>'s Hermes profile
+author: the user's Hermes profile
 metadata:
   hermes:
     tags: [calendar, scheduling, google-workspace, self-evolving, telegram]
@@ -13,7 +13,7 @@ metadata:
 
 # Schedule Management (v1 — Self-Evolving)
 
-<USER> sends schedule data through Telegram in whatever form is easiest
+the user sends schedule data through Telegram in whatever form is easiest
 at the moment — a CSV export, an Excel file, a pasted block of text, a
 photo of a printed schedule, or a Google Docs link. This skill turns that
 input into Google Calendar events, flags conflicts, reports what changed
@@ -27,16 +27,16 @@ in one line, and asks for feedback so it gets smarter each time.
 ## Dependencies
 
 - **google-workspace** skill — provides `calendar list`, `create`, `update`,
-  `delete`, `freebusy`, and `quickadd`. Set the shorthand before use:
-  ```bash
-  GAPI="python ${HERMES_HOME:-$HOME$HERMES_HOME}/skills/productivity/google-workspace/scripts/google_api.py"
-  ```
-- **mem0** — for storing and recalling learned patterns ("<USER>'s CSV uses
+  `delete`, `freebusy`, and `quickadd`. Its CLI is `google_api.py`, inside *that*
+  skill's own `scripts` directory: load `google-workspace`, take the directory from
+  its `[Skill directory]` block, and use it for the shorthand. Do not assume these
+  two skills share a parent — the reader chooses the layout.
+- **mem0** — for storing and recalling learned patterns ("the user's CSV uses
   columns Date/Time/Studio/Group", "Studio A means the main hall").
 
 ## Trigger
 
-Activate this skill when <USER> sends any schedule-related content:
+Activate this skill when the user sends any schedule-related content:
 
 - A **file** attached: `.csv`, `.xlsx`, `.xls`, `.numbers`, `.pdf`, or an
   image of a schedule/roster.
@@ -51,7 +51,7 @@ silently.
 
 ## Workflow
 
-Follow these steps in order. Stop and ask <USER> whenever a step hits a
+Follow these steps in order. Stop and ask the user whenever a step hits a
 genuine fork (see **Conflict Resolution**).
 
 ### 1. Parse input → normalize to events
@@ -79,16 +79,16 @@ Normalize every entry into a consistent event shape:
 ```
 
 **When you don't know the year**, default to the nearest upcoming date.
-**When you don't know the timezone**, check mem0 for "<USER>'s timezone";
+**When you don't know the timezone**, check mem0 for "the user's timezone";
 if absent, ask once and store it.
 
 ### 2. Confirm the parse (feedback loop — lightweight)
 
-Show <USER> a compact preview, e.g.:
+Show the user a compact preview, e.g.:
 
 > Parsed 6 events from your CSV. First: **Tue Jun 24, 2–4pm @ Studio A — Group 1**. Last: **Sun Jun 29, 6–8pm @ Studio B — Group 3**. Want me to sync all 6 to Google Calendar?
 
-If the count or first/last looks wrong, <USER> will correct you. **Learn
+If the count or first/last looks wrong, the user will correct you. **Learn
 from every correction** (see Self-Evolution). If it looks right, proceed.
 
 ### 3. Check for conflicts (freebusy)
@@ -115,7 +115,7 @@ For each event, decide create vs. update:
 - **Create** new: `$GAPI calendar create --summary "..." --start ... --end ... --location "..."`.
 - **Update** existing (same time + summary, content differs):
   `$GAPI calendar update EVENT_ID --location "..."`.
-- **Quick-add** for a single natural-language item <USER> types:
+- **Quick-add** for a single natural-language item the user types:
   `$GAPI calendar quickadd "Studio A rehearsal Tuesday 2-4pm"`.
 
 Batch quietly — do not narrate each event individually unless asked.
@@ -133,7 +133,7 @@ Then expand only the items that need attention.
 
 Apply these rules in order:
 
-1. **Time changes — latest timestamp wins.** If <USER>'s new schedule moves
+1. **Time changes — latest timestamp wins.** If the user's new schedule moves
    an event's time and the old slot is now free, update the time without
    asking. This reflects the most recent source of truth.
 2. **Content changes (location, activity, group) — always ask.** If the time
@@ -153,12 +153,12 @@ short reflection and store what you learned.
 
 Use mem0 to persist anything reusable. Examples:
 
-- `"<USER>'s schedule CSV columns: Date, Start, End, Studio, Group"` — so
+- `"the user's schedule CSV columns: Date, Start, End, Studio, Group"` — so
   next time you parse a CSV you apply this mapping without re-inferring.
-- `"<USER>'s timezone is America/Los_Angeles"` — asked once, reused forever.
+- `"the user's timezone is America/Los_Angeles"` — asked once, reused forever.
 - `"Studio A = main hall; Studio B = second floor"` — location aliases.
 - `"Rehearsals are 2 hours; if only a start is given, assume 2h duration."`
-- `"<USER>'s schedule week runs Monday–Sunday."`
+- `"the user's schedule week runs Monday–Sunday."`
 
 Only store something when it is **demonstrably reusable** — a one-off detail
 isn't worth saving. Tag memories with `category: schedule-pattern` so they're
@@ -168,7 +168,7 @@ easy to find.
 
 When you notice the skill itself could be improved (a repeated manual step, a
 parse rule that keeps failing, a missing abbreviation), **propose a concrete
-edit** to <USER> and ask for approval before applying it. For example:
+edit** to the user and ask for approval before applying it. For example:
 
 > I've had to ask which column is the studio three times now. Want me to add a
 > note to this skill so I assume column 4 (Studio) by default for your CSV
@@ -182,11 +182,11 @@ always show the proposed change and get a yes.
 
 After parsing (step 2) and after syncing (step 5), briefly confirm:
 
-- **Did I get the parse right?** If <USER> corrects a row, re-parse, apply
-  the fix, and store the general lesson ("<USER>'s AM/PM is often swapped
+- **Did I get the parse right?** If the user corrects a row, re-parse, apply
+  the fix, and store the general lesson ("the user's AM/PM is often swapped
   in column 3 — sanity-check against context").
-- **Did I handle conflicts the way you wanted?** If <USER> overrides your
-  resolution, note their preference ("<USER> wants content conflicts
+- **Did I handle conflicts the way you wanted?** If the user overrides your
+  resolution, note their preference ("the user wants content conflicts
   resolved by keeping the newest sheet, not asking").
 
 Treat corrections as the highest-value training signal. Phrase the next
@@ -201,7 +201,7 @@ confirmation in light of what you just learned.
 3. **Never overwrite an existing event silently** — content conflicts always
    get a question.
 4. **Store reusable patterns, not one-offs** — keep mem0 clean and high-signal.
-5. **Propose, don't impose** — skill edits require <USER>'s approval.
+5. **Propose, don't impose** — skill edits require the user's approval.
 
 ## Changelog
 
@@ -220,7 +220,7 @@ time. Each is an explicit extension point for a future version.
   every week (e.g. always swapping column order, always adding 2h to a bare
   start time), that's a candidate to bake into the parse rule or store in
   mem0.
-- **Recurring event patterns.** If <USER>'s schedule has true recurring
+- **Recurring event patterns.** If the user's schedule has true recurring
   events (same thing every Tuesday), propose switching to a Google Calendar
   recurring event instead of creating 10 individual ones.
 - **New input formats.** The first time a new format arrives (a screenshot
@@ -230,7 +230,7 @@ time. Each is an explicit extension point for a future version.
   abbreviations and confirm their meaning once, then store the alias.
 - **Timezone / DST edge cases.** Note when an event falls near a DST
   transition and confirm the time didn't shift unexpectedly.
-- **Conflict-resolution preferences.** Track which resolution <USER> picks
+- **Conflict-resolution preferences.** Track which resolution the user picks
   most often and whether their preference differs from the default rules.
 
 ### How to propose an update
@@ -250,14 +250,14 @@ These are *not* built yet — they're the places v1 is designed to grow into:
 - **Recurring events** — detect and create RRULE-based events instead of
   copies.
 - **Multi-calendar routing** — send rehearsals to a "Studio" calendar, admin
-  to "Work", based on rules <USER> defines.
+  to "Work", based on rules the user defines.
 - **Reminders / notifications** — add default reminders per event type.
-- **Lookahead / planning** — when <USER> asks "what's next week?", summarize
+- **Lookahead / planning** — when the user asks "what's next week?", summarize
   the synced calendar in plain language.
 - **Draft vs. confirmed** — a staging area where events are created as
-  tentative until <USER> confirms.
+  tentative until the user confirms.
 - **Automated format detectors** — a small per-format parser registry that
-  grows as <USER> sends new source types.
+  grows as the user sends new source types.
 
-Keep v1 honest: every new capability should come from a pattern <USER>
+Keep v1 honest: every new capability should come from a pattern the user
 actually hit, not from speculation.

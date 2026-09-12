@@ -6,11 +6,23 @@ author: hermes (highlander-longevity-coach)
 license: MIT
 metadata:
   hermes:
+    config:
+      - key: health.health_dir
+        description: "Root of your health data: device exports, SQLite DB, verified-data docs"
+        default: "~/health"
+        prompt: "Root of your health data: device exports, SQLite DB, verified-data docs"
     tags: [verification, data-analysis, peer-review, evidence]
     related_skills: [peer-review, deliberate, loop]
 ---
 
 # Evidence Loop — from raw data to shipped, vouched claim
+
+> **Config.** This skill reads its paths from `config.yaml`; the resolved values
+> arrive in the `[Skill config]` block injected when this skill loads. In the
+> commands below `$HEALTH_DIR` = `health.health_dir`.
+> The `$VARS` above are shorthands for the keys, not environment variables — Hermes injects the
+> values into the message, so substitute the resolved path. Never hardcode one: a clone can
+> live anywhere, and `~/health` is only a default.
 
 ## When to Use
 
@@ -43,7 +55,7 @@ Validated across the 2026-08-30 session: 6 correction/analysis loops, all produc
 
 ## Tooling discipline
 
-- Recurring time/stat operations → canonical tested module (e.g. `<YOUR_HEALTH_DIR>/health_time.py`, 22 regression tests, one test per real incident). Ad-hoc probes are for exploration only — never cite a probe's number as a standing claim.
+- Recurring time/stat operations → canonical tested module (e.g. `health.health_dir/health_time.py`, 22 regression tests, one test per real incident). Ad-hoc probes are for exploration only — never cite a probe's number as a standing claim.
 - New module → tests FIRST for each known failure class (one per past incident: utc-as-local, naive circular median, fragment poisoning, DST fold).
 - Predicate gotchas bite twice: window functions have siblings with different semantics (`in_sleep_window` = night [18,06), NOT "evening"); never double-convert an already-local timestamp.
 

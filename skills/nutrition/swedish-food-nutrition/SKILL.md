@@ -45,7 +45,7 @@ All scripts live in this skill's `scripts/` directory. Import via execute_code:
 
 ```python
 import sys, os
-SCRIPTS = os.path.expanduser("$HERMES_HOME/$HERMES_HOME/skills/swedish-groceries/scripts")
+SCRIPTS = os.path.expanduser("${HERMES_SKILL_DIR}/scripts")
 sys.path.insert(0, SCRIPTS)
 from axfood import search, get_product, compare_prices, search_with_details
 from ica_recipe import get_recipe, extract_ingredients
@@ -54,10 +54,10 @@ from ica_recipe import get_recipe, extract_ingredients
 Or run directly via terminal:
 
 ```
-python $HERMES_HOME/$HERMES_HOME/skills/swedish-groceries/scripts/axfood.py search "arborioris" --store hemkop
-python $HERMES_HOME/$HERMES_HOME/skills/swedish-groceries/scripts/axfood.py compare "arborioris"
-python $HERMES_HOME/$HERMES_HOME/skills/swedish-groceries/scripts/ica_recipe.py "https://www.ica.se/recept/svamprisotto-1205/"
-python $HERMES_HOME/$HERMES_HOME/skills/swedish-groceries/scripts/verify.py
+python ${HERMES_SKILL_DIR}/scripts/axfood.py search "arborioris" --store hemkop
+python ${HERMES_SKILL_DIR}/scripts/axfood.py compare "arborioris"
+python ${HERMES_SKILL_DIR}/scripts/ica_recipe.py "https://www.ica.se/recept/svamprisotto-1205/"
+python ${HERMES_SKILL_DIR}/scripts/verify.py
 ```
 
 ## The scripts
@@ -96,7 +96,7 @@ then pass the URL to get_recipe().
 
 ```python
 import sys, os
-sys.path.insert(0, os.path.expanduser("$HERMES_HOME/$HERMES_HOME/skills/swedish-groceries/scripts"))
+sys.path.insert(0, os.path.expanduser("${HERMES_SKILL_DIR}/scripts"))
 from axfood import search_with_details
 from ica_recipe import get_recipe
 

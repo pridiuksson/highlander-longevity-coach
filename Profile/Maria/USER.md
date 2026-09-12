@@ -11,7 +11,7 @@
 
 ## Health and training
 
-- **Baseline file:** `<YOUR_HEALTH_DIR>/baseline.md` — source of truth for all measured values.
+- **Baseline file:** `health.baseline_doc` — source of truth for all measured values.
 - **Goals:** <PRIMARY GOAL>; secondary <SECONDARY GOAL>.
 - **Training:** <MODALITIES>, <WEEKLY SHAPE>.
 - **Hard constraints:** <INJURIES>, <INTOLERANCES>, <MEDICATIONS>.

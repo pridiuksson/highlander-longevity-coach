@@ -158,7 +158,7 @@ case in `references/sleep-bedtime-extraction-audit.md`.
   returns out-of-window values (720..1439) for session starts in 06:00–17:59 local
   (daytime/nap/mis-keyed sessions). Count out-of-window nights; they can be a tiny share
   of the dataset yet CLUSTER in one month and shift that month's median materially
-  (observed: 8/1336 nights all in 2018-03, bedtime median <value>→<value>, +50 min). A 0.7% outlier
+  (observed: 8/1336 nights all in 2018-03, bedtime median shifted ~50 min later). A 0.7% outlier
   rate is invisible at year granularity but not within a single month.
 - **min-over-fragments ≠ min-reclock-then-wrap (the subtle re-derivation bug).** When the
   producer takes `min(bed(fragment))` = `min((m-1080)%1440)` over a night's fragments, you

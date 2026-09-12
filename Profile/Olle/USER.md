@@ -11,7 +11,7 @@
 
 ## Health and training
 
-- **Baseline file:** `<YOUR_HEALTH_DIR>/baseline.md` — the single source of truth for every
+- **Baseline file:** `health.baseline_doc` — the single source of truth for every
   measured value. The agent reads it. It must never recall a value from conversation.
 - **Goals:** <PRIMARY GOAL>; secondary <SECONDARY GOAL>.
 - **Training shape:** <MODALITIES>, <SESSIONS PER WEEK>, <SEASONALITY OR SCHEDULE SHAPE>.

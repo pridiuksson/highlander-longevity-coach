@@ -88,5 +88,5 @@ the export lands (`references/exercise-sidecar-channels.md`).
 column · structure section (testimony + charts, disagreements recorded) ·
 n=2 comparison table · interpretation that explicitly corrects earlier pixel
 reads · pending-sidecar checklist · cross-refs. Plus a one-line entry in
-<YOUR_BASELINE_DOC>.md's training block. Conventional commit on the current PR branch
+health.baseline_doc's training block. Conventional commit on the current PR branch
 (2026-08-30: `df99627`, `2b20604`).

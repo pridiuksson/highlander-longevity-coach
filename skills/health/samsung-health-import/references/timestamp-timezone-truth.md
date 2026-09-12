@@ -2,7 +2,7 @@
 
 Settled 2026-08-16 after a full-day frame inversion hunt. This file is the
 proof chain; the operative rules live in `SKILL.md` and the runbooks
-(`<YOUR_HEALTH_DIR>/samsung-verified-data.md`, `garmin-verified-data.md`).
+(`health.health_dir/samsung-verified-data.md`, `garmin-verified-data.md`).
 
 ## Samsung: ALL CSV time strings are TRUE UTC
 
@@ -42,7 +42,7 @@ Behavioral confirmation: post-fix, the 2025-04-17 morning abs session reads
 
 Four independent mechanical anchors (2026-08-16 evening, peer-reviewed):
 
-1. **Overlap week**: night 2021-08-<value>→<value>, both devices worn — Garmin string
+1. **Overlap week**: night in the 2021-08 handoff week, both devices worn — Garmin string
    21:42 vs Samsung-native (epoch-proven UTC) 22:18: 36 min apart, two
    algorithms on one sleeper. Local reading implies Garmin detects sleep
    3h36m BEFORE the other wrist — impossible.
@@ -55,7 +55,7 @@ Four independent mechanical anchors (2026-08-16 evening, peer-reviewed):
 4. **DST discriminator** (immune to watch-clock state): Vilnius +2↔+3 flip
    must shift string wake medians ~+1 h seasonally if strings are UTC, 0 h
    if local. Measured **+1.13 h** (summer 06:16, winter 07:23; n=361/346).
-   Script: `<YOUR_HEALTH_DIR>/decade-sleep/tz_dst_discriminator.py`.
+   Script: `health.health_dir/decade-sleep/tz_dst_discriminator.py`.
 
 Field name `TimestampGMT` meant what it said. Local = stored + 2h winter /
 +3h summer (EET/EEST, Vilnius era).
@@ -78,9 +78,9 @@ label/plausibility reasoning; every correction came from an anchor.
 
 ## Where the numbers live
 
-- Runbooks: `<YOUR_HEALTH_DIR>/samsung-verified-data.md` (tz sections),
-  `<YOUR_HEALTH_DIR>/garmin-verified-data.md` §Sleep timestamp semantics.
-- Evidence scripts: `<YOUR_HEALTH_DIR>/decade-sleep/tz_dst_discriminator.py`,
+- Runbooks: `health.health_dir/samsung-verified-data.md` (tz sections),
+  `health.health_dir/garmin-verified-data.md` §Sleep timestamp semantics.
+- Evidence scripts: `health.health_dir/decade-sleep/tz_dst_discriminator.py`,
   `tz_overlap_anchors.py`, `tz_probe.py`.
-- Decade consequences (bedtime narrative): `<YOUR_HEALTH_DIR>/decade-sleep/README.md`
+- Decade consequences (bedtime narrative): `health.health_dir/decade-sleep/README.md`
   correction history items 2 & 5.

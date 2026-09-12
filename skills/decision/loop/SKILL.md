@@ -60,7 +60,7 @@ All four must be true. Miss one → just delegate directly, don't loop.
 ### Each iteration — checker phase (independent verification)
 3. Run independent checker using the skill's script:
    ```bash
-   $HERMES_HOME/skills/software-development/loop/scripts/check.sh "<desired>" "<artifact paths>" "<test command>"
+   ${HERMES_SKILL_DIR}/scripts/check.sh "<desired>" "<artifact paths>" "<test command>"
    ```
    - Parse the checker's output for STATUS/EVIDENCE/GAPS
    - The checker outputs `converged`, `not-converged`, or `blocked`

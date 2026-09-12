@@ -9,6 +9,11 @@
 # they catch a second host, account or key that a value list never knew about.
 #
 # Only the entries marked REPLACE need editing.
+#
+# They are INERT until you do: a pattern still containing `<YOUR_...>` matches that literal
+# placeholder text and nothing else, so the check it names catches nothing. leak-scan.sh
+# counts them and says so in its verdict, so a PASS is never read as coverage that does
+# not exist.
 
 # --- must be customised (REPLACE) --------------------------------------------------------
 identity-name	(?i)\b(<YOUR_GIVEN_NAME>|<YOUR_FAMILY_NAME>)\b

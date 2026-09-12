@@ -9,9 +9,23 @@ allowed-tools:
   - Agent
   - Write
 argument-hint: "[run-path | latest]"
+metadata:
+  hermes:
+    config:
+      - key: health.health_dir
+        description: "Root of your health data: device exports, SQLite DB, verified-data docs"
+        default: "~/health"
+        prompt: "Root of your health data: device exports, SQLite DB, verified-data docs"
 ---
 
 # Eval Health
+
+> **Config.** This skill reads its paths from `config.yaml`; the resolved values
+> arrive in the `[Skill config]` block injected when this skill loads. In the
+> commands below `$HEALTH_DIR` = `health.health_dir`.
+> The `$VARS` above are shorthands for the keys, not environment variables — Hermes injects the
+> values into the message, so substitute the resolved path. Never hardcode one: a clone can
+> live anywhere, and `~/health` is only a default.
 
 Evaluate the health-coach skill by running golden questions and measuring output quality against concrete thresholds. **Observer-only** — you read, evaluate, and suggest. You never edit health-coach files.
 
@@ -29,11 +43,11 @@ Evaluate the health-coach skill by running golden questions and measuring output
 
 ### Step 1: Identify the Run to Evaluate
 
-If `$ARGUMENTS` specifies a run path (e.g., `<YOUR_HEALTH_DIR>/evals/run-001`), use that.
+If `$ARGUMENTS` specifies a run path (e.g., `health.health_dir/evals/run-001`), use that.
 
 If `$ARGUMENTS` is `latest` or empty, find the latest run:
 ```bash
-ls <YOUR_HEALTH_DIR>/evals/ | grep 'run-' | sort -V | tail -1
+ls $HEALTH_DIR/evals/ | grep 'run-' | sort -V | tail -1
 ```
 
 Verify the run contains `debate.json`. If only separate `phaseN.json` files exist (old format), tell the user: "This run uses the old multi-file format. Re-run `@health-coach` with the updated skill to generate a `debate.json`, then re-evaluate."
@@ -42,7 +56,7 @@ If no runs exist, tell the user: "No health-coach runs found. Run `@health-coach
 
 ### Step 2: Load Golden Questions
 
-Read `.agents/skills/eval-health/golden-questions.json`. This contains predefined questions with expected themes at three tiers:
+Read `${HERMES_SKILL_DIR}/golden-questions.json`. This contains predefined questions with expected themes at three tiers:
 
 | Tier | Meaning | Coverage Threshold |
 |------|---------|-------------------|
