@@ -42,9 +42,10 @@ silent-unless-transition by construction.
 3. **Compare against the person's own baseline**, never a population norm. The user's own history
    is the reference frame.
 4. **Draft** candidate insights — expect to discard most of them.
-5. **Gate** each candidate (below).
-6. **Emit at most ONE message**, classified.
-7. **Ledger** what you sent.
+5. **Gate** each candidate (below) — by **adversary, in a fresh context**, not by the drafting
+   pass.
+6. **Emit at most ONE message**, classified, or none.
+7. **Ledger** what you sent — and what you rejected, with the reason.
 
 If the crunch produces nothing that clears the gate, that is a successful run: ledger a silent
 sweep and stop. Do not manufacture an insight to justify the schedule.
@@ -62,6 +63,35 @@ An insight is worth sending only if **every** one of these holds:
 | **Timely** | Will it still matter when the message is read? |
 
 Any failure → **SILENT**. Silence is the default and the most common correct outcome.
+
+### Run the gate as an adversary, not as a self-check
+
+A gate the drafting context applies to its own output is not a gate — it is a rubric that the
+model satisfies by rationalisation, because the same context that wanted to send something is
+judging whether to send it. Split it:
+
+1. The drafting pass writes its best candidates **and nothing else**.
+2. A **separate, fresh-context reviewer** receives the candidate, the evidence it cites, and the
+   five tests — and is asked to argue the candidate **fails**: which test does it break, and what
+   is the strongest case that this is old news, unactionable, or noise? The reviewer should be
+   told that "reject" is the expected answer and that approving without a specific argument is a
+   failure of its job.
+3. The candidate ships only if the adversary cannot land a specific objection.
+
+This is the same move `peer-review` and `grill` apply to plans: the value is not a second opinion,
+it is an *opposed* one.
+
+### Record the rejects
+
+For every candidate the gate rejects, write one line to the ledger:
+
+```
+scripts/ledger.py add SOURCE considered "<the insight>" <the test it failed>
+```
+
+Two reasons. It stops next week's crunch re-deriving the same insight, and it makes the gate
+**auditable**: a stack of rejects with named failures is evidence the gate is doing work, while a
+permanently empty reject list means the gate is not being applied.
 
 **Explicitly not insights** (each of these has burned someone):
 
@@ -125,6 +155,10 @@ scripts/ledger.py pending                      # unresolved entries
 This ledger measures **reply rate** — did the user react — not insight quality. It is a crude
 proxy for the paper's Learning Lift, and it should be described that way rather than dressed up
 as a quality metric.
+
+What the recorded *rejects* give you that the reply rate cannot: a count of what the gate stopped.
+If reject volume is high and reply rate is high, the gate is working. If reject volume is zero,
+suspect the gate rather than concluding the data is unusually interesting every week.
 
 ## Pitfalls
 
