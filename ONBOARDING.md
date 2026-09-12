@@ -42,7 +42,7 @@ has already run this kit). So, first: inventory, and take a backup you can actua
 
 ```bash
 hermes skills list
-cp -r ~/.hermes/skills ~/.hermes/skills.bak-$(date +%Y%m%d-%H%M%S)   # timestamped; repeatable
+[ -d ~/.hermes/skills ] && cp -r ~/.hermes/skills ~/.hermes/skills.bak-$(date +%Y%m%d-%H%M%S)
 ```
 
 Then check for collisions **before** copying anything:
@@ -74,6 +74,8 @@ hermes gateway restart
 hermes gateway stop       # optional, but the catalogue is cached at startup — this is the clean window
 mkdir -p ~/.hermes/skills
 cp -r skills/* ~/.hermes/skills/
+hermes gateway restart    # so the running agent can actually see them — step 8 needs this
+hermes gateway status     # confirm it came back
 ```
 
 The `skills/<stage>/<name>/` layout is preserved on purpose: the stage becomes the skill's
@@ -95,9 +97,13 @@ Then verify what actually landed — `hermes skills list` alone is not enough, b
 show you a shadowed duplicate:
 
 ```bash
-python3 scripts/validate-skills.py ~/.hermes          # installed tree, incl. duplicate names
-hermes skills list | grep -E '^[0-9]+ hub-installed'  # expect: … 17 local …
+python3 scripts/validate-skills.py --installed ~/.hermes   # this kit's checks, not other people's
+hermes skills list | grep -E '^[0-9]+ hub-installed' \
+  || echo "could not read the summary — run \`hermes skills list\` by hand (expect 17 local)"
 ```
+
+`--installed` matters: without it the validator applies *this repo's* frontmatter and token rules to
+every unrelated third-party skill on the box, burying the one finding that matters in noise.
 
 ## 5. Configure — you do not edit the skills
 
@@ -186,15 +192,10 @@ Record where this profile came from, for later: the commit from step 1 and the t
 placed. Ask the agent something only your profile can answer — "what are my hard constraints?"
 If it does not know, revisit step 7.1.
 
-## 9. Restart the gateway, then wire delivery
+## 9. Wire proactive delivery
 
-```bash
-hermes gateway restart
-hermes gateway status     # confirm it came back
-```
-
-**Do not skip this.** The gateway caches the skill catalogue at startup, so new skills are
-invisible until it restarts. Restart before you expect anything to fire.
+The gateway was restarted at step 3, and it caches the skill catalogue at startup — so if you have
+changed anything since, restart it again before expecting a message to fire.
 
 `proactive-coach` ships a **blueprint** — a schedule declared in its frontmatter. Installing a
 blueprint does *not* silently create a job; it adds a suggestion you accept:

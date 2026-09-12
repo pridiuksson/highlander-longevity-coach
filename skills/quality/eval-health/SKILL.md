@@ -23,7 +23,9 @@ metadata:
 > **Config.** This skill reads its paths from `config.yaml`; the resolved values
 > arrive in the `[Skill config]` block injected when this skill loads. In the
 > commands below `$HEALTH_DIR` = `health.health_dir`.
-> Never hardcode a path — a clone can live anywhere, and `~/health` is only a default.
+> The `$VARS` above are shorthands for the keys, not environment variables — Hermes injects the
+> values into the message, so substitute the resolved path. Never hardcode one: a clone can
+> live anywhere, and `~/health` is only a default.
 
 Evaluate the health-coach skill by running golden questions and measuring output quality against concrete thresholds. **Observer-only** — you read, evaluate, and suggest. You never edit health-coach files.
 
@@ -54,7 +56,7 @@ If no runs exist, tell the user: "No health-coach runs found. Run `@health-coach
 
 ### Step 2: Load Golden Questions
 
-Read `.agents/skills/eval-health/golden-questions.json`. This contains predefined questions with expected themes at three tiers:
+Read `${HERMES_SKILL_DIR}/golden-questions.json`. This contains predefined questions with expected themes at three tiers:
 
 | Tier | Meaning | Coverage Threshold |
 |------|---------|-------------------|

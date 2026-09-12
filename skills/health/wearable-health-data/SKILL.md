@@ -28,7 +28,9 @@ metadata:
 > **Config.** This skill reads its paths from `config.yaml`; the resolved values
 > arrive in the `[Skill config]` block injected when this skill loads. In the
 > commands below `$HEALTH_DIR` = `health.health_dir`, `$BASELINE_DOC` = `health.baseline_doc`, `$HEALTH_DB` = `health.db`.
-> Never hardcode a path — a clone can live anywhere, and `~/health` is only a default.
+> The `$VARS` above are shorthands for the keys, not environment variables — Hermes injects the
+> values into the message, so substitute the resolved path. Never hardcode one: a clone can
+> live anywhere, and `~/health` is only a default.
 
 Importing training/wellness data (HR, HRV, sleep, exercise, VO2max, steps) from
 consumer wearables into storage on the Hermes Linux server (headless, no Android).

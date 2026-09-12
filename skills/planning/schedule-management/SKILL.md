@@ -27,10 +27,10 @@ in one line, and asks for feedback so it gets smarter each time.
 ## Dependencies
 
 - **google-workspace** skill — provides `calendar list`, `create`, `update`,
-  `delete`, `freebusy`, and `quickadd`. Set the shorthand before use:
-  ```bash
-  GAPI="python ${HERMES_HOME:-$HOME$HERMES_HOME}/skills/productivity/google-workspace/scripts/google_api.py"
-  ```
+  `delete`, `freebusy`, and `quickadd`. Its CLI is `google_api.py`, inside *that*
+  skill's own `scripts` directory: load `google-workspace`, take the directory from
+  its `[Skill directory]` block, and use it for the shorthand. Do not assume these
+  two skills share a parent — the reader chooses the layout.
 - **mem0** — for storing and recalling learned patterns ("the user's CSV uses
   columns Date/Time/Studio/Group", "Studio A means the main hall").
 

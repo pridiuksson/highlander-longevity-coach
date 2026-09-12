@@ -10,9 +10,17 @@
 
 That checks the tree for identity, path and health patterns and delegates secrets to `gitleaks`.
 **gitleaks is required, not optional:** if it is missing the scan exits `2` instead of printing a
-PASS, because a pass that never ran the secrets check is not evidence of anything. It does **not**
-read history, and a personal name in a commit message is public forever — so check that separately,
-before you open a PR:
+PASS, because a pass that never ran the secrets check is not evidence of anything. Two things it
+will tell you about itself rather than hide:
+
+- the secrets pass covers the **working tree only**. `gitleaks detect` walks git history unless
+  `--no-git` is passed, so history needs its own pass (below).
+- if any pattern still contains a `<YOUR_...>` placeholder, that check is **inert** — it matches the
+  literal placeholder and nothing else. The verdict prints how many, so a PASS is never read as
+  coverage that does not exist. Fill in the `REPLACE` entries in `scripts/leak-patterns.tsv`.
+
+It does **not** read history, and a personal name in a commit message is public forever — so check
+that separately, before you open a PR:
 
 ```bash
 git log -p --all -- . \
@@ -65,6 +73,10 @@ There are three, and `validate-skills.py` enforces the difference:
 | **Substitution** | `<YOUR_HEALTH_DIR>`, `<USER>`, `<YOUR_BASELINE_DOC>` | **Never.** These read as an instruction to the reader but resolve to nothing at load time. A path the user owns belongs in `metadata.hermes.config` (below); a file inside the skill belongs to `${HERMES_SKILL_DIR}` |
 | **Redaction** | `<value>`, `<YOUR_WEIGHT_KG>`, `<YOUR_RESTING_HR_BPM>` | Allowed, and visible on purpose — a measurement removed because it was a person's. **Never glued to a number or an arrow:** `<value>→<value>` is a broken expression, not a redaction. Excise the fragment so the sentence still says something true |
 | **Syntax** | `<uuid>`, `<prompt>`, `<YYYYMMDDHHMMSS>` | Allowed. Metavariables in usage strings and filename patterns |
+
+The three classes apply to **skills**. In a *profile* template they invert: `<USER>`, `<AGE>` and
+`<CITY>` are fields the adopter fills in, and there is no config mechanism behind them — see
+ONBOARDING step 7. Do not "fix" a profile by resolving its angle brackets for the reader.
 
 Paths come from `config.yaml`, not from the reader doing find-and-replace on an installed skill. A
 skill declares what it needs in its frontmatter, and Hermes injects the resolved values when the

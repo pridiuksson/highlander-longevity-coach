@@ -41,7 +41,7 @@ cp -r Profile/Els ~/my-profile
 
 1. **Put the three files where your Hermes actually reads them** — `SOUL.md`, `USER.md` and
    `MEMORY.md` in your profile directory. Copying the folder somewhere Hermes never looks is the
-   most common way this silently does nothing; [ONBOARDING.md](../ONBOARDING.md) step 4 has the
+   most common way this silently does nothing; [ONBOARDING.md](../ONBOARDING.md) step 7 has the
    concrete layout.
 2. **Replace every `<PLACEHOLDER>`.** Nothing in these files should still contain angle brackets
    when you are done.

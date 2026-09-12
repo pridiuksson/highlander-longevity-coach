@@ -3,9 +3,11 @@
 into fit-cache, so parse_garmin_fit.py can walk loose .fit files.
 Re-runnable: skips files already present.
 
-No path is hardcoded. Resolution order for the health data root:
+No path is hardcoded. The health data root resolves from, in order:
   1. --health-dir
-  2. $HEALTH_DIR  (the resolved value of the `health.health_dir` skill config)
+  2. $HEALTH_DIR, if YOU export it — Hermes injects `metadata.hermes.config` values into the
+     skill message, not into the environment, so nothing sets this for you. An agent should
+     pass the resolved `health.health_dir` via --health-dir.
 Pass --export / --cache to override either path directly.
 """
 import argparse
