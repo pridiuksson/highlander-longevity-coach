@@ -1,22 +1,24 @@
 # CI
 
-`leak-gate.yml` is the leak gate as a GitHub Actions workflow. It is **not active by default** —
-it lives here rather than in `.github/workflows/` because activating it requires a token with the
-`workflow` scope, and the automation that populates this repo deliberately does not hold one.
+`leak-gate.yml` is the leak gate as a GitHub Actions workflow. It is **active**: the same file is
+installed at `.github/workflows/leak-gate.yml` and runs on every push and pull request.
 
-However you obtain the file, enabling it is a copy:
+It scans the tree, validates the skills tree, and scans the full git history. That matters because
+the pre-commit hook is client-side and bypassable with `--no-verify`; CI is the version that
+actually enforces anything.
+
+## Keeping the two copies in sync
+
+`.github/workflows/leak-gate.yml` is the live workflow; this file is its source. Edit here first,
+then copy:
 
 ```bash
 mkdir -p .github/workflows
 cp ci/leak-gate.yml .github/workflows/
-git add .github/workflows/leak-gate.yml
-git commit -m "ci: enable the leak gate"
-git push
 ```
 
-Once enabled it runs on every push and pull request, scanning the tree **and the full git
-history**. That matters because the pre-commit hook is client-side and bypassable with
-`--no-verify`; CI is the version that actually enforces anything.
+Commit both. Enabling it the first time required a token with the `workflow` scope — the publishing
+automation deliberately does not hold one, which is why the file also lives here.
 
-**Leave the copy in `ci/`.** If you delete it, the next person has no workflow to enable and the
-reason it is inactive is no longer discoverable.
+**Leave this copy in `ci/`.** If you delete it, the next person cannot tell the workflow was ever
+optional, or where to edit it.

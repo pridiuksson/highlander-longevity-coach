@@ -9,9 +9,10 @@ saying and learns from whether it landed.
 ## What is in here
 
 ```
-skills/       17 skills, grouped by the stage of the loop they serve
+skills/       21 skills, grouped by the stage of the loop they serve
 Profile/      SOUL / USER / MEMORY templates (Olle, Maria, Els)
 scripts/      the leak gate and the structural validator
+AGENTS.md     working guide for agents (CLAUDE.md points here)
 ONBOARDING.md from clone to a working coach
 CONTRIBUTING.md
 ```
@@ -34,6 +35,13 @@ Two things make it a loop rather than a toolbox: **nothing reaches interpretatio
 the outcome of every proactive message writes back to memory. A silent week is a successful week —
 `proactive-coach` exists to decide when *not* to speak.
 
+### Contributor workflow
+
+The `skills/workflow/` stage serves the people and agents working **on** this repo, not the coaching
+loop: `commit` (leak-gated conventional commits), `create-pr` (push and open a PR without moving
+HEAD), `ticket` (author an agent-ready GitHub issue), and `work` (execute an issue end-to-end). They
+end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the full flow.
+
 ## Install
 
 See **[ONBOARDING.md](./ONBOARDING.md)**.
@@ -42,7 +50,9 @@ See **[ONBOARDING.md](./ONBOARDING.md)**.
 
 Nothing in this repository contains personal health data. Skills use placeholders
 (`<YOUR_WEIGHT_KG>`, `<USER>`, `<YOUR_HEALTH_DIR>`) and expect your data to live in your own files.
-The gate below enforces that over the working tree, and the same check runs over the full history:
+The gate below enforces that over the working tree; the identity/path/health patterns also run over
+every commit (the history **secrets** pass is a separate `gitleaks --log-opts="--all"` — see
+[CONTRIBUTING.md](./CONTRIBUTING.md)):
 
 ```bash
 ./scripts/leak-scan.sh .          # identity / path / health patterns + gitleaks, over the tree

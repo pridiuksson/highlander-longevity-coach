@@ -35,6 +35,9 @@ cp -r skills/* ~/.hermes/skills/          # a copy
 # ln -s "$PWD/skills/"* ~/.hermes/skills/
 ```
 
+This also installs the `skills/workflow/` stage (`commit`, `create-pr`, `ticket`, `work`). Those are
+for working on the repo itself, not for coaching — see [AGENTS.md](./AGENTS.md).
+
 Verify they are visible:
 
 ```bash

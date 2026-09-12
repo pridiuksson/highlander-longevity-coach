@@ -29,10 +29,11 @@ python3 scripts/validate-skills.py .            # frontmatter, name/dir match, r
 gitleaks detect --source . --log-opts="--all"   # secrets, over every commit
 ```
 
-**CI is not active yet.** `ci/leak-gate.yml` is shipped but has to be enabled — activating a
-workflow needs a token with the `workflow` scope, which the publishing automation deliberately does
-not hold. See [ci/README.md](./ci/README.md) for the one-line step. **Until it is enabled, you are
-the enforcement.** The pre-commit hook is a convenience and is bypassable with `--no-verify`.
+**CI enforces the gate.** `.github/workflows/leak-gate.yml` runs on every push and pull request,
+scanning the tree, validating the skills, and scanning the full git history. The pre-commit hook is
+a convenience and is bypassable with `--no-verify`; CI is the version that actually enforces
+anything. `ci/leak-gate.yml` is kept as the source the workflow is copied from — see
+[ci/README.md](./ci/README.md).
 
 ## Privacy — the part that is not negotiable
 
@@ -54,10 +55,14 @@ config file with an example default rather than hardcoding it.
 skills/<stage>/<name>/     one skill, self-contained
 scripts/                   the leak gate + the structural validator
 Profile/                   profile templates
+.commandcode/              Command Code skill discovery
+.github/workflows/         the leak gate in CI
 ```
 
 Skills are grouped by the stage of the coaching loop they serve — `decision/`, `health/`,
-`evidence/`, `nutrition/`, `planning/`, `proactive/`, `quality/`.
+`evidence/`, `nutrition/`, `planning/`, `proactive/`, `quality/` — plus `workflow/`, which holds the
+contribution skills (`commit`, `create-pr`, `ticket`, `work`) and serves the repo rather than the
+coaching loop.
 
 **Skills never import across their own boundary.** Duplicate a small reference, or point at the
 owning skill's path. Shared state is how two skills drift apart.
@@ -68,6 +73,9 @@ owning skill's path. Shared state is how two skills drift apart.
 a contributor lane with the conventions above. It is a template: copy it, do not edit it in place.
 
 ## Changing a skill
+
+The `workflow/` skills run this loop for you — `@ticket` to file the work, `@work` to execute an
+issue end-to-end, `@commit` then `@create-pr` to ship. By hand:
 
 1. Branch.
 2. Edit **inside that skill's directory**. If a change is needed in two skills, make the case for
