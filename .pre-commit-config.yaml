@@ -1,4 +1,12 @@
 # Convenience only — CI is the enforcement (a local hook is bypassable with --no-verify).
+#
+# This file is config for the pre-commit framework, which is NOT installed by anything in this
+# repo — until you install it and wire it into git, these hooks run nowhere:
+#
+#   pipx install pre-commit && pre-commit install
+#
+# The value layer is local per-owner config, so the second hook below can never fail on its
+# absence; it fails only when the layer is configured and useless (see scripts/check-values-configured.sh).
 repos:
   - repo: local
     hooks:

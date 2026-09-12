@@ -18,6 +18,8 @@ reaches out when — and only when — something is worth saying.
 | **Python ≥ 3.11** (tested on 3.12) | import/analysis scripts |
 | **`git`, with access to this repo** | the repo is private; an HTTPS clone needs a credential (`gh auth login`, or a token) |
 | **`gitleaks`** | **required.** It is the secrets half of the leak gate. Without it `leak-scan.sh` exits `2` rather than claiming a pass — a "clean" that never ran the secrets scan is not a clean tree |
+| *optional* `pre-commit` framework | runs the leak gate on every local commit. `pipx install pre-commit && pre-commit install` wires `.pre-commit-config.yaml` into git; without that step the committed hook config runs nowhere |
+| *optional* `perl` | the PCRE engine for the leak gate on machines whose `grep` has no `-P` (the stock macOS grep). macOS ships perl; a GNU `grep` in PATH is used instead when present |
 | *optional* `sqlite3` CLI | poking at imported device databases by hand. The skills use Python's `sqlite3` stdlib, so this is a convenience, not a requirement |
 | *optional* `fitdecode` | parsing Garmin FIT files. `garmin-import` pins it into the skill's own venv |
 | *optional* `command-code` / `agy` | a **model-independent** peer for `peer-review`. Without one it falls back to a subagent — a second *context*, not a second *model* |
