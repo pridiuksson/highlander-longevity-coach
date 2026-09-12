@@ -88,6 +88,21 @@ python3 scripts/validate-skills.py .            # frontmatter, unique names, ref
 gitleaks detect --source . --log-opts="--all"   # secrets, over every commit
 ```
 
+And one that looks at something the scan above structurally cannot see:
+
+```bash
+./scripts/check-git-identities.sh              # who is attached to the commits
+```
+
+The history scan drops `Author:` / `Commit:` / `Date:` / `Merge:` lines when it splits `git log -p`
+into per-file pseudo-diffs — they are metadata, not content — so a personal address in a commit's
+*authorship* is invisible to every pattern in the denylist. The same address inside a file is a hit;
+as an author line it is not, and no pattern can ever fire on one because by then the line is gone.
+
+Authorship is also the one thing you cannot edit after publication: every commit carries it
+forever. So this check is the only mechanism that sees it, and it is worth running before the
+repository becomes public and before writing a release tag.
+
 `validate-skills.py` is worth knowing in full, because it enforces the conventions on this page. It
 also works against an **install root** — `python3 scripts/validate-skills.py --installed ~/.hermes` —
 which is how you check a box for shadowed skill names.

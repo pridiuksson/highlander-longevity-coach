@@ -71,9 +71,10 @@ before acting on an assumption), `grill` (adversarial, null hypothesis = no, for
 
 ## Pre-push checks
 
-`@create-pr` runs a diff check plus the four checks below. The tree gate, the skill validator, and
-the history identity scan are mandatory. The fourth — secrets over the full history — needs
-`gitleaks` installed; if it is missing, report the secrets checks as **unverified**, never as clean.
+`@create-pr` runs a diff check plus the five checks below. The tree gate, the skill validator, the
+history identity scan, and the authorship check are mandatory. The fifth — secrets over the full
+history — needs `gitleaks` installed; if it is missing, report the secrets checks as **unverified**,
+never as clean.
 
 ```bash
 ./scripts/leak-scan.sh .                     # tree: identity / path / health + secrets
@@ -84,8 +85,15 @@ git log -p HEAD -- . \
   ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
   | ./scripts/leak-scan.sh --no-gitleaks -   # this ref's history — see CONTRIBUTING on why not --all
 
+./scripts/check-git-identities.sh            # authorship. The scan above cannot see it: it drops
+                                             # Author:/Commit: lines when splitting the log into
+                                             # per-file diffs, so no pattern can fire on one
+
 gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 ```
+
+The authorship check is separate because authorship is the one thing that cannot be edited after
+publication. Every commit carries it forever, and no content pattern can reach it.
 
 ## Working style
 
