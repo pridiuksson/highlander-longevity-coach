@@ -47,7 +47,7 @@ end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the 
 ## Install
 
 See **[ONBOARDING.md](./ONBOARDING.md)**. No machine yet? Point your agent at
-[Box/Nebius/](./Box/Nebius/README.md) — it stands one up from zero, agent-executed.
+[Box/Nebius/](./Box/Nebius/nebius-cpu-box-cookbook.md) — it stands one up from zero, agent-executed.
 
 ## Privacy
 

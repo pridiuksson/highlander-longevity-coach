@@ -114,7 +114,7 @@ publication. Every commit carries it forever, and no content pattern can reach i
 | [ONBOARDING.md](./ONBOARDING.md) | From clone to a working coach |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | The gate, layout, and how to change a skill |
 | [Profile/README.md](./Profile/README.md) | The three profile templates |
-| [Box/Nebius/README.md](./Box/Nebius/README.md) | Stand up a coach box on Nebius via the `nebius` CLI, agent-executed |
+| [Box/Nebius/nebius-cpu-box-cookbook.md](./Box/Nebius/nebius-cpu-box-cookbook.md) | Stand up a coach box on Nebius via the `nebius` CLI, agent-executed |
 
 ## Do not
 

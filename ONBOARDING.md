@@ -14,7 +14,7 @@ reaches out when — and only when — something is worth saying.
 
 | Need | Why |
 |---|---|
-| **A machine to run on** | no box yet? Point your agent at [Box/Nebius/](./Box/Nebius/README.md) — it stands one up from zero, stopping only where a human must act |
+| **A machine to run on** | no box yet? Point your agent at [Box/Nebius/](./Box/Nebius/nebius-cpu-box-cookbook.md) — it stands one up from zero, stopping only where a human must act |
 | **Hermes agent** (v0.21.0+) | hosts the skills and the loops. Verify with `hermes --version` |
 | **Python ≥ 3.11** (tested on 3.12) | import/analysis scripts |
 | **`git`, with access to this repo** | the repo is private; an HTTPS clone needs a credential (`gh auth login`, or a token) |
