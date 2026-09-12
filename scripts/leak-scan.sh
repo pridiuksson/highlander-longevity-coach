@@ -31,6 +31,53 @@
 
 set -uo pipefail
 
+# ---- PCRE engine ------------------------------------------------------------
+# The pattern dialect is PCRE (inline flags like (?i)). GNU grep's -P is the natural
+# engine, but the stock grep on macOS is BSD grep, which has no -P AT ALL: it errors on
+# every pattern, and where that error was swallowed (the match loop below) the scan
+# matched nothing while still printing PASS. So the engine is chosen, not assumed:
+# GNU grep when it is really there, else perl — which ships with macOS and speaks the
+# same dialect. Neither means the gate cannot run honestly, so that is a hard error.
+if printf 'pcre-probe' | grep -qP 'pcre-probe' 2>/dev/null; then
+  PCRE_ENGINE="grep"
+elif command -v perl >/dev/null 2>&1; then
+  PCRE_ENGINE="perl"
+else
+  echo "error: no PCRE-capable engine — this gate needs GNU grep (-P) or perl." >&2
+  echo "       On macOS the stock /usr/bin/grep is BSD grep, which has no -P; install" >&2
+  echo "       GNU grep (brew install grep, then put it ahead of /usr/bin in PATH) or" >&2
+  echo "       perl, and re-run. Guessing at patterns here would print a false verdict." >&2
+  exit 2
+fi
+
+# Compile check: exit 0 iff the regex compiles under the chosen engine. grep exits 2 when
+# it cannot compile (0 and 1 both mean it did); perl dies on an invalid qr and is mapped
+# to the same convention.
+pcre_compiles() {
+  case "$PCRE_ENGINE" in
+    grep) grep -qP -e "$1" /dev/null 2>/dev/null; [ "$?" -le 1 ];;
+    perl) perl -e 'exit(eval { qr/$ARGV[0]/ } ? 0 : 2)' "$1" 2>/dev/null;;
+  esac
+}
+
+# Line matches in grep -nP -e RE FILE format ("line:content"), newline-terminated like
+# grep — files whose last line has no newline would otherwise drop that line in the
+# `while read` loop that consumes this.
+pcre_lines() {
+  case "$PCRE_ENGINE" in
+    grep) grep -nP -e "$1" "${@:2}";;
+    perl) perl -ne 'BEGIN { $re = eval { qr/$ARGV[0]/ } or exit 2; shift } s/\n\z//; print "$.:$_\n" if /$re/' "$1" "${@:2}";;
+  esac
+}
+
+# Match-only output, one match per line (grep -oP). Reads files or stdin, like grep.
+pcre_matches() {
+  case "$PCRE_ENGINE" in
+    grep) grep -oP -e "$1" "${@:2}";;
+    perl) perl -ne 'BEGIN { $re = eval { qr/$ARGV[0]/ } or exit 2; shift } while (/$re/g) { my $m = $&; print "$m\n" unless $m eq ""; last if $m eq ""; }' "$1" "${@:2}";;
+  esac
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PATTERNS="$SCRIPT_DIR/leak-patterns.tsv"
 PATTERNS_EXTRA="${LEAK_PATTERNS_EXTRA:-}"
@@ -69,10 +116,9 @@ validate_pattern_file() {
     case "$_pn" in ''|\#*) continue;; esac
     if [ -z "${_pe:-}" ]; then _bad="${_bad:+$_bad; }entry '$_pn' has no regex"; continue; fi
     if [ -n "${_px:-}" ]; then _bad="${_bad:+$_bad; }entry '$_pn' has too many fields (a stray tab?)"; continue; fi
-    # -e, so a pattern beginning with `-` is a pattern rather than an option. grep exits 2 when it
-    # cannot compile; 0 and 1 both mean it compiled.
-    grep -qP -e "$_pe" /dev/null 2>/dev/null
-    if [ "$?" -ge 2 ]; then _bad="${_bad:+$_bad; }entry '$_pn' has an invalid regex"; continue; fi
+    # The compile check goes through the engine chosen above, so a regex the ENGINE cannot
+    # compile is caught here regardless of which engine that is.
+    if ! pcre_compiles "$_pe"; then _bad="${_bad:+$_bad; }entry '$_pn' has an invalid regex"; continue; fi
   done < "$_file"
   [ -z "$_bad" ] && return 0
   echo "error: $_file: $_bad" >&2
@@ -260,7 +306,7 @@ while IFS=$'\t' read -r name ere; do
           _seen=1
           _seg=$(printf '%s' "$_m" | sed -E 's#^.*/##' | tr '[:upper:]' '[:lower:]')
           case "$_seg" in olle|maria|els) ;; *) _ok=0;; esac
-        done < <(printf '%s' "$content" | grep -oP -e "$ere" 2>/dev/null)
+        done < <(printf '%s' "$content" | pcre_matches "$ere" 2>/dev/null)
         [ "$_seen" -eq 1 ] && [ "$_ok" -eq 1 ] && _allow=1
         [ "$_allow" -eq 1 ] && continue
       fi
@@ -275,13 +321,13 @@ while IFS=$'\t' read -r name ere; do
             _seen=1
             _seg=$(printf '%s' "$_m" | sed -E 's#^.*/##' | tr '[:upper:]' '[:lower:]')
             case "$_seg" in olle|maria|els) ;; *) _ok=0;; esac
-          done < <(printf '%s' "$content" | grep -oP -e "$ere" 2>/dev/null)
+          done < <(printf '%s' "$content" | pcre_matches "$ere" 2>/dev/null)
           [ "$_seen" -eq 1 ] && [ "$_ok" -eq 1 ] && _allow=1
           [ "$_allow" -eq 1 ] && continue
         fi
       fi
       printf '%s\t%s\t%s\t%s\n' "$name" "$dpath" "$line" "$content" >> "$HITS"
-    done < <(grep -nP -e "$ere" "$f" 2>/dev/null)
+    done < <(pcre_lines "$ere" "$f" 2>/dev/null)
   done
 done < "$_pf"
 done

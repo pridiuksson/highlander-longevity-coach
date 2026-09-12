@@ -38,6 +38,28 @@ if [ ! -f "$EXTRA" ]; then
   exit 1
 fi
 
+# The value regexes are PCRE, validated with the same engine choice as leak-scan.sh: GNU grep
+# when present, else perl. The stock grep on macOS is BSD grep, which has no -P — using it here
+# would report every valid regex as invalid, and the guard would be useless exactly where the
+# gate needs it (an unvalidated pattern file is one that can match nothing).
+if printf 'pcre-probe' | grep -qP 'pcre-probe' 2>/dev/null; then
+  PCRE_ENGINE="grep"
+elif command -v perl >/dev/null 2>&1; then
+  PCRE_ENGINE="perl"
+else
+  echo "error: no PCRE-capable engine — GNU grep (-P) or perl is required." >&2
+  echo "       On macOS the stock /usr/bin/grep is BSD grep, which has no -P; install" >&2
+  echo "       GNU grep or perl, and re-run." >&2
+  exit 2
+fi
+
+pcre_compiles() {
+  case "$PCRE_ENGINE" in
+    grep) grep -qP -e "$1" /dev/null 2>/dev/null; [ "$?" -le 1 ];;
+    perl) perl -e 'exit(eval { qr/$ARGV[0]/ } ? 0 : 2)' "$1" 2>/dev/null;;
+  esac
+}
+
 # Three ways a layer can be present and useless, all of which look identical to a working one
 # from the verdict summary alone: a line that does not parse, a regex that does not compile (grep
 # errors and matches nothing), and a file with no entries at all.
@@ -49,8 +71,7 @@ while IFS=$'\t' read -r _pn _pe _px; do
   case "$_pn" in ''|\#*) continue;; esac
   if [ -z "${_pe:-}" ]; then _bad="${_bad:+$_bad; }entry '$_pn' has no regex"; continue; fi
   if [ -n "${_px:-}" ]; then _bad="${_bad:+$_bad; }entry '$_pn' has too many fields (a stray tab?)"; continue; fi
-  grep -qP -e "$_pe" /dev/null 2>/dev/null
-  if [ "$?" -ge 2 ]; then _bad="${_bad:+$_bad; }entry '$_pn' has an invalid regex"; continue; fi
+  if ! pcre_compiles "$_pe"; then _bad="${_bad:+$_bad; }entry '$_pn' has an invalid regex"; continue; fi
 done < "$EXTRA"
 if [ -n "$_bad" ]; then
   echo "FAIL: $EXTRA: $_bad." >&2

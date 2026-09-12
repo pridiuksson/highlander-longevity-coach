@@ -1,7 +1,8 @@
 # leak-patterns.tsv — the SHAPE denylist the leak gate applies to this repo.
 #
 # Format: NAME<TAB>EXTENDED_REGEX   ('#' comments and blank lines ignored). PCRE, so inline
-# flags like (?i) work.
+# flags like (?i) work. The gate runs them with GNU grep -P, or perl where grep has no -P
+# (the stock macOS grep) — see the engine choice at the top of leak-scan.sh.
 #
 # VALUE-FREE BY DESIGN, and now value-free in fact. This file is public, so it must not list the
 # identifiers it exists to catch — a denylist that names your Telegram chat id has itself leaked
