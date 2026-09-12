@@ -63,53 +63,112 @@ extraction). macOS and Ubuntu are the supported hosts for this phase.
 
 ```bash
 curl -sSL https://storage.eu-north1.nebius.cloud/cli/install.sh | bash
-nebius version
 ```
 
+The installer downloads the binary, prints its path (`~/.nebius/bin/nebius`), and runs a version
+check itself. **Agent note:** the installer edits rc files, but step-isolated shells never source
+them — call the CLI by full path (`~/.nebius/bin/nebius`), as this runbook does. Live-tested:
+installer `0.12.275` on macOS and Ubuntu.
+
 Official installer instructions: [docs.nebius.com/cli/install](https://docs.nebius.com/cli/install/).
-If `nebius` is not found after install, open a new shell or re-source your profile.
 
 ### A3 — ⛔ authenticate (human: browser)
 
-The agent runs `nebius profile create` and **stops**. You complete the federation login in the
-browser, and supply `<PROJECT_ID>` when prompted. Configuration reference:
+```bash
+~/.nebius/bin/nebius profile create \
+  --profile coach-box \
+  --endpoint api.nebius.cloud \
+  --federation-endpoint auth.nebius.com \
+  --parent-id <PROJECT_ID>
+```
+
+A browser tab opens (or the command prints the URL — open it on any machine); log in to the
+Nebius console and approve. Expect `profile "coach-box" configured and activated`. The
+step-by-step interactive prompts are for humans in their own terminal — an agent-driven run uses
+the flags above. Configuration reference:
 [docs.nebius.com/cli/configure](https://docs.nebius.com/cli/configure/).
 
 Verify before moving on:
 
 ```bash
-nebius profile list        # must show the new profile as [default]
+~/.nebius/bin/nebius profile list        # must show coach-box [default]
 ```
 
 ### A4 — SSH keypair
 
 ```bash
-[ -f <SSH_KEY_PATH> ] || ssh-keygen -t ed25519 -N "" -f <SSH_KEY_PATH>
+[ -f <SSH_KEY_PATH> ] || ssh-keygen -t ed25519 -N "" -C coach-box -f <SSH_KEY_PATH>
 ```
 
-An existing key at that path is reused, not overwritten. The agent works with the **path** only —
-the private key is never printed, copied, or sent anywhere; its public half goes into the
-cloud-init user-data at A6. Background: [Nebius SSH keys](https://docs.nebius.com/compute/virtual-machines/ssh-keys/).
+An existing key at that path is reused, not overwritten. The `-C coach-box` comment matters:
+ssh-keygen defaults the comment to `user@local-hostname`, and the key rides into the VM's
+cloud-init — a neutral comment keeps your machine's name out of it. The agent works with the
+**path** only — the private key is never printed, copied, or sent anywhere; its public half goes
+into the cloud-init user-data at A6. Background:
+[Nebius SSH keys](https://docs.nebius.com/compute/virtual-machines/ssh-keys/).
 
 ### A5 — find the subnet
 
 ```bash
-nebius vpc subnet list --format json   # resolve exact flags with --help first
+~/.nebius/bin/nebius vpc subnet list --parent-id <PROJECT_ID>
 ```
 
-Take the id of the first subnet in the default network for `<REGION>`. Record nothing yet — A7
-writes the state file.
+`--parent-id` is **required** (the profile's default does not apply). Output is YAML; take
+`metadata.id` of the subnet whose `status.state` is `READY` — on a fresh project there is exactly
+one, `default-subnet-…`. (`--format json|yaml|table` is a *global* option, not a subcommand flag.)
+Record nothing yet — A7 writes the state file.
+
+### A5b — quota gate (do not skip)
+
+A fresh Nebius tenant has **zero** non-GPU vCPU quota — A6 fails with
+`compute.instance.non-gpu.vcpu (limit 0, requested 2)` until you raise it. Check:
+
+```bash
+~/.nebius/bin/nebius quotas quota-allowance list --parent-id <PROJECT_ID> \
+  | grep -A3 "name: compute.instance.non-gpu"
+```
+
+The list omits the limit; the console shows it. In the console → **Quotas** (region
+`<REGION>`), request an increase for **`compute.instance.non-gpu.vcpu`** (8 covers this box with
+headroom) and **`compute.instance.count`** (4) — both usually granted quickly for small amounts.
+This gate is ⛔-adjacent: the raise is a human console action, so the agent stops here if the
+quota is not confirmed.
 
 ### A6 — create the VM
 
-Compose `nebius compute instance create` **after** running `nebius compute instance create --help`.
-The shape the command must produce:
+Verify the platform and preset slugs against the live catalog, then create — the full command is
+below, and it is the one this cookbook was executed with:
 
-- platform `cpu-d3`, preset `2vcpu-8gb` (the smallest sane CPU-only shape)
-- boot disk: 50 GiB `network_ssd`, image family `ubuntu24.04-driverless`
-  ([images](https://docs.nebius.com/compute/storage/boot-disk-images/))
-- one network interface **with a public IP**
-- SSH access via cloud-init user-data creating user `<VM_USERNAME>` with the A4 public key:
+```bash
+# discovery: confirm the slugs (presets hang off platforms; there is no `preset list`)
+~/.nebius/bin/nebius compute platform list --parent-id <PROJECT_ID>
+# discovery: confirm the image family (public families live in the public-images project)
+~/.nebius/bin/nebius compute image list --parent-id project-e00public-images --all \
+  | grep -oE "image_family: [a-z0-9.-]+" | sort -u
+
+~/.nebius/bin/nebius compute instance create \
+  --parent-id <PROJECT_ID> \
+  --name <VM_NAME> \
+  --boot-disk-attach-mode read_write \
+  --boot-disk-managed-disk-name <VM_NAME>-boot \
+  --boot-disk-managed-disk-size-gibibytes 50 \
+  --boot-disk-managed-disk-type network_ssd \
+  --boot-disk-managed-disk-source-image-family-image-family ubuntu24.04-driverless \
+  --resources-platform cpu-d3 \
+  --resources-preset 2vcpu-8gb \
+  --cloud-init-user-data file://<ABSOLUTE_PATH_TO_CLOUD_INIT_YAML> \
+  --network-interfaces '[{"name":"nic0","subnet_id":"<SUBNET_ID>","ip_address":{},"public_ip_address":{"static":false}}]'
+```
+
+Two live-verified gotchas:
+
+- **Do not pass `--boot-disk-managed-disk-source-image-family-parent-id`.** Pointing it at your
+  own project fails with `no image of family "ubuntu24.04-driverless" in region …` — public
+  families resolve from Nebius' public project without the flag.
+- `--cloud-init-user-data` accepts `file://` URLs — write the user-data to a scratch file rather
+  than inlining YAML.
+
+The cloud-init user-data creates user `<VM_USERNAME>` with the A4 public key:
 
 ```yaml
 # #cloud-config
@@ -122,14 +181,12 @@ users:
 ssh_pwauth: false
 ```
 
-Name the instance `<VM_NAME>`. Quickstart for orientation:
+Quickstart for orientation:
 [docs.nebius.com/compute/quickstart](https://docs.nebius.com/compute/quickstart/).
-
-> **Rule for the executing agent:** every Nebius command in this cookbook is a *shape*, not a
-> verified flag list. Nebius' CLI moves faster than any checked-in doc — before composing each
-> create/manage command, run it with `--help` and resolve the exact flags. The cookbook pins
-> platform names, preset names, image families, and the order of operations; it does not pin
-> flag spellings.
+> **Rule for the executing agent:** these flags were verified against CLI `0.12.275` (2026-09).
+> They will drift. If `create` rejects anything, re-run it with `--help` and re-resolve before
+> retrying — the flag *groups* (boot disk, network interfaces, resources) have been far more
+> stable than their names.
 
 ### A7 — wait for RUNNING, then write the state file
 
@@ -283,6 +340,9 @@ secrets, but a stale IP/ID pair invites confusion later.
 
 | Symptom | Cause |
 |---|---|
+| `create` fails with `compute.instance.non-gpu.vcpu (limit 0, …)` | fresh-tenant quota — A5b, request the raise in the console and re-run |
+| `no image of family "…" in region …` | you passed `--boot-disk-managed-disk-source-image-family-parent-id` — drop it; public families resolve without it (A6) |
+| A flag from this file is rejected | flag drift — re-run `--help` and re-resolve (A6 rule) |
 | `ssh` refused right after A7 | cloud-init is still provisioning — wait ~1 min and retry; serial console if it persists |
 | `leak-scan.sh` exits `2` | gitleaks missing on the box — go back to B1 |
 | Gateway ignores newly installed skills | catalogue cache — `hermes gateway restart` (ONBOARDING step 3) |
