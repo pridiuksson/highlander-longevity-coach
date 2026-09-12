@@ -9,7 +9,7 @@ saying and learns from whether it landed.
 ## What is in here
 
 ```
-skills/       21 skills, grouped by the stage of the loop they serve
+skills/       22 skills, grouped by the stage of the loop they serve
 Profile/      SOUL / USER / MEMORY templates (Olle, Maria, Els)
 Box/          provider cookbooks to stand up a coach box (agent-executed)
 scripts/      the leak gate and the structural validator
@@ -31,6 +31,7 @@ CONTRIBUTING.md
 | **Plan** | `plan`, `schedule-management` |
 | **Deliver** | `proactive-coach` |
 | **Learn** | `proactive-coach` ledger, `eval-health`, `loop` |
+| **Onboard** | `demo` — a fresh box's tour guide: runs real skills on the user's own questions, learns the user slowly (max 3 questions per session, skip allowed), rewards every answer instantly, retires itself at graduation |
 
 Two things make it a loop rather than a toolbox: **nothing reaches interpretation unverified**, and
 the outcome of every proactive message writes back to memory. A silent week is a successful week —

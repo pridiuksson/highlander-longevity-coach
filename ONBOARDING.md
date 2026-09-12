@@ -19,6 +19,8 @@ reaches out when — and only when — something is worth saying.
 | **Python ≥ 3.11** (tested on 3.12) | import/analysis scripts |
 | **`git`, with access to this repo** | the repo is private; an HTTPS clone needs a credential (`gh auth login`, or a token) |
 | **`gitleaks`** | **required.** It is the secrets half of the leak gate. Without it `leak-scan.sh` exits `2` rather than claiming a pass — a "clean" that never ran the secrets scan is not a clean tree |
+| *optional* `pre-commit` framework | runs the leak gate on every local commit. `pipx install pre-commit && pre-commit install` wires `.pre-commit-config.yaml` into git; without that step the committed hook config runs nowhere |
+| *optional* `perl` | the PCRE engine for the leak gate on machines whose `grep` has no `-P` (the stock macOS grep). macOS ships perl; a GNU `grep` in PATH is used instead when present |
 | *optional* `sqlite3` CLI | poking at imported device databases by hand. The skills use Python's `sqlite3` stdlib, so this is a convenience, not a requirement |
 | *optional* `fitdecode` | parsing Garmin FIT files. `garmin-import` pins it into the skill's own venv |
 | *optional* `command-code` / `agy` | a **model-independent** peer for `peer-review`. Without one it falls back to a subagent — a second *context*, not a second *model* |
@@ -227,6 +229,31 @@ Quiet hours and timezone come from step 5 (`proactive.quiet_hours`, `proactive.t
 are configuration, not constants. Then expect silence most weeks: a silent sweep is a successful
 run, and `proactive-coach` exists to decide when *not* to speak.
 
+## 10. Let it learn you
+
+A fresh profile is a skeleton, and the kit is built to adapt to you — but it can only adapt to
+what it knows. `demo` is the onboarding skill that closes this gap by *doing*: it runs real
+skills on your own questions while it slowly learns the facts that make the rest of the kit
+yours (diet, city, sleep window, supplements — never more than 3 questions per session, and
+skip is always an option).
+
+Run it interactively right now:
+
+```
+demo
+```
+
+Or accept its daily suggestion instead (same `/suggestions` flow as step 9) — it will ask at
+most 1–2 casual questions per day, each answered with an immediately useful result (tell it
+your diet and it prices matching staples at your local store; give it your weight and it
+computes your protein range).
+
+Everything it learns lands where the rest of the kit already reads — `health.baseline_doc`
+(step 5) and `~/.hermes/memories/USER.md` — so skills pick it up with no extra wiring. When
+your profile is complete (or after ~30 days, whichever comes first), it says so once, wires
+the handoff to `proactive-coach`, and you never hear from it again. It holds no data of its
+own beyond a progress file in `$HERMES_HOME/data/demo/`.
+
 ## Updating
 
 The install is a copy, so an update is: pull, re-check, re-copy, restart.
@@ -260,3 +287,31 @@ is the failure the repo's versioning design exists to prevent.
 | The gateway ignores a new skill | It cached the catalogue — restart it |
 | The leak gate is red | **Do not proceed.** Read the report; it names the pattern and the line |
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
+| The verdict says `value-layer: NOT-CONFIGURED` | Expected on a fresh clone, and **not** a failure: the shape patterns ran and passed, but the identity checks (your name, your handle) are not configured, and the verdict says so rather than implying coverage it does not have. Set up the value layer: `mkdir -p ~/.config/leak && cp scripts/leak-patterns.local.example.tsv ~/.config/leak/patterns.tsv`, then fill it in. It lives outside the repo on purpose — a tracked file naming those identifiers is the leak the gate exists to prevent |
+| The verdict says `CONFIGURED BUT INERT` or `CONFIGURED BUT EMPTY` | The value layer exists and checks nothing: the entries are still `<YOUR_...>` placeholders, or the file has no entries. `./scripts/check-values-configured.sh` is the same check as a standalone command, and the pre-commit hook runs it |
+| You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
+| `demo` keeps asking questions | Check `$HERMES_HOME/data/demo/state.json` — `budget_used` vs `budget_limit_asks`, `skip_streak`, and `stop_learning`. It must retire itself at 21 asks or 30 days; if it will not stop, say "stop learning" and verify `stop_learning` flips to `true` |
+
+## Field note: adopting onto a box that already has skills (2026-09-12)
+
+Step 2's collision check tells you *that* a name collides. It cannot tell you *which side
+should win*, and it cannot see skills that live under a **renamed home** or under an **old
+name**. If your box predates this kit, or you maintain customized copies of these skills:
+
+1. Diff every collision before copying — do not assume "you are upgrading". One field test
+   found three stale local copies (upstream correctly won) AND one case where **upstream was
+   the stale side**: the local `plan` skill used a backend-aware relative path that an upstream
+   edit had regressed to `$HERMES_HOME/plans/`. Direction of "better" is per-skill, not global.
+2. Normalize placeholders before comparing (`<YOUR_...>`, `${HERMES_SKILL_DIR}` vs hardcoded
+   paths) — otherwise cosmetic differences mask real ones, and vice versa.
+3. Check `references/` and `scripts/` trees separately: a SKILL.md can be near-identical while
+   one side carries whole reference files the other lacks.
+4. A skill body that hardcodes instance paths is not "wrong" — it is pre-migration. Decide
+   whether its values belong in `config.yaml` (then adopt upstream) or are genuinely
+   instance-specific (then keep local and record the delta).
+5. Record the decision per skill — a diff you did not write down is a diff you will re-do.
+
+## Renames
+
+`swedish-groceries` → `swedish-food-nutrition` (2026-09). If you installed under the old name,
+retire it: the collision check in step 2 matches on `name:` and will not flag the leftover.

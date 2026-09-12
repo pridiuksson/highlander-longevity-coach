@@ -80,9 +80,9 @@ the history identity scan are mandatory. The fourth — secrets over the full hi
 
 python3 scripts/validate-skills.py .         # skill structure + README consistency
 
-git log -p --all -- . \
+git log -p HEAD -- . \
   ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
-  | ./scripts/leak-scan.sh --no-gitleaks -   # full history
+  | ./scripts/leak-scan.sh --no-gitleaks -   # this ref's history — see CONTRIBUTING on why not --all
 
 gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 ```
