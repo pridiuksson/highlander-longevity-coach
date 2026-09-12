@@ -16,18 +16,28 @@
 # cannot be edited after publication: every commit carries it forever. Run this before the repo
 # becomes public, and before writing a release tag.
 #
+# WHAT IT COVERS: the author and committer of every commit reachable from any ref, plus the
+# tagger of every annotated tag — `git log` never sees a tag object, so a tagger identity would
+# otherwise sail past the one check that looks. Lightweight tags carry no identity of their own;
+# they are covered through the commits they point at.
+#
 # Usage:
 #   check-git-identities.sh [--repo DIR]
 #
-# Exit: 0 every identity is a bot or a noreply address | 1 at least one is not | 2 not a repo
+# Exit: 0 every identity is a bot or a noreply address | 1 at least one is not | 2 not a repo, bad usage
 
 set -uo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="."
 while [ $# -gt 0 ]; do
   case "$1" in
-    --repo) REPO="${2:-}"; shift 2;;
-    -h|--help) sed -n '2,20p' "$0"; exit 0;;
+    --repo)
+      if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+        echo "error: --repo requires a directory argument" >&2
+        exit 2
+      fi
+      REPO="$2"
+      shift 2;;
+    -h|--help) sed -n '2,25p' "$0"; exit 0;;
     *) echo "unknown option: $1" >&2; exit 2;;
   esac
 done
@@ -49,7 +59,12 @@ if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
   exit 2
 fi
 
-IDS=$(git -C "$REPO" log --all --format='%an <%ae>%n%cn <%ce>' 2>/dev/null | sort -u | sed '/^[[:space:]]*$/d')
+# Author/committer of every commit reachable from any ref, plus the tagger of every annotated
+# tag (see WHAT IT COVERS above).
+IDS=$( {
+  git -C "$REPO" log --all --format='%an <%ae>%n%cn <%ce>' 2>/dev/null
+  git -C "$REPO" for-each-ref refs/tags --format='%(taggername) %(taggeremail)' 2>/dev/null
+} | sort -u | sed '/^[[:space:]]*$/d')
 if [ -z "$IDS" ]; then
   echo "error: no identities found in $REPO — is there any history?" >&2
   exit 2
@@ -61,7 +76,16 @@ TOTAL=$(printf '%s\n' "$IDS" | wc -l | tr -d ' ')
 if [ -n "$BAD" ]; then
   COUNT=$(printf '%s\n' "$BAD" | wc -l | tr -d ' ')
   echo "GIT IDENTITY HITS ($COUNT of $TOTAL):"
-  printf '%s\n' "$BAD" | sed 's/^/  /'
+  printf '%s\n' "$BAD" | while IFS= read -r id; do
+    # Count distinct commits carrying the identity, not author/committer slots: one commit can
+    # name the same identity twice. A count of 0 means tagger-only (annotated tag, no commit).
+    n=$(git -C "$REPO" log --all --format='%H%x09%an <%ae>%x09%cn <%ce>' 2>/dev/null \
+        | awk -F'\t' -v id="$id" '$2 == id || $3 == id { if (!($1 in seen)) { seen[$1] = 1; c++ } } END { print c + 0 }')
+    printf '%s\t%s\n' "${n:-0}" "$id"
+  done | sort -rn | awk -F'\t' '{ printf "  %6s  %s\n", $1, $2 }'
+  echo
+  echo "The number before each identity is how many commits carry it — the size of the rewrite."
+  echo "A count of 0 means the identity appears only as an annotated-tag tagger: retag, no rewrite."
   echo
   echo "These are attached to every commit and cannot be edited after publication. The content gate"
   echo "cannot see them: it drops Author:/Commit: lines when splitting history into per-file diffs,"
