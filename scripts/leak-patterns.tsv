@@ -1,0 +1,32 @@
+# leak-patterns.tsv — the denylist the leak gate applies to this repo.
+#
+# Format: NAME<TAB>EXTENDED_REGEX   ('#' comments and blank lines ignored). PCRE, so inline
+# flags like (?i) work.
+#
+# VALUE-FREE BY DESIGN. This file is public, so it must not list the identifiers it exists to
+# catch — a denylist that names your Telegram chat id has itself leaked it. The patterns below
+# describe the SHAPE of identifying data instead. Shape patterns are also strictly stronger:
+# they catch a second host, account or key that a value list never knew about.
+#
+# Only the entries marked REPLACE need editing.
+
+# --- must be customised (REPLACE) --------------------------------------------------------
+identity-name	(?i)\b(<YOUR_GIVEN_NAME>|<YOUR_FAMILY_NAME>)\b
+owner-handle	(?i)<YOUR_GITHUB_HANDLE>
+repo-name	\b<YOUR_PRIVATE_REPO>\b
+profile-path	profiles/<YOUR_PROFILE_NAME>
+
+# --- shape-based, work as shipped --------------------------------------------------------
+# Deliberately NOT included: a generic IPv4 pattern (it matches version strings such as
+# 6.30.5.105) and a generic *.sqlite pattern (not identifying on its own). A shape pattern has
+# to be both identifying AND precise — a noisy gate gets switched off, which is worse than none.
+telegram-id	\b\d{9,10}\b
+ssh-key	\b[a-z0-9_.-]+\.pem\b
+absolute-home	/home/[a-z][a-z0-9_-]*/
+local-endpoint	\blocalhost:\d{2,5}\b
+contact-email	[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}
+health-dir	\bHEALTH/
+
+# --- personal measurements: a marker next to a number, or a number with a body unit ------
+health-marker	\b(?i:ferritin|vo2max|rmssd|hba1c|testosterone|creatinine)\b(?!\s*,?\s*\d+\s*Hz)[^0-9\n|]{0,12}\b[0-9]+(?:\.[0-9]+)?\b
+health-unit	[0-9]+\s?(kg|cm|bpm|kcal)\b

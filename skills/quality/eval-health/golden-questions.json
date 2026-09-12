@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "questions": [
+    {
+      "id": "gq-001",
+      "question": "Based on my blood work, what should I focus on?",
+      "description": "General blood work review question. Tests whether health-coach identifies critical biomarkers, addresses supplement stack, and provides actionable priorities.",
+      "must_mention": [
+        "creatinine",
+        "eGFR",
+        "kidney function",
+        "ApoB or LDL cholesterol",
+        "homocysteine",
+        "supplement stack"
+      ],
+      "should_mention": [
+        "cystatin C",
+        "vitamin D",
+        "ferritin",
+        "hsCRP or inflammation",
+        "sleep consistency",
+        "B6 dosage concern",
+        "omega-3",
+        "creatine supplementation"
+      ],
+      "nice_to_mention": [
+        "GT (gamma-glutamyl transferase)",
+        "TG:HDL ratio",
+        "MTHFR genotype",
+        "fiber intake",
+        "zinc-copper balance",
+        "testosterone",
+        "psyllium husk"
+      ]
+    }
+  ]
+}

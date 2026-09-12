@@ -1,0 +1,10 @@
+# Convenience only — CI is the enforcement (a local hook is bypassable with --no-verify).
+repos:
+  - repo: local
+    hooks:
+      - id: leak-gate
+        name: leak gate (identity / path / health)
+        entry: scripts/leak-scan.sh .
+        language: script
+        pass_filenames: false
+        always_run: true
