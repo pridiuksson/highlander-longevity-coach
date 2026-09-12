@@ -32,8 +32,8 @@ gitleaks detect --source . --log-opts="--all"   # secrets, over every commit
 **CI enforces the gate.** `.github/workflows/leak-gate.yml` runs on every push and pull request:
 the tree scan (with its secrets pass), the skill validator, the full-history identity scan, and a
 full-history `gitleaks` pass. The pre-commit hook is a convenience and is bypassable with
-`--no-verify`; CI is the version that actually enforces anything. `ci/leak-gate.yml` is kept as the
-source the workflow is copied from — see [ci/README.md](./ci/README.md).
+`--no-verify`; CI is the version that actually enforces anything. See [ci/README.md](./ci/README.md)
+for why the workflow once shipped as a manual copy.
 
 ## Privacy — the part that is not negotiable
 

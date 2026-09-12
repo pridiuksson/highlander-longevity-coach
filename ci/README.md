@@ -1,25 +1,18 @@
 # CI
 
-`leak-gate.yml` is the leak gate as a GitHub Actions workflow. It is **active**: the same file is
-installed at `.github/workflows/leak-gate.yml` and runs on every push and pull request.
+The leak gate runs as a GitHub Actions workflow at `.github/workflows/leak-gate.yml`, on every push
+and pull request. It scans the tree (with its secrets pass), validates the skills tree, scans the
+full history for identity/path/health patterns, and runs a separate full-history `gitleaks` pass.
+That matters because the pre-commit hook is client-side and bypassable with `--no-verify`; CI is the
+version that actually enforces anything.
 
-It scans the tree (with its secrets pass), validates the skills tree, scans the full history for
-identity/path/health patterns, and runs a separate full-history `gitleaks` pass. That matters because
-the pre-commit hook is client-side and bypassable with `--no-verify`; CI is the version that
-actually enforces anything.
+## Why a copy once lived in this directory
 
-## Keeping the two copies in sync
+Activating a workflow needs a token with the `workflow` scope, and GitHub refuses to let a token
+without it create or update anything under `.github/workflows/`. The automation that first populated
+this repo deliberately did not hold that scope, so the workflow was shipped inert as
+`ci/leak-gate.yml` and enabled by hand.
 
-`.github/workflows/leak-gate.yml` is the live workflow; this file is its source. Edit here first,
-then copy:
-
-```bash
-mkdir -p .github/workflows
-cp ci/leak-gate.yml .github/workflows/
-```
-
-Commit both. Enabling it the first time required a token with the `workflow` scope — the publishing
-automation deliberately does not hold one, which is why the file also lives here.
-
-**Leave this copy in `ci/`.** If you delete it, the next person cannot tell the workflow was ever
-optional, or where to edit it.
+That file has been removed. One copy under `.github/workflows/` is now the only copy — edit it in
+place. The duplicate had already started to drift: the live workflow gained a full-history
+`gitleaks` step that the `ci/` copy never had.

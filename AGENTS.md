@@ -106,7 +106,7 @@ gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 | [ONBOARDING.md](./ONBOARDING.md) | From clone to a working coach |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | The gate, layout, and how to change a skill |
 | [Profile/README.md](./Profile/README.md) | The three profile templates |
-| [ci/README.md](./ci/README.md) | The leak-gate workflow |
+| [ci/README.md](./ci/README.md) | Background on the leak-gate workflow |
 
 ## Do not
 
