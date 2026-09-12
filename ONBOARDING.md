@@ -11,7 +11,7 @@ reaches out when — and only when — something is worth saying.
 | Need | Why |
 |---|---|
 | **Hermes agent** (v0.21.0+) | hosts the skills and the loops |
-| **Python ≥ 3.11** | import/analysis scripts |
+| **Python ≥ 3.11** (tested on 3.12) | import/analysis scripts |
 | `sqlite3` CLI | inspecting imported device databases by hand |
 | *optional* `fitdecode` | parsing Garmin FIT files |
 | *optional* `gitleaks` | the leak gate's secrets pass |
@@ -41,7 +41,16 @@ Verify they are visible:
 hermes skills list
 ```
 
-## 3. Instantiate a profile
+## 3. Sanity-check the checkout
+
+Both should pass on a fresh clone. If either fails, do not trust the contents.
+
+```bash
+./scripts/leak-scan.sh .              # no personal data in the tree
+python3 scripts/validate-skills.py .  # every skill parses and its references resolve
+```
+
+## 4. Instantiate a profile
 
 Pick the template closest to you — see [`Profile/README.md`](./Profile/README.md).
 
@@ -63,7 +72,7 @@ Then, before you use it:
 3. Put the three files where your Hermes reads `SOUL.md`, `USER.md` and `MEMORY.md`.
 4. **Keep the `MEMORY.md` rent rule.** It is what stops memory turning into a landfill.
 
-## 4. Your data stays yours
+## 5. Your data stays yours
 
 The skills expect your health data to live **in your own files**, never in this repo:
 
@@ -75,7 +84,7 @@ The skills expect your health data to live **in your own files**, never in this 
 Nothing in this repository contains anyone's health data, and it should stay that way. Do not
 commit your own data into a clone of it — use your own directory.
 
-## 5. First run
+## 6. First run
 
 1. **Import** a device export — `samsung-health-import` or `garmin-import`. Both have their own
    gate suites; both must pass before you trust the resulting database.
@@ -87,7 +96,7 @@ commit your own data into a clone of it — use your own directory.
 4. **Interpret** — `nutrition-advisory` turns evidence into recommendations; `meal-planning`
    turns constraints into actual meals.
 
-## 6. Proactive delivery (optional, but it is the point)
+## 7. Proactive delivery (optional, but it is the point)
 
 Without this you have a toolkit, not a coach.
 
@@ -97,7 +106,7 @@ Without this you have a toolkit, not a coach.
    describes the stages, the insight-quality gate, and the ledger.
 4. Expect silence most weeks. A silent sweep is a successful run.
 
-## 7. Restart the gateway
+## 8. Restart the gateway
 
 ```bash
 hermes gateway restart

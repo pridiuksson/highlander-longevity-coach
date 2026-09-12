@@ -54,4 +54,33 @@ if problems:
     for p in problems:
         print("  " + p)
     sys.exit(1)
-print("OK: frontmatter valid, names match directories, references resolve, Python compiles")
+# --- documentation consistency -----------------------------------------------------------
+# Doc rot is silent: a README that names a skill that no longer exists, or links to a file that
+# was renamed, is worse than no README. These checks cost nothing and catch exactly the bugs a
+# sanitization pass is prone to introduce.
+
+doc_problems = []
+
+# 1. relative markdown links must resolve
+for doc in sorted(list(root.glob("*.md")) + list(root.glob("*/*.md"))):
+    for target in re.findall(r"\]\((\./[^)#\s]+)\)", doc.read_text()):
+        if not (doc.parent / target).exists():
+            doc_problems.append(f"{doc.relative_to(root)}: broken link -> {target}")
+
+# 2. README's loop table must name only skills that exist, and every skill must appear
+readme = root / "README.md"
+if readme.exists():
+    named = set(re.findall(r"`([a-z0-9-]+)`", readme.read_text()))
+    on_disk = {p.parent.name for p in root.glob("skills/*/*/SKILL.md")}
+    for s in sorted(on_disk - named):
+        doc_problems.append(f"README.md: skill '{s}' exists but is not mentioned")
+    for s in sorted(n for n in named if n.endswith(("-import", "-loop", "-coach", "-planning"))
+                    and n not in on_disk):
+        doc_problems.append(f"README.md: names skill '{s}' which does not exist")
+
+if doc_problems:
+    print(f"DOC PROBLEMS ({len(doc_problems)}):")
+    for d in doc_problems:
+        print("  " + d)
+    sys.exit(1)
+print(f"OK: frontmatter valid, names match directories, references resolve, Python compiles, docs consistent")

@@ -11,7 +11,7 @@ saying and learns from whether it landed.
 ```
 skills/       17 skills, grouped by the stage of the loop they serve
 Profile/      SOUL / USER / MEMORY templates (Olle, Maria, Els)
-scripts/      the leak gate
+scripts/      the leak gate and the structural validator
 ONBOARDING.md from clone to a working coach
 CONTRIBUTING.md
 ```
@@ -42,13 +42,17 @@ See **[ONBOARDING.md](./ONBOARDING.md)**.
 
 Nothing in this repository contains personal health data. Skills use placeholders
 (`<YOUR_WEIGHT_KG>`, `<USER>`, `<YOUR_HEALTH_DIR>`) and expect your data to live in your own files.
-The gate below enforces that, over the tree *and* the full git history.
+The gate below enforces that over the working tree, and the same check runs over the full history:
 
 ```bash
-./scripts/leak-scan.sh .          # identity / path / health patterns + gitleaks
+./scripts/leak-scan.sh .          # identity / path / health patterns + gitleaks, over the tree
+
+git log -p --all -- . \
+  ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
+  | ./scripts/leak-scan.sh --no-gitleaks -      # ...and over every commit
 ```
 
-CI runs the same check; see [CONTRIBUTING.md](./CONTRIBUTING.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the rest of the pre-push checks.
 
 ## Status
 

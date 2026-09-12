@@ -35,13 +35,21 @@ Two properties matter more than the stage names:
 
 ## Instantiating a template
 
-1. Copy the folder you want next to your Hermes configuration.
-2. Replace every `<PLACEHOLDER>`. Nothing in these files should still contain angle brackets when
-   you are done.
+```bash
+cp -r Profile/Els ~/my-profile
+```
+
+1. **Put the three files where your Hermes actually reads them** — `SOUL.md`, `USER.md` and
+   `MEMORY.md` in your profile directory. Copying the folder somewhere Hermes never looks is the
+   most common way this silently does nothing; [ONBOARDING.md](../ONBOARDING.md) step 4 has the
+   concrete layout.
+2. **Replace every `<PLACEHOLDER>`.** Nothing in these files should still contain angle brackets
+   when you are done.
 3. **Delete anything that does not apply.** A template with sections you do not use is worse than
    a shorter accurate one.
 4. Keep the `MEMORY.md` rent rule — it is what stops memory becoming a landfill.
-5. Restart the gateway so the skill catalogue reloads.
+5. Restart the gateway **if you also installed skills** — it caches the skill catalogue at startup.
+   Profile files are read fresh, so a restart is not what makes them take effect.
 
 ## These are scaffolds, not redactions
 

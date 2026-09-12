@@ -5,27 +5,39 @@
 **Run the leak gate before you propose anything. A red gate means stop.**
 
 ```bash
-./scripts/leak-scan.sh .
+./scripts/leak-scan.sh .              # the working tree
 ```
 
-It checks the tree for identity, path and health patterns, and delegates secrets to `gitleaks`.
-It also scans **git history** — a personal name in a commit message is public forever, so the
-history matters as much as the working tree.
-
-CI runs the same check, plus a structural pass:
+That checks the tree for identity, path and health patterns and delegates secrets to `gitleaks`.
+It does **not** read history, and a personal name in a commit message is public forever — so check
+that separately, before you open a PR:
 
 ```bash
-python3 scripts/validate-skills.py .   # frontmatter, name/dir match, references, py_compile
+git log -p --all -- . \
+  ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
+  | ./scripts/leak-scan.sh --no-gitleaks -
 ```
 
-The pre-commit hook is a convenience; CI is the enforcement.
+The two exclusions stop the gate flagging its own pattern file — which necessarily contains the
+shapes it looks for — and its own example text. `--no-gitleaks` because piping raw patches through
+gitleaks is mostly noise; run the secrets pass over history directly instead.
 
-The workflow is shipped as [`ci/leak-gate.yml`](./ci/README.md) rather than in `.github/workflows/`
-— see [ci/README.md](./ci/README.md) for why and for the one-line step that activates it.
+Two more pre-push checks:
+
+```bash
+python3 scripts/validate-skills.py .            # frontmatter, name/dir match, refs, py_compile
+gitleaks detect --source . --log-opts="--all"   # secrets, over every commit
+```
+
+**CI is not active yet.** `ci/leak-gate.yml` is shipped but has to be enabled — activating a
+workflow needs a token with the `workflow` scope, which the publishing automation deliberately does
+not hold. See [ci/README.md](./ci/README.md) for the one-line step. **Until it is enabled, you are
+the enforcement.** The pre-commit hook is a convenience and is bypassable with `--no-verify`.
 
 ## Privacy — the part that is not negotiable
 
-This repository is public. Do not put personal health data into it, ever:
+Treat everything you commit as public. The repository is private today, but the intent is to
+publish it, and git history is forever. Do not put personal health data into it, ever:
 
 - not into a skill body, even as a "worked example"
 - not into a fixture
@@ -40,7 +52,7 @@ config file with an example default rather than hardcoding it.
 
 ```
 skills/<stage>/<name>/     one skill, self-contained
-scripts/                   the leak gate
+scripts/                   the leak gate + the structural validator
 Profile/                   profile templates
 ```
 
