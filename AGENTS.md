@@ -9,7 +9,7 @@ A health-coach kit for the Hermes agent: reusable skills, the coaching loop that
 and profile templates to instantiate. It is a coach, not a dashboard — the skills collect and verify
 data; the loop decides what is worth saying and learns from whether it landed.
 
-**Publish boundary.** `skills/` is the published kit. `Profile/`, `scripts/`, and the root docs are
+**Publish boundary.** `skills/` is the published kit. `Box/`, `Profile/`, `scripts/`, and the root docs are
 scaffolding around it. The repo is intended to become public, so everything here is written as if it
 already is.
 
@@ -71,21 +71,29 @@ before acting on an assumption), `grill` (adversarial, null hypothesis = no, for
 
 ## Pre-push checks
 
-`@create-pr` runs a diff check plus the four checks below. The tree gate, the skill validator, and
-the history identity scan are mandatory. The fourth — secrets over the full history — needs
-`gitleaks` installed; if it is missing, report the secrets checks as **unverified**, never as clean.
+`@create-pr` runs a diff check plus the five checks below. The tree gate, the skill validator, the
+history identity scan, and the authorship check are mandatory. The fifth — secrets over the full
+history — needs `gitleaks` installed; if it is missing, report the secrets checks as **unverified**,
+never as clean.
 
 ```bash
 ./scripts/leak-scan.sh .                     # tree: identity / path / health + secrets
 
 python3 scripts/validate-skills.py .         # skill structure + README consistency
 
-git log -p --all -- . \
+git log -p HEAD -- . \
   ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
-  | ./scripts/leak-scan.sh --no-gitleaks -   # full history
+  | ./scripts/leak-scan.sh --no-gitleaks -   # this ref's history — see CONTRIBUTING on why not --all
+
+./scripts/check-git-identities.sh            # authorship. The scan above cannot see it: it drops
+                                             # Author:/Commit: lines when splitting the log into
+                                             # per-file diffs, so no pattern can fire on one
 
 gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 ```
+
+The authorship check is separate because authorship is the one thing that cannot be edited after
+publication. Every commit carries it forever, and no content pattern can reach it.
 
 ## Working style
 
@@ -106,6 +114,7 @@ gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 | [ONBOARDING.md](./ONBOARDING.md) | From clone to a working coach |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | The gate, layout, and how to change a skill |
 | [Profile/README.md](./Profile/README.md) | The three profile templates |
+| [Box/Nebius/README.md](./Box/Nebius/README.md) | Stand up a coach box on Nebius via the `nebius` CLI, agent-executed |
 
 ## Do not
 

@@ -19,15 +19,55 @@ jobs:
             | tar -xz gitleaks
           sudo install -m0755 gitleaks /usr/local/bin/gitleaks
 
+      # The value layer — the real identifiers — is never in the repo, so CI materialises it from a
+      # repository secret into $RUNNER_TEMP: outside the checkout, where `find` cannot enumerate it
+      # and its own patterns cannot match its own text.
+      #
+      # When the secret is unset the layer is simply absent. The shape layer still enforces itself
+      # and the verdict prints NOT-CONFIGURED, so a fork or a contributor is not blocked by a
+      # secret they cannot hold. `check-values-configured.sh` fails only when the layer IS
+      # configured and useless (inert placeholders, or a path that does not exist). This job is
+      # deliberately NOT a required status check: GitHub treats a *skipped* required check as
+      # passing, which would be the silent bypass rather than a guard.
+      - name: Materialise and check the value layer
+        env:
+          LEAK_VALUES: ${{ secrets.LEAK_PATTERNS_EXTRA }}
+        run: |
+          if [ -n "$LEAK_VALUES" ]; then
+            printf '%s\n' "$LEAK_VALUES" > "$RUNNER_TEMP/leak-patterns.extra.tsv"
+            # Two consumers need two mechanisms. GITHUB_ENV applies to SUBSEQUENT steps (the scans
+            # below); a variable written there is NOT visible to the shell that wrote it, so the
+            # guard in this step also needs a real export. Without it the guard ran with the
+            # variable unset, fell back to the (absent) default path, printed NOT-CONFIGURED and
+            # exited 0 every time — a no-op in the one environment where the layer is materialised.
+            echo "LEAK_PATTERNS_EXTRA=$RUNNER_TEMP/leak-patterns.extra.tsv" >> "$GITHUB_ENV"
+            export LEAK_PATTERNS_EXTRA="$RUNNER_TEMP/leak-patterns.extra.tsv"
+          else
+            # Not a failure: forks and contributors cannot hold this secret, and blocking them
+            # would be blocking the wrong person. But on the canonical repo an absent layer is a
+            # real coverage gap, so it is surfaced as an annotation rather than passing silently.
+            if [ "$GITHUB_REPOSITORY" = "pridiuksson/highlander-longevity-coach" ]; then
+              echo "::warning title=Value layer not configured::The identity checks (owner name, handle) are NOT running. Add the LEAK_PATTERNS_EXTRA repository secret."
+            fi
+          fi
+          ./scripts/check-values-configured.sh
+
       - name: Scan the tree
         run: ./scripts/leak-scan.sh .
 
       - name: Validate the skills tree
         run: python3 scripts/validate-skills.py .
 
-      - name: Scan the full git history (identity / path / health)
+      # Scoped to HEAD — the ref being built — and deliberately not `--all`. `--all` reaches every
+      # branch the runner knows about, so one branch's content can fail another branch's build, and
+      # the same commit can pass or fail depending only on what else existed at the time. A merge
+      # gate has to answer "is what I am merging clean", and a gate that changes its answer when
+      # somebody else pushes to an unrelated branch is not a gate. The repo-wide audit over `--all`
+      # still exists (see CONTRIBUTING.md) and belongs before a release or a public flip, where
+      # scanning every branch is the point rather than a side effect.
+      - name: Scan the git history of this ref (identity / path / health)
         run: |
-          git log -p --all -- . ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
+          git log -p HEAD -- . ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
             | ./scripts/leak-scan.sh --no-gitleaks -
 
       # Separate from the tree scan on purpose: `gitleaks detect` walks git history unless

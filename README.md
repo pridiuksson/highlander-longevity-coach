@@ -11,6 +11,7 @@ saying and learns from whether it landed.
 ```
 skills/       22 skills, grouped by the stage of the loop they serve
 Profile/      SOUL / USER / MEMORY templates (Olle, Maria, Els)
+Box/          provider cookbooks to stand up a coach box (agent-executed)
 scripts/      the leak gate and the structural validator
 AGENTS.md     working guide for agents (CLAUDE.md points here)
 ONBOARDING.md from clone to a working coach
@@ -45,7 +46,8 @@ end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the 
 
 ## Install
 
-See **[ONBOARDING.md](./ONBOARDING.md)**.
+See **[ONBOARDING.md](./ONBOARDING.md)**. No machine yet? Point your agent at
+[Box/Nebius/](./Box/Nebius/README.md) — it stands one up from zero, agent-executed.
 
 ## Privacy
 
