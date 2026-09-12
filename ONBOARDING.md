@@ -189,16 +189,48 @@ redactions, not fields you are meant to fill in. See CONTRIBUTING.md for the tok
 
 ## 7. Instantiate a profile
 
-Pick the template closest to you — see [`Profile/README.md`](./Profile/README.md).
+The bundled profiles under [`Profile/`](./Profile/) are scaffolds for different kinds of people, and
+new ones get added over time. So this step is a **framework for matching, not a lookup table**:
+whoever drives the onboarding — an agent working with the user, or a human alone — thinks with the
+dimensions below against the *current* registry, never against a list frozen in this doc.
 
-| Template | Pick it if |
-|---|---|
-| `Profile/Olle/` | you want an operator that pushes back and verifies before it acts |
-| `Profile/Maria/` | you are new to AI and want an assistant that explains and asks first |
-| `Profile/Els/` | you are technically fluent and want coaching plus a contributor lane |
+### Match the person to a profile
+
+**Ask before you assume.** The driver interviews the user in one short pass, then recommends. A
+human working alone answers the same questions for themselves. The questions below are the floor,
+not the script — derive the discriminating ones from the registry rows:
+
+- What do you want from Hermes — an operator that pushes back and verifies before it acts, an
+  assistant that explains and asks first, or something in between?
+- When something breaks, do you read the logs yourself?
+- Will you work on this kit's skills, or only be coached?
+- The facts that fill the template: name, age, sex, city, occupation, language, wearable device,
+  training, hard constraints (injuries, intolerances, medications), and how much proactive contact
+  you want.
+
+**Enumerate candidates from the registry, not from this doc.**
+[`Profile/README.md`](./Profile/README.md) holds the living list and each profile's
+self-description — read every one before matching, so a profile added after this doc was written
+is considered too.
+
+**Assess on the dimensions that drive fit:**
+
+- **Style of authority** — pushback-first, explain-first, or in between. The axis the bundled
+  profiles are built around.
+- **Technical fluency** — decides how much gets explained versus done, and breaks style ties.
+- **Contribution intent** — some profiles carry a contributor lane, some don't.
+- **Health context** — age, sex, device, constraints. These never choose the persona: they decide
+  which template sections survive the delete step below, and which import skill step 8 will need.
+
+**Recommend with a reason.** Name the closest match and say in one sentence why; offer the
+runner-up. The persona is the user's call — the agent recommends and, on confirmation, does the
+typing. If nothing is a clean fit, take the closest and adapt harder (step 3 below); the templates
+are scaffolds, not a fixed menu.
+
+### Adopt
 
 ```bash
-cp -r Profile/Els ~/my-profile
+cp -r Profile/<TEMPLATE> ~/my-profile
 ```
 
 Then:
@@ -211,15 +243,28 @@ Then:
 
    Profile files are read as plain text, not through the skill pipeline, so they take effect on the
    next turn — no gateway restart needed for these (unlike step 3).
-2. **Fill in the angle-bracket fields.** In the *profile* these are yours to write — `<USER>`,
-   `<AGE>`, `<CITY>`. Unlike the skills there is no config mechanism here, because these are the
-   facts about you that the whole loop is built on.
-3. **Delete anything that does not apply.** A template with unused sections is worse than a shorter
-   accurate one.
+2. **Fill in the angle-bracket fields from the interview answers** — `<USER>`, `<AGE>`, `<CITY>`.
+   Unlike the skills there is no config mechanism here, because these are the facts about the user
+   that the whole loop is built on. Never invent an answer the user did not give, and never press
+   for one: a declined answer stays a placeholder, and any section that depends on it goes with
+   step 3.
+3. **Delete anything that does not apply, and adapt the tone.** Health sections follow the health
+   facts (a cycle-tracking section survives only if it applies to this person); where the user's
+   stated expectations differ from the template's defaults, bend the tone lines and record the
+   delta. A template with unused sections is worse than a shorter accurate one.
 4. **Keep the `MEMORY.md` rent rule.** It is what stops memory turning into a landfill.
 
+Re-matching later — the person changes, or the registry grows — replaces only `SOUL.md`:
+`USER.md` and `MEMORY.md` belong to the person and survive the swap.
+
+**Guardrails.** Interview answers are personal data: they are written only into `~/.hermes/` on the
+box, never into a clone of this repo (step 6 is the rule). The default is that the **human types
+them** — the handback exists so personal facts do not pass through an agent transcript. Agent-fill
+is opt-in: only when the user explicitly asks, the agent shows the filled profile as a diff for
+approval before writing, and names the caveat that the answers now live in the transcript too.
+
 Record where this profile came from, for later: the commit from step 1 and the template you forked
-(`derived_from: highlander-longevity-coach@<sha>`, `profile: Els`).
+(`derived_from: highlander-longevity-coach@<sha>`, `profile: <name>`).
 
 A second person on the same box is a **Hermes profile**, not a second set of memory files: each
 profile under `~/.hermes/profiles/<name>/` carries its own `config.yaml`, state, gateway service,
@@ -245,7 +290,7 @@ and local memory store. Instantiate the templates per profile rather than mixing
 
 **Gate before you go further:** confirm the profile actually loaded, not merely that the files are
 placed. Ask the agent something only your profile can answer — "what are my hard constraints?"
-If it does not know, revisit step 7.1.
+If it does not know, revisit step 7.
 
 ## 9. Wire proactive delivery
 

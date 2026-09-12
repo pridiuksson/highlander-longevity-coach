@@ -373,10 +373,10 @@ explains why). Override the quiet hours here if you already know better.
 The automated run ends here. **Do not continue into personal data** — steps 7–9 are yours, with
 the agent narrating. Print this exact to-do:
 
-1. **Instantiate a profile** (ONBOARDING step 7): copy `Profile/Maria`, `Profile/Olle` or
-   `Profile/Els`; place `SOUL.md` → `~/.hermes/SOUL.md`, `USER.md`/`MEMORY.md` →
-   `~/.hermes/memories/`; fill the angle-bracket fields with **your** facts; delete what does not
-   apply.
+1. **Instantiate a profile** (ONBOARDING step 7): run the interview, match against the registry in
+   `Profile/README.md` (new profiles may exist beyond the originals); place `SOUL.md` →
+   `~/.hermes/SOUL.md`, `USER.md`/`MEMORY.md` → `~/.hermes/memories/`; fill the angle-bracket
+   fields with **your** facts; delete what does not apply.
 2. **First run** (ONBOARDING step 8): import → verify → deliberate → interpret, then the profile
    gate question — "what are my hard constraints?" — must be answered from your profile, not
    guessed.
