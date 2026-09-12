@@ -136,17 +136,32 @@ while IFS=$'\t' read -r name ere; do
 done < "$PATTERNS"
 
 # ---- secrets pass ----------------------------------------------------------
+# Fail CLOSED when the pass is enabled but unavailable. Reporting PASS while the
+# secrets pass silently never ran is worse than reporting nothing: the docs quote
+# this exit code as evidence that the tree is clean.
 GITLEAKS_RC=0
+GITLEAKS_STATE="skipped (stdin mode — diffs are not a secret surface)"
 if [ "$USE_GITLEAKS" -eq 1 ] && [ "$STDIN_MODE" -eq 0 ]; then
   if command -v gitleaks >/dev/null 2>&1; then
     gitleaks detect --source "$SCAN_ROOT" --no-banner --redact --exit-code 1 >"$WORK/gitleaks.txt" 2>&1
     GITLEAKS_RC=$?
-    if [ "$GITLEAKS_RC" -ne 0 ] && [ -s "$WORK/gitleaks.txt" ]; then
-      grep -E 'Finding:|Secret:|File:' "$WORK/gitleaks.txt" >> "$HITS" 2>/dev/null || true
+    if [ "$GITLEAKS_RC" -ne 0 ]; then
+      GITLEAKS_STATE="FAILED (rc=$GITLEAKS_RC)"
+      if [ -s "$WORK/gitleaks.txt" ]; then
+        grep -E 'Finding:|Secret:|File:' "$WORK/gitleaks.txt" >> "$HITS" 2>/dev/null || true
+      fi
+    else
+      GITLEAKS_STATE="clean"
     fi
   else
-    echo "warn: gitleaks not found — secrets pass SKIPPED" >&2
+    echo "error: gitleaks not found, but the secrets pass is enabled." >&2
+    echo "       install gitleaks (https://github.com/gitleaks/gitleaks), or re-run with" >&2
+    echo "       --no-gitleaks to skip the pass EXPLICITLY. A PASS that never ran the" >&2
+    echo "       secrets pass is not a clean tree, and this script will not claim it is." >&2
+    exit 2
   fi
+elif [ "$USE_GITLEAKS" -eq 0 ]; then
+  GITLEAKS_STATE="disabled (--no-gitleaks)"
 fi
 
 # ---- report ----------------------------------------------------------------
@@ -175,8 +190,8 @@ if [ -n "$EXPECT" ]; then
 fi
 
 if [ "$NHITS" -gt 0 ] || [ "$GITLEAKS_RC" -ne 0 ]; then
-  echo "FAIL: $NHITS identity/path/health hit(s)${GITLEAKS_RC:+, gitleaks rc=$GITLEAKS_RC}"
+  echo "FAIL: $NHITS identity/path/health hit(s); secrets pass: $GITLEAKS_STATE"
   exit 1
 fi
-echo "PASS: no identity/path/health hits${USE_GITLEAKS:+, gitleaks clean}"
+echo "PASS: no identity/path/health hits; secrets pass: $GITLEAKS_STATE"
 exit 0
