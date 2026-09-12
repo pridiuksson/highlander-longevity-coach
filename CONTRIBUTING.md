@@ -15,9 +15,43 @@ will tell you about itself rather than hide:
 
 - the secrets pass covers the **working tree only**. `gitleaks detect` walks git history unless
   `--no-git` is passed, so history needs its own pass (below).
-- if any pattern still contains a `<YOUR_...>` placeholder, that check is **inert** — it matches the
-  literal placeholder and nothing else. The verdict prints how many, so a PASS is never read as
-  coverage that does not exist. Fill in the `REPLACE` entries in `scripts/leak-patterns.tsv`.
+- the **value layer's** state, on every run.
+
+### Two layers, and why the identifiers are not in the repo
+
+The gate has two layers with different contracts.
+
+| Layer | Where it lives | Contract |
+|---|---|---|
+| **Shape** | `scripts/leak-patterns.tsv`, tracked | The merge gate. No config, no secret, enforced in every clone and fork. A hit fails the run |
+| **Value** | outside the tree, loaded by path | The identifiers themselves — your name, your handle. **Additive**: absent is a printed state, not a failure |
+
+`scripts/leak-patterns.tsv` cannot name the identifiers it exists to catch: a denylist that names
+your handle has itself leaked it, and it is the one file every reader opens. So the values live
+outside the repository entirely:
+
+```bash
+mkdir -p ~/.config/leak
+cp scripts/leak-patterns.local.example.tsv ~/.config/leak/patterns.tsv
+$EDITOR ~/.config/leak/patterns.tsv          # fill in your name and your handle
+./scripts/leak-scan.sh .                     # verdict: value layer: configured (2 pattern(s) applied)
+```
+
+The gate finds that path automatically; `--patterns-extra FILE` or `$LEAK_PATTERNS_EXTRA` points it
+somewhere else. **Do not put it inside the repository.** The scan enumerates with `find`, not git, so
+an in-tree overlay is enumerated and its own patterns match its own text — and the gate refuses to
+run rather than grow an exclusion to cope with it, because every exclusion is an evasion surface.
+
+There is deliberately **no flag that silences the value layer**. An absent layer prints
+`value-layer: NOT-CONFIGURED (0 value patterns applied)`; a layer that is configured but still full
+of placeholders prints `CONFIGURED BUT INERT`. Both are stated on every run, so a PASS is never read
+as identity coverage that does not exist. `scripts/check-values-configured.sh` (wired into the
+pre-commit hook and run in CI) fails only when the layer is *configured and useless* — never on
+simple absence, which a contributor cannot fix and which is not their identity at stake.
+
+A real name used as free prose cannot be caught by shape: no regex decides "is this a human name?"
+without a dictionary that also matches places and products. That is the gap the value layer fills,
+and the reason its absence is reported rather than ignored.
 
 It does **not** read history, and a personal name in a commit message is public forever — so check
 that separately, before you open a PR:
@@ -41,8 +75,10 @@ git log -p --all -- . \
 ```
 
 The two exclusions stop the gate flagging its own pattern file — which necessarily contains the
-shapes it looks for — and its own example text. `--no-gitleaks` because piping raw patches through
-gitleaks is mostly noise; run the secrets pass over history directly instead.
+shapes it looks for — and its own example text. The scanner's own self-exclusion is anchored on
+`scripts/<name>` rather than the bare basename, so a file with the same name elsewhere in the tree
+is still scanned; every verdict prints how many files were excluded. `--no-gitleaks` because piping
+raw patches through gitleaks is mostly noise; run the secrets pass over history directly instead.
 
 Two more pre-push checks:
 
@@ -59,7 +95,9 @@ which is how you check a box for shadowed skill names.
 **CI enforces the gate.** `.github/workflows/leak-gate.yml` runs on every push and pull request:
 the tree scan (with its secrets pass), the skill validator, the full-history identity scan, and a
 full-history `gitleaks` pass. The pre-commit hook is a convenience and is bypassable with
-`--no-verify`; CI is the version that actually enforces anything.
+`--no-verify`; CI is the version that actually enforces anything. The hook also needs the
+pre-commit framework installed and wired in once — `pipx install pre-commit && pre-commit install`
+— otherwise the committed config runs nowhere at all.
 
 It is the only copy — edit the workflow in place. It once shipped inert as `ci/leak-gate.yml`
 because activating a workflow needs a token with the `workflow` scope, and GitHub refuses to let a

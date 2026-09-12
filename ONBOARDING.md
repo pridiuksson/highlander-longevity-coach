@@ -18,6 +18,8 @@ reaches out when — and only when — something is worth saying.
 | **Python ≥ 3.11** (tested on 3.12) | import/analysis scripts |
 | **`git`, with access to this repo** | the repo is private; an HTTPS clone needs a credential (`gh auth login`, or a token) |
 | **`gitleaks`** | **required.** It is the secrets half of the leak gate. Without it `leak-scan.sh` exits `2` rather than claiming a pass — a "clean" that never ran the secrets scan is not a clean tree |
+| *optional* `pre-commit` framework | runs the leak gate on every local commit. `pipx install pre-commit && pre-commit install` wires `.pre-commit-config.yaml` into git; without that step the committed hook config runs nowhere |
+| *optional* `perl` | the PCRE engine for the leak gate on machines whose `grep` has no `-P` (the stock macOS grep). macOS ships perl; a GNU `grep` in PATH is used instead when present |
 | *optional* `sqlite3` CLI | poking at imported device databases by hand. The skills use Python's `sqlite3` stdlib, so this is a convenience, not a requirement |
 | *optional* `fitdecode` | parsing Garmin FIT files. `garmin-import` pins it into the skill's own venv |
 | *optional* `command-code` / `agy` | a **model-independent** peer for `peer-review`. Without one it falls back to a subagent — a second *context*, not a second *model* |
@@ -284,7 +286,8 @@ is the failure the repo's versioning design exists to prevent.
 | The gateway ignores a new skill | It cached the catalogue — restart it |
 | The leak gate is red | **Do not proceed.** Read the report; it names the pattern and the line |
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
-| The gate warns about INERT patterns | Expected on a fresh clone. The four `<YOUR_...>` rows in `scripts/leak-patterns.tsv` are the adopter's own identity denylist — fill them in (or delete the rows) and the warning goes away. Until then those specific checks catch nothing, and the verdict says so |
+| The verdict says `value-layer: NOT-CONFIGURED` | Expected on a fresh clone, and **not** a failure: the shape patterns ran and passed, but the identity checks (your name, your handle) are not configured, and the verdict says so rather than implying coverage it does not have. Set up the value layer: `mkdir -p ~/.config/leak && cp scripts/leak-patterns.local.example.tsv ~/.config/leak/patterns.tsv`, then fill it in. It lives outside the repo on purpose — a tracked file naming those identifiers is the leak the gate exists to prevent |
+| The verdict says `CONFIGURED BUT INERT` or `CONFIGURED BUT EMPTY` | The value layer exists and checks nothing: the entries are still `<YOUR_...>` placeholders, or the file has no entries. `./scripts/check-values-configured.sh` is the same check as a standalone command, and the pre-commit hook runs it |
 | You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
 | `demo` keeps asking questions | Check `$HERMES_HOME/data/demo/state.json` — `budget_used` vs `budget_limit_asks`, `skip_streak`, and `stop_learning`. It must retire itself at 21 asks or 30 days; if it will not stop, say "stop learning" and verify `stop_learning` flips to `true` |
 
