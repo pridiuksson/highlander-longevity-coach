@@ -25,8 +25,8 @@ Treat everything you commit as public: no personal health data, no real names, n
 no hosts — in a skill body, a fixture, a commit message, or a branch name. Keep placeholders
 (`<USER>`, `<YOUR_HEALTH_DIR>`) and drop the values. `CONTRIBUTING.md` has the full rule.
 
-CI (`.github/workflows/leak-gate.yml`) re-runs the gate on every push and PR over the tree and the
-full history — including secrets over history — so a red gate blocks the merge. The local hook and
+CI (`.github/workflows/leak-gate.yml`) re-runs the gate on every push and PR — the tree scan, this
+ref's history, and a full-history secrets pass — so a red gate blocks the merge. The local hook and
 the `workflow/` skills exist so you never push something CI will reject. Note the gate walks with
 `find`, not `git`: gitignored `staging/` is scanned too.
 
@@ -114,7 +114,7 @@ publication. Every commit carries it forever, and no content pattern can reach i
 | [ONBOARDING.md](./ONBOARDING.md) | From clone to a working coach |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | The gate, layout, and how to change a skill |
 | [Profile/README.md](./Profile/README.md) | The three profile templates |
-| [Box/Nebius/README.md](./Box/Nebius/README.md) | Stand up a coach box on Nebius via the `nebius` CLI, agent-executed |
+| [Box/Nebius/nebius-cpu-box-cookbook.md](./Box/Nebius/nebius-cpu-box-cookbook.md) | Stand up a coach box on Nebius via the `nebius` CLI, agent-executed |
 
 ## Do not
 

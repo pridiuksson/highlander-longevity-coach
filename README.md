@@ -12,7 +12,7 @@ saying and learns from whether it landed.
 skills/       22 skills, grouped by the stage of the loop they serve
 Profile/      SOUL / USER / MEMORY templates (Olle, Maria, Els)
 Box/          provider cookbooks to stand up a coach box (agent-executed)
-scripts/      the leak gate and the structural validator
+scripts/      the leak gate, the validator, and the authorship + value-layer checks
 AGENTS.md     working guide for agents (CLAUDE.md points here)
 ONBOARDING.md from clone to a working coach
 CONTRIBUTING.md
@@ -47,7 +47,7 @@ end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the 
 ## Install
 
 See **[ONBOARDING.md](./ONBOARDING.md)**. No machine yet? Point your agent at
-[Box/Nebius/](./Box/Nebius/README.md) — it stands one up from zero, agent-executed.
+[Box/Nebius/](./Box/Nebius/nebius-cpu-box-cookbook.md) — it stands one up from zero, agent-executed.
 
 ## Privacy
 
@@ -55,15 +55,17 @@ Nothing in this repository contains personal health data. Skills take the paths 
 `config.yaml` (`skills.config.*`, injected at load) instead of baked-in placeholders, and the
 reference docs carry deliberate `<value>` redactions where the authors' measurements were removed.
 The gate below enforces that over the working tree; the identity/path/health patterns also run over
-every commit (the history **secrets** pass is a separate `gitleaks --log-opts="--all"` — see
-[CONTRIBUTING.md](./CONTRIBUTING.md)):
+the history of the ref being built — never `--all`, so one branch's content cannot fail another
+branch's build. The full-history **secrets** pass is a separate `gitleaks --log-opts="--all"`, and
+the repo-wide `--all` identity audit is run on purpose before a release or a public flip — see
+[CONTRIBUTING.md](./CONTRIBUTING.md):
 
 ```bash
 ./scripts/leak-scan.sh .          # identity / path / health patterns + gitleaks, over the tree
 
-git log -p --all -- . \
+git log -p HEAD -- . \
   ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
-  | ./scripts/leak-scan.sh --no-gitleaks -      # ...and over every commit
+  | ./scripts/leak-scan.sh --no-gitleaks -      # ...and over this ref's history
 ```
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the rest of the pre-push checks.

@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: "Ship the current commits as a pull request without ever moving HEAD — leak-gated. Use after @commit when the user asks to open a PR, push a branch, or 'get this reviewed'. Runs the full pre-push gate (tree + history + skills + secrets) before pushing."
+description: "Ship the current commits as a pull request without ever moving HEAD — leak-gated. Use after @commit when the user asks to open a PR, push a branch, or 'get this reviewed'. Runs the full pre-push gate (tree + history + skills + authorship + secrets) before pushing."
 version: 1.0.0
 author: Hermes Agent
 license: MIT
@@ -39,40 +39,37 @@ Keep the `HEAD` SHA for branch creation.
 
 ## Step 2 — Pre-push gates
 
-Run in this order. Any failure stops the push. Gate 5 requires `gitleaks`; if it is missing, report
-the secrets checks as unverified — not clean.
+Run in this order. Any failure stops the push. The secrets pass needs `gitleaks`; if it is missing,
+report the secrets checks as unverified — not clean.
 
 ```bash
-git diff --check origin/main..HEAD      # 1. whitespace / conflict markers
-
-./scripts/leak-scan.sh .                # 2. leak gate, tree (+ its own gitleaks pass)
-
-git log -p --all -- . \
-  ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
-  | ./scripts/leak-scan.sh --no-gitleaks -   # 3. leak gate, full history
-
-python3 scripts/validate-skills.py .    # 4. skill structure + README consistency
-
-gitleaks detect --source . --log-opts="--all"   # 5. secrets over every commit (if installed)
+git diff --check origin/main..HEAD      # whitespace / conflict markers
 ```
+
+Then run the **five pre-push checks exactly as written in `AGENTS.md`, section "Pre-push checks"** —
+the tree leak gate, the skill validator, this ref's history scan, the authorship check, and the
+full-history `gitleaks` pass. That block is canonical and this skill deliberately does not restate
+it: restated copies are exactly how a history-scope fix failed to reach this file, and how the
+authorship check never reached it at all.
 
 Notes that matter:
 
-- **Two passes, two scopes.** Gate 2 (`leak-scan.sh` in directory mode) has an identity/path/health
-  pass that walks the **whole working tree** with `find` — so `.gitignore` exempts nothing, and a
-  scratch file anywhere in the repo, even in gitignored `staging/`, is scanned. Move stray files
-  outside the repo. Its embedded `gitleaks` pass is different: it inspects **committed content** and
-  ignores uncommitted files.
+- **Two passes, two scopes.** The tree gate (`leak-scan.sh` in directory mode) has an
+  identity/path/health pass that walks the **whole working tree** with `find` — so `.gitignore`
+  exempts nothing, and a scratch file anywhere in the repo, even in gitignored `staging/`, is
+  scanned. Move stray files outside the repo. Its embedded `gitleaks` pass is different: it inspects
+  **committed content** and ignores uncommitted files.
 - **The embedded `gitleaks` pass is not full-history.** Verified: a secret committed and later
   removed is missed by `gitleaks detect --source .` but caught with `--log-opts="--all"` — which is
-  what gate 5 adds, so gate 5 is not redundant.
-- **If `gitleaks` is not installed**, gate 2 prints `gitleaks not found — secrets pass SKIPPED` and
-  can still exit 0 on a clean pattern pass — and gate 5 cannot run either. Install it so both secrets
-  passes are available locally; until then report the local secrets checks as **unverified**, never as
-  clean. CI runs both the tree and the full-history secrets passes, so the gap closes on the PR — but
-  a skipped local pass is still not a clean one.
-- **Gate 3 catches personal names in commit messages**, but it exempts the public committer handle
-  and the template profile names. Check those yourself before committing — `@commit` Step 4 does.
+  what the full-history secrets pass adds, so it is not redundant.
+- **If `gitleaks` is not installed**, the tree gate prints `gitleaks not found — secrets pass
+  SKIPPED` and can still exit 0 on a clean pattern pass — and the full-history secrets pass cannot
+  run either. Install it so both secrets passes are available locally; until then report the local
+  secrets checks as **unverified**, never as clean. CI runs both the tree and the full-history
+  secrets passes, so the gap closes on the PR — but a skipped local pass is still not a clean one.
+- **The history scan catches personal names in commit messages**, but it exempts the public
+  committer handle and the template profile names. Check those yourself before committing —
+  `@commit` Step 4 does.
 - Leak-scan exit codes: `0` clean, `1` hits, `2` setup error. Anything but `0` stops the push.
 
 **Advisory — skills changed.** If any file under `skills/**` changed, set `SKILLS_CHANGED = true`
@@ -136,8 +133,9 @@ Fill **every** section — a missing section is a defect, not a style choice:
 
 - **Diff check**: ✅ `git diff --check origin/main..HEAD` passed
 - **Leak gate (tree)**: ✅ `./scripts/leak-scan.sh .` passed
-- **Leak gate (history)**: ✅ full-history scan passed
+- **Leak gate (history, this ref)**: ✅ history identity scan passed
 - **Skill validation**: ✅ / ⏭ no skills changed
+- **Authorship**: ✅ `./scripts/check-git-identities.sh` passed
 - **Secrets (full history)**: ✅ `gitleaks --log-opts="--all"` passed / ⏭ not installed locally — CI runs it
 - **Peer review**: ⏭ not flagged / ⚠️ skills changed — review recommended
 
