@@ -83,7 +83,7 @@ Every issue uses this structure. Omit a section only when it is genuinely empty,
 ```bash
 ./scripts/leak-scan.sh .              # expect: PASS
 python3 scripts/validate-skills.py .  # expect: OK
-git log -p --all -- . ':(exclude)scripts/leak-patterns.tsv' \
+git log -p HEAD -- . ':(exclude)scripts/leak-patterns.tsv' \
   ':(exclude)scripts/leak-scan.sh' | ./scripts/leak-scan.sh --no-gitleaks -   # expect: PASS
 ```
 

@@ -108,8 +108,8 @@ also works against an **install root** — `python3 scripts/validate-skills.py -
 which is how you check a box for shadowed skill names.
 
 **CI enforces the gate.** `.github/workflows/leak-gate.yml` runs on every push and pull request:
-the tree scan (with its secrets pass), the skill validator, the full-history identity scan, and a
-full-history `gitleaks` pass. The pre-commit hook is a convenience and is bypassable with
+the tree scan (with its secrets pass), the skill validator, the HEAD-scoped identity scan (this ref
+only, as above), and a full-history `gitleaks` pass. The pre-commit hook is a convenience and is bypassable with
 `--no-verify`; CI is the version that actually enforces anything. The hook also needs the
 pre-commit framework installed and wired in once — `pipx install pre-commit && pre-commit install`
 — otherwise the committed config runs nowhere at all.
