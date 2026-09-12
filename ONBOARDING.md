@@ -104,7 +104,7 @@ show you a shadowed duplicate:
 ```bash
 python3 scripts/validate-skills.py --installed ~/.hermes   # this kit's checks, not other people's
 hermes skills list | grep -E '^[0-9]+ hub-installed' \
-  || echo "could not read the summary — run \`hermes skills list\` by hand (expect 21 local: 17 coaching + 4 workflow)"
+  || echo "could not read the summary — run \`hermes skills list\` by hand (expect 22 local: 17 coaching + 4 workflow + 1 onboarding/demo)"
 ```
 
 `--installed` matters: without it the validator applies *this repo's* frontmatter and token rules to
@@ -228,6 +228,11 @@ and local memory store. Instantiate the templates per profile rather than mixing
 
 ## 8. First run
 
+> **No device exports yet?** Run the step-8 gate first ("what are my hard constraints?" — it
+> takes one message and confirms your profile loaded), then skip to step 10 — `demo` works
+> with zero data, learns what it needs to make the kit useful today, and will tell you when
+> an import becomes worthwhile. Come back here once you have an export.
+
 1. **Import** a device export — `samsung-health-import` or `garmin-import`. Both have their own
    gate suites; both must pass before you trust the resulting database.
 2. **Verify** — nothing goes into interpretation unverified. `evidence-loop` is the skill that
@@ -282,10 +287,13 @@ Run it interactively right now:
 demo
 ```
 
-Or accept its daily suggestion instead (same `/suggestions` flow as step 9) — it will ask at
-most 1–2 casual questions per day, each answered with an immediately useful result (tell it
-your diet and it prices matching staples at your local store; give it your weight and it
-computes your protein range).
+Or accept its daily suggestion instead — the same `/suggestions` flow as step 9 (the skill
+ships a `blueprint:` in its frontmatter, so after the step-3 gateway restart it appears as a
+pending suggestion; accept it and the learn cron asks at most a couple of casual questions per
+day, each answered with an immediately useful result — tell it your diet and it prices matching
+staples at your local store; give it your weight and it computes your protein range). The
+blueprint's prompt already encodes the guardrails: budget, quiet hours, the shared daily cap,
+and silence as the correct outcome when nothing should be asked.
 
 Everything it learns lands where the rest of the kit already reads — `health.baseline_doc`
 (step 5) and `~/.hermes/memories/USER.md` — so skills pick it up with no extra wiring. When

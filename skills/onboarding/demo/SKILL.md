@@ -10,6 +10,19 @@ prerequisites:
 metadata:
   hermes:
     tags: [onboarding, demo, tour, personalization, cron, graduation]
+    blueprint:
+      schedule: "30 10 * * *"
+      prompt: >-
+        Learn-mode fire for the demo skill. Load $HERMES_HOME/data/demo/state.json.
+        If terminal is set, the budget is spent, backoff_until is in the future, the current
+        local time is inside demo.quiet_hours (the NO-ASKING window — the inverse of the
+        proactive skill's may-speak window, which must NOT gate this skill),
+        or the shared daily ask cap (demo.daily_asks) is reached, do NOTHING — silence is a
+        successful run. Otherwise pick the
+        highest-value unfilled fact whose declared reward is computable from facts so far
+        (skills/onboarding/demo/references/demo-catalog.md ladder), ask ONE casual question
+        with skip offered, write the answer to its single home (health.baseline_doc or
+        memories/USER.md), run the reward immediately, update the ledger atomically.
     config:
       - key: demo.daily_asks
         description: "Max questions per day across BOTH modes (tour sessions + learn cron draw from the same cap)"
@@ -24,7 +37,7 @@ metadata:
 
 # Demo — Show it working, learn the user, get out of the way
 
-A fresh adopter has 21 skills and zero data. This skill exists to close that gap by doing, not
+A fresh adopter has 22 skills and zero data. This skill exists to close that gap by doing, not
 describing: every demo is a **real skill run on the user's own input**, and every fact learned is
 written **where the other skills already read**. When the profile is complete, this skill retires
 itself and hands the user to `proactive-coach`.
@@ -34,7 +47,7 @@ Two modes:
 | Mode | When | What it does |
 |---|---|---|
 | **Tour** | user says `demo`, or ONBOARDING step 10 | ≤3 questions (skip allowed) → run 1-2 live demos on the user's own question → close with their personal unlock path |
-| **Learn** | daily cron, 1-2 fires/day at random times, **one question per fire**. Each fire: (1) load state; if `terminal` set, budget spent, `backoff_until` in the future, quiet hours, or the daily cap (`daily_ask_cap`, default 3/day shared with tour sessions) is reached → stay silent, silence is a successful run; (2) pick the highest-value unfilled, not-`unreachable` fact whose declared reward is computable from facts-so-far; (3) ask casually, offer skip; (4) on answer: write the fact to its single home (rule 2), then run the reward immediately. Examples: |
+| **Learn** | daily cron (blueprint ships one fire/day; a second optional fire may be added at setup), **one question per fire**. Each fire: (1) load state; if `terminal` set, budget spent, `backoff_until` in the future, inside `demo.quiet_hours` (the no-asking window), or the daily cap (`daily_ask_cap`, default 3/day shared with tour sessions) is reached → stay silent, silence is a successful run; (2) pick the highest-value unfilled, not-`unreachable` fact whose declared reward is computable from facts-so-far; (3) ask casually, offer skip; (4) on answer: write the fact to its single home (rule 2), then run the reward immediately (worked examples in the Learn-mode section below). |
 
 ## Hard rules (all modes)
 
@@ -61,8 +74,10 @@ Two modes:
 5. **Learn budget: 21 asks or 30 days**, whichever comes first, then stop — regardless of profile
    completeness. 3 consecutive skips → silent for 7 days. The user can always say
    "stop learning" and the cron retires immediately.
-6. **Quiet hours respected** (`demo.quiet_hours`; when wiring the cron, reuse the same window
-   set in step 5 for `proactive` so the two skills never speak in the same night).
+6. **Quiet hours respected** (`demo.quiet_hours`, default `22:00-09:00` — this is the
+   *no-asking* window; it is the inverse of the `proactive` skill's *may-speak* window for
+   digest delivery, which must NOT gate asking — do not copy that value in). When wiring the
+   cron, schedule fires outside this window.
 
 ## Tour mode — the demo catalog
 
@@ -85,10 +100,12 @@ Tour session shape:
 
 ## Learn mode — the cron
 
-The cron schedule itself is wired once during setup (ONBOARDING step 10): 1-2 fires/day. The
-fire times are jittered by the scheduling agent — the rule is: never two asks within 4 hours of
-each other, never outside quiet hours. `demo.daily_asks` is the total daily ask cap shared by
-both modes (see rule 3b).
+The cron schedule itself is wired once during setup (ONBOARDING step 10) from the skill's
+`blueprint:` frontmatter — a daily fire whose hour the scheduling agent jitters within the
+allowed window (outside `demo.quiet_hours`, the no-asking window; never two asks within 4
+hours). A second daily fire is optional; the blueprint ships one. `demo.daily_asks`
+is the total daily ask cap shared by both modes (see rule 3b) — fires beyond what the cap
+allows do nothing.
 
 Each fire (one question max):
 
