@@ -168,7 +168,7 @@ them, because it does not.
 
 ```
 skills/<stage>/<name>/     one skill, self-contained
-scripts/                   the leak gate + the structural validator
+scripts/                   the leak gate, the validator, authorship + value-layer checks
 Profile/                   profile templates
 Box/                       provider cookbooks: stand up a coach box, agent-executed
 .commandcode/              Command Code skill discovery

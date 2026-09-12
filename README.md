@@ -12,7 +12,7 @@ saying and learns from whether it landed.
 skills/       22 skills, grouped by the stage of the loop they serve
 Profile/      SOUL / USER / MEMORY templates (Olle, Maria, Els)
 Box/          provider cookbooks to stand up a coach box (agent-executed)
-scripts/      the leak gate and the structural validator
+scripts/      the leak gate, the validator, and the authorship + value-layer checks
 AGENTS.md     working guide for agents (CLAUDE.md points here)
 ONBOARDING.md from clone to a working coach
 CONTRIBUTING.md
