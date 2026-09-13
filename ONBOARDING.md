@@ -23,8 +23,14 @@ reaches out when — and only when — something is worth saying.
 | *conditional* PCRE engine — GNU `grep` or `perl` | the gate's patterns are PCRE: GNU grep (`-P`) is used when present, else perl, else the gate exits `2` rather than guess. macOS: stock grep has no `-P`, so the pre-shipped perl is the engine — nothing to install. Linux: GNU grep is normally already there |
 | *optional* `sqlite3` CLI | poking at imported device databases by hand. The skills use Python's `sqlite3` stdlib, so this is a convenience, not a requirement |
 | *optional* `fitdecode` | parsing Garmin FIT files. `garmin-import` pins it into the skill's own venv |
+| *conditional* **a wearable the kit can import** | `samsung-health-import` and `garmin-import` are the only importers (step 8). Another device — an Apple Watch, for example — is not a blocker: start on the demo path (step 8 note) until an importer exists |
 | *optional* `command-code` / `agy` | a **model-independent** peer for `peer-review`. Without one it falls back to a subagent — a second *context*, not a second *model* |
 | *optional* Honcho API key | the memory-overlay provider this kit is field-tested with — see step 5. Without it the kit runs on the local files alone |
+
+Driving the box over SSH instead of sitting at it? `hermes` is installed into `~/.local/bin`, which a non-interactive
+shell does not read: `ssh <user>@<host> 'hermes skills list'` fails with `command not found` while the same command at
+the console works. Prefix with a login shell — `ssh <user>@<host> "bash -lc 'hermes skills list'"` — or export a PATH
+that includes `$HOME/.local/bin` first. Every `hermes` command in this document assumes `hermes` resolves.
 
 ## 1. Clone — and record what you cloned
 
@@ -32,6 +38,7 @@ reaches out when — and only when — something is worth saying.
 git clone https://github.com/pridiuksson/highlander-longevity-coach ~/highlander-longevity-coach
 cd ~/highlander-longevity-coach
 git rev-parse HEAD        # write this down. This is your version.
+git status -sb            # ...and which branch it tracks — the Updating section assumes you pull the same one
 ```
 
 ## 2. Look before you install
@@ -104,13 +111,20 @@ show you a shadowed duplicate:
 ```bash
 python3 scripts/validate-skills.py --installed ~/.hermes   # this kit's checks, not other people's
 hermes skills list | grep -E '^[0-9]+ hub-installed' \
-  || echo "could not read the summary — run \`hermes skills list\` by hand (expect 22 local: 17 coaching + 4 workflow + 1 onboarding/demo)"
+  || echo "could not read the summary — run \`hermes skills list\` by hand (expect one local row per kit skill, plus whatever this box already had — \`validate-skills.py\` is the source of truth for what the kit ships)"
 ```
 
 `--installed` matters: without it the validator applies *this repo's* frontmatter and token rules to
 every unrelated third-party skill on the box, burying the one finding that matters in noise.
 `hermes doctor` covers the box itself — run it after installs and upgrades; `--fix` performs
 config-version migrations.
+
+Triage the report instead of treating it as pass/fail. One class of finding is real: a
+`model.default` / `model.provider` mismatch (a vendor-prefixed model name under a provider that
+does not use that prefix) — fix it per the report's own hint, because it can silently route
+around your intended provider. Expected on a fresh box and not blocking: npm vulnerability
+counts for the browser/web tooling, and `hermes setup` listing API keys for tools you have not
+configured yet (verified on v0.21.2: a fresh box reported exactly this mix).
 
 ## 5. Configure — you do not edit the skills
 
@@ -126,6 +140,12 @@ hermes config set skills.config.proactive.quiet_hours "08:00-21:00"
 It will warn that `skills.config.…` is "not a recognized config key" and save it anyway. That
 notice is expected — skill-declared keys are not in the static schema — and it writes to exactly the
 path the skills read. Do not skip the write because of the warning.
+
+One naming trap: `proactive.quiet_hours` is a **delivery window**, not a silence window — DIGEST
+messages go out only inside it (ALERTs are exempt), so the default `08:00-21:00` means daytime
+delivery, never overnight. It is consumed at step 9. Note the inverse trap too: `demo.quiet_hours`
+(step 10) is the **no-asking** window, `22:00-09:00` — same key name, opposite meaning; never copy
+one into the other.
 
 **Do not rely on `hermes config migrate` here.** It prompts for environment-style keys, not for
 `metadata.hermes.config` settings, and `hermes config show` does not list skill settings at all —
@@ -277,6 +297,10 @@ and local memory store. Instantiate the templates per profile rather than mixing
 > takes one message and confirms your profile loaded), then skip to step 10 — `demo` works
 > with zero data, learns what it needs to make the kit useful today, and will tell you when
 > an import becomes worthwhile. Come back here once you have an export.
+>
+> And if your wearable is not a Samsung or a Garmin, this is not just the no-data-yet path — it
+> is the path: no other importer exists yet, so the ingest stage stays blocked until one does.
+> Run the kit demo-first; everything the demo can ask about still lands where the kit reads.
 
 1. **Import** a device export — `samsung-health-import` or `garmin-import`. Both have their own
    gate suites; both must pass before you trust the resulting database.
@@ -314,7 +338,8 @@ hermes cron list
 hermes cron edit <job_id> --deliver telegram      # same grammar as `hermes cron create`
 ```
 
-Quiet hours and timezone come from step 5 (`proactive.quiet_hours`, `proactive.timezone`) — they
+The delivery window and timezone come from step 5 (`proactive.quiet_hours` is the window DIGEST
+messages may be delivered in, despite the name — and `proactive.timezone` pins it) — they
 are configuration, not constants. Then expect silence most weeks: a silent sweep is a successful
 run, and `proactive-coach` exists to decide when *not* to speak.
 
@@ -376,6 +401,9 @@ is the failure the repo's versioning design exists to prevent.
 | A skill is listed but will not load | Its frontmatter is invalid, or a `references/` target is missing. The validator reports both |
 | Paths inside a skill are dead | You are running an older copy that hardcoded `$HERMES_HOME/skills/<name>/`. Current ones use `${HERMES_SKILL_DIR}` and `config.yaml` — re-copy from a current checkout |
 | `leak-scan.sh` exits `2` | gitleaks is missing while the secrets pass is enabled. Install it, or pass `--no-gitleaks` knowingly |
+| `hermes: command not found` over ssh | non-interactive shells do not read `~/.local/bin` — `bash -lc`, or export PATH first (step 0) |
+| `mktemp: mkdtemp failed … Operation not permitted` from the gate | the shell's temp dir is not writable (sandboxed dev environments do this) — run the gate outside the sandbox; setting `TMPDIR` may not survive the sandbox |
+| doctor flags `model.default` as vendor-prefixed | the vendor prefix contradicts `model.provider` — drop the prefix or switch provider per doctor's hint; unlike npm/keys noise this one is real (step 4) |
 | The gateway ignores a new skill | It cached the catalogue — restart it |
 | The leak gate is red | **Do not proceed.** Read the report; it names the pattern and the line |
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
