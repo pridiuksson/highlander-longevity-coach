@@ -6,7 +6,7 @@ turn, and this folder ships three worked scaffolds to start from.
 | Template | Flavour | Best suited to |
 |---|---|---|
 | [`Olle/`](./Olle/) | **Operator.** Direct, high-agency, verification as a pre-flight gate. | Technically senior users who want an agent that pushes back. |
-| [`Maria/`](./Maria/) | **Assistant.** Warm, explains, proposes before acting. | Domain experts who are new to AI. |
+| [`Maria/`](./Maria/) | **Assistant.** Warm, explains, proposes before acting. | Domain experts who want a collaborator. The template's fluency assumptions are written for AI newcomers — adapt per [ONBOARDING step 7](../ONBOARDING.md) when your expert is not one. |
 | [`Els/`](./Els/) | **Middle ground + contributor.** Assisted, but technically comfortable and works on this repo. | Technical users who want coaching *and* to hack on the skills. |
 
 ## The three files
