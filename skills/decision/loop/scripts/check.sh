@@ -9,7 +9,29 @@
 #
 # Usage: check.sh "<desired state>" "<artifact1> <artifact2>" "<test command>"
 set -uo pipefail
-for p in ~/.bashrc ~/.bash_profile ~/.zshrc ~/.profile; do [[ -f "$p" ]] && source "$p" 2>/dev/null; done
+
+# Harvest PATH additions from shell profiles in a disposable child shell: a
+# profile that is noisy or fatal (unbound variable, exit, exec) must not
+# terminate this script or suppress its blocked/exit-3 signal.
+for p in ~/.bashrc ~/.bash_profile ~/.zshrc ~/.profile; do
+  [[ -f "$p" ]] || continue
+  harvested=$(bash -c 'set +u; source "$1" >/dev/null 2>&1; printf %s "$PATH"' bash "$p" 2>/dev/null)
+  # Adopt only additive harvests: non-empty, single-line, nothing dropped from
+  # the inherited PATH, and something added.
+  case "$harvested" in
+    ""|"$PATH"|*$'\n'*) : ;;
+    *)
+      additive=1
+      oldIFS=$IFS; IFS=:
+      for entry in $PATH; do
+        [ -n "$entry" ] || continue
+        case ":$harvested:" in *":$entry:"*) : ;; *) additive=0 ;; esac
+      done
+      IFS=$oldIFS
+      [ "$additive" = 1 ] && PATH="$harvested"
+      ;;
+  esac
+done
 
 DESIRED="${1:?Usage: check.sh DESIRED ARTIFACTS [TEST_CMD]}"
 ARTIFACTS="${2:-}"
