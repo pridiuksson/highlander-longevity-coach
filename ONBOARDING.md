@@ -503,6 +503,9 @@ On the box (`hermes` is off-PATH otherwise — step 0):
    Field-tested 2026-09-13: the env named the tenant while an operator's account was paired, and
    the gateway duly delivered its startup notification to the tenant from the operator's account.
    The QR scan, not the env, decides the account — make them agree before the first message.
+   Ordering matters as well: flipping `WHATSAPP_ENABLED=true` before the scan makes the gateway
+   refuse to start — a clean exit `78/CONFIG` (`WhatsApp enabled but not paired`), the unit left
+   in the failed state. Pair first, then start; the unit recovers on the next start.
 
 3. **Restart, then verify.** `hermes gateway restart` and `hermes gateway status`; a message from
    the paired phone must draw a reply — `~/.hermes/logs/gateway.log` should show
@@ -555,6 +558,7 @@ is the failure the repo's versioning design exists to prevent.
 | WhatsApp bridge dies instantly, `EADDRINUSE` on `127.0.0.1:3000` in `~/.hermes/whatsapp/bridge.log` | Another WhatsApp gateway (GOWA, WAHA, …) holds the port — the gateway cannot self-heal a container-owned holder. Stop it, confirm `ss -ltnp | grep :3000` is empty, restart the gateway (tenant flow, WhatsApp) |
 | The coach answers the wrong phone, or messages someone who never paired | `WHATSAPP_ALLOWED_USERS` / `WHATSAPP_HOME_CHANNEL` do not match the **paired** account — the QR scan decided it, not the env. Re-point the env at the paired account or re-pair with the intended one, then restart the gateway |
 | `WHATSAPP_ENABLED=false` but the bridge still spawns | Observed on v0.21.2 with a `whatsapp:` block in `config.yaml` — the flag is not a reliable kill switch there. `hermes gateway stop` for pairing windows; to disable outright, remove the variable from `.env` (Hermes' own adapter guidance) and confirm `ps aux | grep bridge.js` comes back empty |
+| Gateway exits `78/CONFIG`: `WhatsApp enabled but not paired` | `WHATSAPP_ENABLED=true` landed before the QR scan — the preflight refuses cleanly instead of crash-looping. Pair (`hermes whatsapp`), then `hermes gateway start`; the failed unit recovers on the next start |
 | The verdict says `value-layer: NOT-CONFIGURED` | Expected on a fresh clone, and **not** a failure: the shape patterns ran and passed, but the identity checks (your name, your handle) are not configured, and the verdict says so rather than implying coverage it does not have. Set up the value layer: `mkdir -p ~/.config/leak && cp scripts/leak-patterns.local.example.tsv ~/.config/leak/patterns.tsv`, then fill it in. It lives outside the repo on purpose — a tracked file naming those identifiers is the leak the gate exists to prevent |
 | The verdict says `CONFIGURED BUT INERT` or `CONFIGURED BUT EMPTY` | The value layer exists and checks nothing: the entries are still `<YOUR_...>` placeholders, or the file has no entries. `./scripts/check-values-configured.sh` is the same check as a standalone command, and the pre-commit hook runs it |
 | You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
