@@ -39,7 +39,9 @@ the outcome of every proactive message writes back to memory. A silent week is a
 
 The `skills/workflow/` stage serves the people and agents working **on** this repo, not the coaching
 loop: `commit` (leak-gated conventional commits), `create-pr` (push and open a PR without moving
-HEAD), `ticket` (author an agent-ready GitHub issue), and `work` (execute an issue end-to-end). They
+HEAD), `ticket` (author an agent-ready GitHub issue), `work` (execute an issue end-to-end), and
+`contributions` (send locally-proven improvements back upstream — capture the reason at edit time,
+decide at a deliberate monthly check). They
 end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the full flow.
 
 ## Install
