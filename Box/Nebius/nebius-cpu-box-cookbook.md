@@ -415,6 +415,7 @@ secrets, but a stale IP/ID pair invites confusion later.
 | `nebius` rejects a flag from this file | flag drift, the expected kind — re-run `--help` and re-resolve (top rule) |
 | OAuth URL "doesn't work" | it printed on the headless box — open it on your laptop, not over SSH |
 | `hermes --version` < 0.21.2 | re-run the installer without `--skip-setup`, or pin per its docs; do not onboard onto 0.21.0 |
+| `hermes: command not found` over ssh | non-interactive shells skip `~/.profile` — `ssh <user>@<host> "bash -lc 'hermes …'"`, or export a PATH that includes `$HOME/.local/bin` (ONBOARDING step 0) |
 
 ## Doc anchors
 
