@@ -1,7 +1,7 @@
 ---
 name: commit
 description: "Create well-scoped conventional commits from the current changes — leak-gated, including the commit message. Use when the user asks to commit, stage, or 'wrap this up', and as the commit step of the @work → @commit → @create-pr ship gate. A red leak gate means stop."
-version: 1.0.1
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux]
@@ -99,6 +99,23 @@ is green, and only then commit. The skill change and its README line are one com
 | 0 with `gitleaks not found — secrets pass SKIPPED` | Identity/path/health passed, but the scan's own secrets pass did not run (gitleaks absent) | Surface it — the tree is **not** fully clean until the secrets pass runs. Install `gitleaks` and re-run. |
 | 1 | Hits found | Report the hits, stop. |
 | 2 | Setup error (bad option, missing pattern file) | Stop — the gate is not doing its job. |
+
+### Notice — is the local hook wired? (never blocks)
+
+The checks above run because this skill runs them. A commit made outside this skill — a human
+typing `git commit`, another tool — is gated locally only if a pre-commit hook is wired into the
+clone. Run from the repo root (a relative `core.hooksPath` resolves from there):
+
+```bash
+hooks="$(git config core.hooksPath || echo .git/hooks)"; test -x "$hooks/pre-commit" && echo wired || echo not-wired
+```
+
+`not-wired` is a notice, not a failure: before committing, say so in one line — "local hook not
+wired: commits made outside this skill are gated by CI only; run `pipx install pre-commit &&
+pre-commit install` for commit-time blocking of the tree" — and carry on. `wired` means a hook is
+wired; with this repo's `.pre-commit-config.yaml` that hook is the leak gate over the tree — it
+cannot see the commit message and yields to `--no-verify`. Same rule as the value layer: an absent
+layer is surfaced, never failed.
 
 ## Step 4 — Check the message, stage, commit
 
