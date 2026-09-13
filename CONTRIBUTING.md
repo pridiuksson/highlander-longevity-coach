@@ -124,6 +124,30 @@ token without it create or update anything under `.github/workflows/`. The autom
 populated this repo did not hold that scope, which is also why the copy was removed once CI was
 enabled for real: two copies drift.
 
+### Merging — what the ruleset requires
+
+`main` is guarded by a ruleset, and it is deliberately unbypassable — there is no admin escape
+hatch, for the same reason the gate has no silence flag. Three requirements bind every merge:
+
+1. **`leak-gate` green** on the head commit — the workflow's check runs report under exactly
+   that name.
+2. **The branch up to date with `main`** (the strict policy). On a repo where merges and pushes
+   interleave, the base moves underneath you; a branch that was green an hour ago is still
+   refused.
+3. **Review threads resolved** (zero approving reviews required; resolution is).
+
+The procedure that satisfies all three without racing the base:
+
+```bash
+gh pr update-branch <number>              # merge main in; CI reruns on the new head
+gh pr merge <number> --merge --auto       # queue: merges the moment the requirements hold
+```
+
+`--auto` is not an optional courtesy here. A plain `gh pr merge` races the base, and when it
+loses the failure reads like a naming bug — `Required status check "leak-gate" is expected` —
+when the check is green and the real cause is staleness. There is no `--admin` escape to reach
+for: the ruleset grants no bypass, and that is deliberate.
+
 ## Privacy — the part that is not negotiable
 
 Treat everything you commit as public. The repository is private today, but the intent is to
