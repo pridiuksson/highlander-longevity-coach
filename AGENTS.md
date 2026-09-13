@@ -10,8 +10,7 @@ and profile templates to instantiate. It is a coach, not a dashboard — the ski
 data; the loop decides what is worth saying and learns from whether it landed.
 
 **Publish boundary.** `skills/` is the published kit. `Box/`, `Profile/`, `scripts/`, and the root docs are
-scaffolding around it. The repo is intended to become public, so everything here is written as if it
-already is.
+scaffolding around it. The repo is public, so everything here is written for public eyes.
 
 ## The one rule: the leak gate
 
