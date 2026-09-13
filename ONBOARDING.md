@@ -10,6 +10,14 @@ reaches out when — and only when — something is worth saying.
 > has you record the commit: that is the only way to say what you are actually running, and the
 > thing you will need to tell whether an update is safe.
 
+## One doc, three ways in
+
+| You are… | Read this as… |
+|---|---|
+| **A person setting up your own coach** | steps 0–10 in order; each step verifies itself |
+| **An operator onboarding someone else** | the steps are yours to execute, the guardrails are not yours to own — start at *Onboarding a tenant* (after step 10) |
+| **Re-opening a box that already ran some of this** | do not trust the checklist, audit it — the status check in *Onboarding a tenant* maps evidence to steps |
+
 ## 0. Prerequisites
 
 | Need | Why |
@@ -283,6 +291,14 @@ them** — the handback exists so personal facts do not pass through an agent tr
 is opt-in: only when the user explicitly asks, the agent shows the filled profile as a diff for
 approval before writing, and names the caveat that the answers now live in the transcript too.
 
+**Operator-driven variant.** When an operator's agent does the typing — the person (the tenant,
+in the operator flow below) is remote, or new — the operator's explicit approval substitutes for
+the adopter's **at fill time only**.
+Nothing else relaxes: the facts still land only in `~/.hermes/` on the box, the transcript caveat
+is still named, and the adopter personally confirms the filled profile in their first session
+("here is what I believe about you — correct me"). Confirmation is what finalizes the profile;
+until then it is a draft. The adopter remains the only standing approver of their facts.
+
 Record where this profile came from, for later: the commit from step 1 and the template you forked
 (`derived_from: highlander-longevity-coach@<sha>`, `profile: <name>`).
 
@@ -371,6 +387,61 @@ your profile is complete (or after ~30 days, whichever comes first), it says so 
 the handoff to `proactive-coach`, and you never hear from it again. It holds no data of its
 own beyond a progress file in `$HERMES_HOME/data/demo/`.
 
+## Onboarding a tenant (operator flow)
+
+A tenant is a person whose coach runs on a box they do not operate. The roles split three ways:
+
+- **Operator** — holds the SSH key, executes the mechanics. Never a source of health facts.
+- **Tenant** — the only source of personal facts, and the only standing approver of them.
+- **Agent** — does the typing, on the box and in the docs.
+
+The invariant: **SSH access is not permission over personal facts.** Facts land only in
+`~/.hermes/` on the tenant's box — never in a clone of this repo, and not in operator scratch
+notes inside the tree either (the leak gate walks gitignored directories too; keep scratch
+outside the repo entirely, e.g. `~/highlander-scratch/<tenant>/`, and treat it as disposable).
+Access is custody, not ownership: the operator's SSH key is for provisioning, the box's
+credentials (`authorized_keys`, channel tokens in `.env`) belong to the tenant, and closing the
+engagement means verifying the operator's key no longer authenticates.
+
+### Status check first — the checklist is resumable
+
+A box rarely arrives virgin: an installer may have run steps 1–5 already. Audit before you act;
+never redo what the evidence says is done. One login shell covers the probe (`hermes` is
+off-PATH otherwise — step 0):
+
+```bash
+ssh <user>@<host> "bash -lc 'hermes --version; hermes gateway status; hermes skills list; hermes cron list; hermes doctor; git -C ~/highlander-longevity-coach rev-parse HEAD; ls -d ~/.hermes/skills.bak-*'"
+ssh <user>@<host> "ls -la ~/.hermes/SOUL.md ~/.hermes/memories ~/health 2>/dev/null"
+ssh <user>@<host> "grep -nE 'health_dir|baseline_doc|timezone|quiet_hours|provider' ~/.hermes/config.yaml"
+ssh <user>@<host> "python3 ~/highlander-longevity-coach/scripts/validate-skills.py --installed ~/.hermes"
+```
+
+| Evidence on the box | Step already done |
+|---|---|
+| `git -C … rev-parse HEAD` prints a SHA | 1 |
+| `ls -d ~/.hermes/skills.bak-*` matches | 2 |
+| kit stages under `~/.hermes/skills/`, `--installed` run from the box's clone comes back clean | 3, 4 |
+| `skills.config.*` keys resolve in `config.yaml` | 5 |
+| non-stock `SOUL.md`, non-empty `~/.hermes/memories/` | 7 |
+| `~/health/` and the baseline file exist | 5 (config points at it), 10 (`demo` writes it) |
+| `hermes cron list` non-empty with a delivery target | 9 |
+
+Run the difference. The probe is idempotent — re-run it whenever you resume; its output is
+scratch, not state, and lives outside the repo. Whatever `hermes doctor` flags, triage per
+step 4.
+
+### The interview happens in the tenant's channel
+
+Ask the step-7 questions where the tenant answers in their own words — their chat with the box,
+not a relay through the operator where avoidable. When answers do arrive through the operator,
+the step-7 operator variant governs: operator approves the fill, the box holds the facts, and
+the tenant confirms on first contact.
+
+Three moments need the tenant, not the operator: the step-8 gate question ("what are my hard
+constraints?" must come from the profile), the step-9 delivery target (theirs to choose), and
+the profile confirmation — make it the first thing step 10's `demo` does: play back what it
+believes about the tenant and ask for corrections.
+
 ## Updating
 
 The install is a copy, so an update is: pull, re-check, re-copy, restart.
@@ -431,6 +502,24 @@ name**. If your box predates this kit, or you maintain customized copies of thes
    whether its values belong in `config.yaml` (then adopt upstream) or are genuinely
    instance-specific (then keep local and record the delta).
 5. Record the decision per skill — a diff you did not write down is a diff you will re-do.
+
+## Field note: the first operator-driven tenant onboarding (2026-09-13)
+
+First real tenant, first non-self onboarding — the run that produced the operator section above.
+
+1. The box arrived pre-provisioned through step 5 (clone, backup, skills, config all in place);
+   a linear reading would have redone all of it. The status-check table is that day's probe,
+   written down.
+2. The profile matched `Maria/` on the authority axis and missed on its fluency assumption —
+   the tenant is an AI professional, not a newcomer. Adapt-harder worked exactly as step 7
+   predicts; the registry row now carries the warning.
+3. Agent-fill ran with operator approval; the step-7 operator variant and the first-session
+   confirmation exist because the tenant's own confirmation was still pending when the files
+   were written. Do it that way on purpose, not by omission.
+4. The tenant's wearable has no importer (step 0/8 now say so) — the kit ran demo-first, which
+   is the designed path, and the missing importer is filed as its own issue (#17).
+5. Operator scratch inside the repo went red on the first gate run after it gained state
+   (`absolute-home`) — scratch lives outside the tree now, and the operator section says so.
 
 ## Renames
 
