@@ -2,7 +2,7 @@
 name: grill
 license: MIT
 description: "Use when facing 'should I do/build/adopt X?' — a real decision with stakes. Null hypothesis = NO, adversary must prove YES. Adversarial CLI + delegate_task agents (~2min). For binary decisions, not exploration."
-version: 1.0
+version: 1.1
 ---
 
 # Grill — Adversarial Decision Analysis
