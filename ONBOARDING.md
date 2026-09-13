@@ -127,12 +127,22 @@ every unrelated third-party skill on the box, burying the one finding that matte
 `hermes doctor` covers the box itself — run it after installs and upgrades; `--fix` performs
 config-version migrations.
 
-Triage the report instead of treating it as pass/fail. One class of finding is real: a
-`model.default` / `model.provider` mismatch (a vendor-prefixed model name under a provider that
-does not use that prefix) — fix it per the report's own hint, because it can silently route
-around your intended provider. Expected on a fresh box and not blocking: npm vulnerability
+Triage the report instead of treating it as pass/fail. Most findings are noise: npm vulnerability
 counts for the browser/web tooling, and `hermes setup` listing API keys for tools you have not
-configured yet (verified on v0.21.2: a fresh box reported exactly this mix).
+configured yet (verified on v0.21.2: a fresh box reported exactly this mix). The
+`model.default` / `model.provider` mismatch is the one to treat with care: it is a heuristic, and
+the report's fix hint is provider-specific. For some providers the vendor-prefixed name IS the
+canonical catalog ID — `nebius-token-factory` serves `zai-org/GLM-5.3-Flash` verbatim, and
+dropping the prefix (per the hint) turns every turn into a 404 while the config looks green. If
+the agent was working before you touched anything, treat the mismatch as suspect, and verify any
+change by round-trip — this is the only check that counts, and it takes seconds:
+
+```bash
+hermes -z "Reply with the single word: alive"
+```
+
+If that stops answering after a config change, revert the change. The report's hint does not know
+your provider's catalog; your last working config does.
 
 ## 5. Configure — you do not edit the skills
 
@@ -531,7 +541,8 @@ is the failure the repo's versioning design exists to prevent.
 | `leak-scan.sh` exits `2` | gitleaks is missing while the secrets pass is enabled. Install it, or pass `--no-gitleaks` knowingly |
 | `hermes: command not found` over ssh | non-interactive shells do not read `~/.local/bin` — `bash -lc`, or export PATH first (step 0) |
 | `mktemp: mkdtemp failed … Operation not permitted` from the gate | the shell's temp dir is not writable (sandboxed dev environments do this) — run the gate outside the sandbox; setting `TMPDIR` may not survive the sandbox |
-| doctor flags `model.default` as vendor-prefixed | the vendor prefix contradicts `model.provider` — drop the prefix or switch provider per doctor's hint; unlike npm/keys noise this one is real (step 4) |
+| doctor flags `model.default` as vendor-prefixed | a heuristic; the fix hint is provider-specific. For `nebius-token-factory` the prefixed name IS the canonical ID — dropping it 404s every turn. If the agent was working, leave it; verify any change with `hermes -z` (step 4) |
+| the LLM stopped responding after a model-config change | the provider rejected the model name — revert `model.default` to the last working value and round-trip with `hermes -z`; on `nebius-token-factory` that name includes the vendor prefix (step 4) |
 | The gateway ignores a new skill | It cached the catalogue — restart it |
 | The leak gate is red | **Do not proceed.** Read the report; it names the pattern and the line |
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
