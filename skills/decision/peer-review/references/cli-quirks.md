@@ -1,6 +1,6 @@
 # CLI Quirks — command-code and agy
 
-Empirical findings from debugging the peer-review fallback chain (2026-06-13; updated 2026-07-18: all three CLIs re-verified, versions updated, mimo corrected — see install source note below).
+Empirical findings from debugging the peer-review fallback chain (2026-06-13; updated 2026-07-18: all three CLIs re-verified, versions updated, mimo corrected — see install source note below; updated 2026-09-13: the `timeout` fallback below).
 
 ## command-code (v0.52.1, verified 2026-07-18)
 
@@ -117,6 +117,28 @@ Operates on current working directory, same as command-code. Use `--add-dir` to 
 - `agy models` — list available models
 - `agy changelog` — release notes
 - `agy plugin` — manage plugins
+
+## `timeout` — GNU coreutils; absent on stock macOS (all tiers exit 127)
+
+**Observed 2026-09-13, dogfooding the chain on macOS:** all three CLIs installed and on PATH, yet
+every tier "failed (exit 127)" and the chain exited 3. Cause: each `try_cli` case invoked
+`timeout 180 <cli>` — and `timeout` is a GNU coreutils binary that stock macOS does not ship
+(`gtimeout`, coreutils' alias, is absent too). The 127 came from the missing `timeout` itself,
+not from the CLIs; `command -v` had already proven the CLIs present, which is why the script's
+parting line was "All 3 installed peer CLI(s) failed" — maximally misleading.
+
+**Fix (in the scripts):** a `run_timeout` helper resolves the bound at call time — `timeout` if
+present, else `gtimeout`, else `perl -e 'alarm shift; exec @ARGV or exit 127'`. Perl is already this repo's
+documented macOS fallback engine (the leak gate uses it the same way), and the alarm survives
+`exec`, so the bound holds. The helper is harmonized across all four scripts carrying the
+CLI-routing block: peer-review, grill-adversary, deliberate-validator, loop/check.
+
+**Symptom signature worth remembering:** "all N installed CLI(s) failed" with an *identical*
+exit code across CLIs that share nothing points at the shared invocation wrapper, not the CLIs.
+127 everywhere means the wrapper's own command is missing.
+
+Note the skill frontmatter says `platforms: [linux]` — that was the assumption the bug grew out
+of. The chain now works on macOS; any other Linux-isms in these scripts are unverified.
 
 ## Fallback chain design rationale
 

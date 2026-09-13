@@ -2,7 +2,7 @@
 name: deliberate
 license: MIT
 description: "Use for complex questions spanning MULTIPLE domains with genuine tension between perspectives (e.g. health + behavior + training). 5-phase expert debate with model-independent validation (~5min). NOT for quick checks (peer-review) or binary decisions (grill)."
-version: 1.0.0
+version: 1.1.0
 trigger: "Multiple domains pull in different directions and a single opinion won't resolve the tension."
 tags: [deliberation, debate, multi-expert, health, synthesis]
 metadata:
