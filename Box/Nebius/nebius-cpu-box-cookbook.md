@@ -416,6 +416,7 @@ secrets, but a stale IP/ID pair invites confusion later.
 | OAuth URL "doesn't work" | it printed on the headless box — open it on your laptop, not over SSH |
 | `hermes --version` < 0.21.2 | re-run the installer without `--skip-setup`, or pin per its docs; do not onboard onto 0.21.0 |
 | `hermes: command not found` over ssh | non-interactive shells skip `~/.profile` — `ssh <user>@<host> "bash -lc 'hermes …'"`, or export a PATH that includes `$HOME/.local/bin` (ONBOARDING step 0) |
+| WhatsApp bridge crash-loops with `EADDRINUSE` on 127.0.0.1:3000 | a self-hosted WhatsApp gateway (GOWA/WAHA) already binds that port — stop it before pairing Hermes' native bridge (ONBOARDING tenant flow, WhatsApp) |
 
 ## Doc anchors
 

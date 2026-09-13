@@ -127,12 +127,22 @@ every unrelated third-party skill on the box, burying the one finding that matte
 `hermes doctor` covers the box itself — run it after installs and upgrades; `--fix` performs
 config-version migrations.
 
-Triage the report instead of treating it as pass/fail. One class of finding is real: a
-`model.default` / `model.provider` mismatch (a vendor-prefixed model name under a provider that
-does not use that prefix) — fix it per the report's own hint, because it can silently route
-around your intended provider. Expected on a fresh box and not blocking: npm vulnerability
+Triage the report instead of treating it as pass/fail. Most findings are noise: npm vulnerability
 counts for the browser/web tooling, and `hermes setup` listing API keys for tools you have not
-configured yet (verified on v0.21.2: a fresh box reported exactly this mix).
+configured yet (verified on v0.21.2: a fresh box reported exactly this mix). The
+`model.default` / `model.provider` mismatch is the one to treat with care: it is a heuristic, and
+the report's fix hint is provider-specific. For some providers the vendor-prefixed name IS the
+canonical catalog ID — `nebius-token-factory` serves `zai-org/GLM-5.3-Flash` verbatim, and
+dropping the prefix (per the hint) turns every turn into a 404 while the config looks green. If
+the agent was working before you touched anything, treat the mismatch as suspect, and verify any
+change by round-trip — this is the only check that counts, and it takes seconds:
+
+```bash
+hermes -z "Reply with the single word: alive"
+```
+
+If that stops answering after a config change, revert the change. The report's hint does not know
+your provider's catalog; your last working config does.
 
 ## 5. Configure — you do not edit the skills
 
@@ -345,7 +355,9 @@ blueprint does *not* silently create a job; it adds a suggestion you accept:
 /suggestions accept 1   # create the weekly crunch job
 ```
 
-A fresh box has no delivery target, so decide where the message should land before you accept.
+A fresh box has no delivery target, so decide where the message should land before you accept —
+and for WhatsApp, the channel itself is wired first: the tenant flow's *Wiring the tenant's
+WhatsApp channel* owns that, and the paired account decides what `whatsapp` resolves to here.
 `--deliver` accepts `origin`, `local`, `telegram`, `discord`, `signal`, `platform:chat_id`, or
 `bot-chat[:profile]` — the grammar of the validated Hermes (v0.21.2); newer releases add
 platforms in the same shape: a bare platform name delivers to its home channel (`whatsapp`, …),
@@ -416,6 +428,7 @@ off-PATH otherwise — step 0):
 ```bash
 ssh <user>@<host> "bash -lc 'hermes --version; hermes gateway status; hermes skills list; hermes cron list; hermes doctor; git -C ~/highlander-longevity-coach rev-parse HEAD; ls -d ~/.hermes/skills.bak-*'"
 ssh <user>@<host> "ls -la ~/.hermes/SOUL.md ~/.hermes/memories ~/health 2>/dev/null"
+ssh <user>@<host> "grep -nE '^WHATSAPP' ~/.hermes/.env; ls ~/.hermes/whatsapp/session/creds.json 2>/dev/null"
 ssh <user>@<host> "grep -nE 'health_dir|baseline_doc|timezone|quiet_hours|provider' ~/.hermes/config.yaml"
 ssh <user>@<host> "python3 ~/highlander-longevity-coach/scripts/validate-skills.py --installed ~/.hermes"
 ```
@@ -429,6 +442,7 @@ ssh <user>@<host> "python3 ~/highlander-longevity-coach/scripts/validate-skills.
 | non-stock `SOUL.md`, non-empty `~/.hermes/memories/` | 7 |
 | `~/health/` and the baseline file exist | 5 (config points at it), 10 (`demo` writes it) |
 | `hermes cron list` non-empty with a delivery target | 9 |
+| `^WHATSAPP` lines active in `.env` + WhatsApp session creds on disk | WhatsApp channel wired (tenant flow) |
 
 Run the difference. The probe is idempotent — re-run it whenever you resume; its output is
 scratch, not state, and lives outside the repo. Whatever `hermes doctor` flags, triage per
@@ -439,12 +453,70 @@ step 4.
 Ask the step-7 questions where the tenant answers in their own words — their chat with the box,
 not a relay through the operator where avoidable. When answers do arrive through the operator,
 the step-7 operator variant governs: operator approves the fill, the box holds the facts, and
-the tenant confirms on first contact.
+the tenant confirms on first contact. If that chat is WhatsApp, wire the channel first (next
+section) — the interview and every proactive message after it ride on the account the QR scan
+chose.
 
 Three moments need the tenant, not the operator: the step-8 gate question ("what are my hard
 constraints?" must come from the profile), the step-9 delivery target (theirs to choose), and
 the profile confirmation — make it the first thing step 10's `demo` does: play back what it
 believes about the tenant and ask for corrections.
+
+### Wiring the tenant's WhatsApp channel
+
+WhatsApp is the common tenant channel — the interview above may itself happen there, so wire it
+as soon as the tenant names it, not at the end. Two decisions belong to the tenant, and the QR
+scan enforces the second one whether the env agrees or not:
+
+- **Mode.** `self-chat` pairs the bridge with the tenant's own WhatsApp account: the coach lives
+  in their "message yourself" chat, no second number needed. `bot` pairs a dedicated number
+  instead — the coach becomes a normal contact and ban risk (WhatsApp does not officially allow
+  third-party bridges) stays off the personal account, at the cost of a SIM or VoIP number kept
+  alive.
+- **Account.** Whoever scans the QR decides which account the coach speaks as. An operator who
+  test-pairs with their own phone has wired *their* chat, not the tenant's — the session, the
+  allowlist and the home channel must all name the same account before the first message.
+
+On the box (`hermes` is off-PATH otherwise — step 0):
+
+1. **Free the port, then pair.** The native bridge binds `127.0.0.1:3000`; a second WhatsApp
+   gateway (GOWA, WAHA, …) holding that port crash-loops it with `EADDRINUSE`, and the gateway
+   cannot self-heal a container-owned port — `Bridge process died` repeats every ~60s until the
+   holder is gone. `ss -ltnp | grep :3000` must be empty first (Node ≥ 18 is required; the bridge
+   is a Node process). Pair interactively — `ssh -t` and `hermes whatsapp` — with the phone whose
+   account the mode chose (WhatsApp → Settings → Linked Devices → Link a Device). Pair with the
+   gateway **stopped** (`hermes gateway stop`; restart it at step 3) — do not trust
+   `WHATSAPP_ENABLED=false` to hold the window: field-tested 2026-09-13, with a `whatsapp:` block
+   present in `config.yaml` the bridge still spawned on restart twice with `false` on disk (the
+   plugin counts an enabled config with extras as connected; Hermes' own adapter guidance is to
+   remove the variable from `.env` to disable). A stopped gateway also cannot send stray
+   home-channel notifications from a not-yet-tenant account.
+2. **Point the env at the paired account.** In `~/.hermes/.env`:
+
+   ```
+   WHATSAPP_ENABLED=true
+   WHATSAPP_MODE=self-chat                 # or: bot
+   WHATSAPP_ALLOWED_USERS=<tenant-number>  # country code, no +
+   WHATSAPP_HOME_CHANNEL=<tenant-number>   # where bare `whatsapp` delivery lands (step 9)
+   ```
+
+   Field-tested 2026-09-13: the env named the tenant while an operator's account was paired, and
+   the gateway duly delivered its startup notification to the tenant from the operator's account.
+   The QR scan, not the env, decides the account — make them agree before the first message.
+   Ordering matters as well: flipping `WHATSAPP_ENABLED=true` before the scan makes the gateway
+   refuse to start — a clean exit `78/CONFIG` (`WhatsApp enabled but not paired`), the unit left
+   in the failed state. Pair first, then start; the unit recovers on the next start.
+
+3. **Restart, then verify.** `hermes gateway restart` and `hermes gateway status`; a message from
+   the paired phone must draw a reply — `~/.hermes/logs/gateway.log` should show
+   `✓ whatsapp connected` plus the `inbound message` and `Sending response` lines. The session
+   path is version-dependent (v0.21.2 keeps it at `~/.hermes/whatsapp/session`; newer Hermes moves
+   it under `~/.hermes/platforms/`) — `ps aux | grep bridge.js` shows the truth via its
+   `--session` argument, and `bridge.log` beside it is where a dead bridge explains itself.
+
+Custody: the session directory grants full access to that WhatsApp account — `chmod 700`, treat
+it like a password. Closing the engagement means unlinking the box from the account (WhatsApp →
+Settings → Linked Devices), the same way the operator's SSH key is verified gone.
 
 ## Updating
 
@@ -478,10 +550,15 @@ is the failure the repo's versioning design exists to prevent.
 | `leak-scan.sh` exits `2` | gitleaks is missing while the secrets pass is enabled. Install it, or pass `--no-gitleaks` knowingly |
 | `hermes: command not found` over ssh | non-interactive shells do not read `~/.local/bin` — `bash -lc`, or export PATH first (step 0) |
 | `mktemp: mkdtemp failed … Operation not permitted` from the gate | the shell's temp dir is not writable (sandboxed dev environments do this) — run the gate outside the sandbox; setting `TMPDIR` may not survive the sandbox |
-| doctor flags `model.default` as vendor-prefixed | the vendor prefix contradicts `model.provider` — drop the prefix or switch provider per doctor's hint; unlike npm/keys noise this one is real (step 4) |
+| doctor flags `model.default` as vendor-prefixed | a heuristic; the fix hint is provider-specific. For `nebius-token-factory` the prefixed name IS the canonical ID — dropping it 404s every turn. If the agent was working, leave it; verify any change with `hermes -z` (step 4) |
+| the LLM stopped responding after a model-config change | the provider rejected the model name — revert `model.default` to the last working value and round-trip with `hermes -z`; on `nebius-token-factory` that name includes the vendor prefix (step 4) |
 | The gateway ignores a new skill | It cached the catalogue — restart it |
 | The leak gate is red | **Do not proceed.** Read the report; it names the pattern and the line |
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
+| WhatsApp bridge dies instantly, `EADDRINUSE` on `127.0.0.1:3000` in `~/.hermes/whatsapp/bridge.log` | Another WhatsApp gateway (GOWA, WAHA, …) holds the port — the gateway cannot self-heal a container-owned holder. Stop it, confirm `ss -ltnp | grep :3000` is empty, restart the gateway (tenant flow, WhatsApp) |
+| The coach answers the wrong phone, or messages someone who never paired | `WHATSAPP_ALLOWED_USERS` / `WHATSAPP_HOME_CHANNEL` do not match the **paired** account — the QR scan decided it, not the env. Re-point the env at the paired account or re-pair with the intended one, then restart the gateway |
+| `WHATSAPP_ENABLED=false` but the bridge still spawns | Observed on v0.21.2 with a `whatsapp:` block in `config.yaml` — the flag is not a reliable kill switch there. `hermes gateway stop` for pairing windows; to disable outright, remove the variable from `.env` (Hermes' own adapter guidance) and confirm `ps aux | grep bridge.js` comes back empty |
+| Gateway exits `78/CONFIG`: `WhatsApp enabled but not paired` | `WHATSAPP_ENABLED=true` landed before the QR scan — the preflight refuses cleanly instead of crash-looping. Pair (`hermes whatsapp`), then `hermes gateway start`; the failed unit recovers on the next start |
 | The verdict says `value-layer: NOT-CONFIGURED` | Expected on a fresh clone, and **not** a failure: the shape patterns ran and passed, but the identity checks (your name, your handle) are not configured, and the verdict says so rather than implying coverage it does not have. Set up the value layer: `mkdir -p ~/.config/leak && cp scripts/leak-patterns.local.example.tsv ~/.config/leak/patterns.tsv`, then fill it in. It lives outside the repo on purpose — a tracked file naming those identifiers is the leak the gate exists to prevent |
 | The verdict says `CONFIGURED BUT INERT` or `CONFIGURED BUT EMPTY` | The value layer exists and checks nothing: the entries are still `<YOUR_...>` placeholders, or the file has no entries. `./scripts/check-values-configured.sh` is the same check as a standalone command, and the pre-commit hook runs it |
 | You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
