@@ -1,7 +1,7 @@
 ---
 name: create-pr
 description: "Ship the current commits as a pull request without ever moving HEAD — leak-gated. Use after @commit when the user asks to open a PR, push a branch, or 'get this reviewed'. Runs the full pre-push gate (tree + history + skills + authorship + secrets) before pushing."
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux]
@@ -218,6 +218,7 @@ Step 2. The no-checkout invariant is satisfied trivially.
 | Branch name exists on origin | Append `-2`, `-3`, … |
 | `git push` fails (non-fast-forward) | Report the error. Do **not** force-push. |
 | `gh pr create` fails | Report; the branch is already pushed, so the PR can be opened by hand. |
+| `gh pr merge` refused — "Required status check … is expected" or "head branch is not up to date" | the ruleset requires `leak-gate` green **and** a branch that is fresh with `main`; it grants no bypass. `gh pr update-branch <n>`, then `gh pr merge <n> --merge --auto` — see CONTRIBUTING, "Merging". |
 | Post-merge pull reports divergence | Report; do not rebase or force — someone moved the base; resolve with the user. |
 
 ## When to use
