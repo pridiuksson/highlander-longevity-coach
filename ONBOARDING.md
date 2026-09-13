@@ -100,7 +100,8 @@ hermes gateway status     # confirm it came back
 The `skills/<stage>/<name>/` layout is preserved on purpose: the stage becomes the skill's
 **Category** in Hermes. Do **not** symlink the skills in — see *Updating* for why.
 
-This also installs the `skills/workflow/` stage (`commit`, `create-pr`, `ticket`, `work`). Those are
+This also installs the `skills/workflow/` stage (`commit`, `create-pr`, `ticket`, `work`,
+`contributions`). Those are
 for working on the repo itself, not for coaching — see [AGENTS.md](./AGENTS.md).
 
 ## 4. Sanity-check, then confirm the install
