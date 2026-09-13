@@ -23,6 +23,8 @@ set -uo pipefail
 # Harvest PATH additions from shell profiles (nvm/fnm/volta) in a disposable
 # child shell: a profile that is noisy or fatal (unbound variable, exit, exec)
 # must not terminate this script or suppress its no-CLI signal (exit 3).
+# KEEP IN SYNC: grill-adversary.sh and loop/scripts/check.sh carry variants of this harvest block
+# (no ~/.zprofile, no set +e/-e wrap) — if you change the approach, change all three.
 set +e
 for profile in ~/.bashrc ~/.bash_profile ~/.zshrc ~/.zprofile ~/.profile; do
   [[ -f "$profile" ]] || continue

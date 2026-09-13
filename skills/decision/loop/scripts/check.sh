@@ -13,6 +13,9 @@ set -uo pipefail
 # Harvest PATH additions from shell profiles in a disposable child shell: a
 # profile that is noisy or fatal (unbound variable, exit, exec) must not
 # terminate this script or suppress its blocked/exit-3 signal.
+# KEEP IN SYNC: peer-review.sh carries a variant of this harvest block (it also sources ~/.zprofile
+# and wraps the loop in set +e/-e); grill-adversary.sh matches this one — change all three
+# together if you change the approach.
 for p in ~/.bashrc ~/.bash_profile ~/.zshrc ~/.profile; do
   [[ -f "$p" ]] || continue
   harvested=$(bash -c 'set +u; source "$1" >/dev/null 2>&1; printf %s "$PATH"' bash "$p" 2>/dev/null)
