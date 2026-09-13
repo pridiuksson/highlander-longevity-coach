@@ -102,7 +102,9 @@ publication. Every commit carries it forever, and no content pattern can reach i
 - **Verify, don't assert.** Prefer running a command over reasoning about what it would do; when a
   claim comes from elsewhere, check it against the source before repeating it.
 - **Delegate with enough context.** A subagent cannot see this file or the conversation unless you
-  put the relevant part in its prompt.
+  put the relevant part in its prompt. Constrain its output too: a delegated agent that narrates at
+  length can exhaust its budget before shipping anything — require terse progress and a bounded
+  final report.
 - **Stay lean.** Offload durable facts into the docs rather than long-lived scratch files.
 
 ## Docs index

@@ -15,6 +15,9 @@ set -uo pipefail
 # ~/.bashrc — the Xiaomi installer does not symlink into /usr/local/bin) in a
 # disposable child shell: a profile that is noisy or fatal (unbound variable,
 # exit, exec) must not terminate this script or suppress NO_CLI_FOUND (exit 3).
+# KEEP IN SYNC: peer-review.sh carries a variant of this harvest block (it also sources ~/.zprofile
+# and wraps the loop in set +e/-e); loop/scripts/check.sh matches this one — change all three
+# together if you change the approach.
 for p in ~/.bashrc ~/.bash_profile ~/.zshrc ~/.profile; do
   [[ -f "$p" ]] || continue
   harvested=$(bash -c 'set +u; source "$1" >/dev/null 2>&1; printf %s "$PATH"' bash "$p" 2>/dev/null)
