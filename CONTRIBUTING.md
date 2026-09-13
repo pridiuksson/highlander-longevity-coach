@@ -16,6 +16,10 @@ will tell you about itself rather than hide:
 - the secrets pass covers the **working tree only**. `gitleaks detect` walks git history unless
   `--no-git` is passed, so history needs its own pass (below).
 - the **value layer's** state, on every run.
+- its need for a **writable temp dir**: the gate stages its work under `mktemp -d`. If your
+  environment sandboxes processes behind a read-only default temp dir, the run dies at startup
+  (`mktemp: mkdtemp failed … Operation not permitted`) — run the gate outside the sandbox rather
+  than route around it, and do not count on a `TMPDIR` override surviving the sandbox.
 
 ### Two layers, and why the identifiers are not in the repo
 
