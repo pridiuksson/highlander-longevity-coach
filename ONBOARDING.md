@@ -484,7 +484,13 @@ On the box (`hermes` is off-PATH otherwise — step 0):
    cannot self-heal a container-owned port — `Bridge process died` repeats every ~60s until the
    holder is gone. `ss -ltnp | grep :3000` must be empty first (Node ≥ 18 is required; the bridge
    is a Node process). Pair interactively — `ssh -t` and `hermes whatsapp` — with the phone whose
-   account the mode chose (WhatsApp → Settings → Linked Devices → Link a Device).
+   account the mode chose (WhatsApp → Settings → Linked Devices → Link a Device). Pair with the
+   gateway **stopped** (`hermes gateway stop`; restart it at step 3) — do not trust
+   `WHATSAPP_ENABLED=false` to hold the window: field-tested 2026-09-13, with a `whatsapp:` block
+   present in `config.yaml` the bridge still spawned on restart twice with `false` on disk (the
+   plugin counts an enabled config with extras as connected; Hermes' own adapter guidance is to
+   remove the variable from `.env` to disable). A stopped gateway also cannot send stray
+   home-channel notifications from a not-yet-tenant account.
 2. **Point the env at the paired account.** In `~/.hermes/.env`:
 
    ```
@@ -548,6 +554,7 @@ is the failure the repo's versioning design exists to prevent.
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
 | WhatsApp bridge dies instantly, `EADDRINUSE` on `127.0.0.1:3000` in `~/.hermes/whatsapp/bridge.log` | Another WhatsApp gateway (GOWA, WAHA, …) holds the port — the gateway cannot self-heal a container-owned holder. Stop it, confirm `ss -ltnp | grep :3000` is empty, restart the gateway (tenant flow, WhatsApp) |
 | The coach answers the wrong phone, or messages someone who never paired | `WHATSAPP_ALLOWED_USERS` / `WHATSAPP_HOME_CHANNEL` do not match the **paired** account — the QR scan decided it, not the env. Re-point the env at the paired account or re-pair with the intended one, then restart the gateway |
+| `WHATSAPP_ENABLED=false` but the bridge still spawns | Observed on v0.21.2 with a `whatsapp:` block in `config.yaml` — the flag is not a reliable kill switch there. `hermes gateway stop` for pairing windows; to disable outright, remove the variable from `.env` (Hermes' own adapter guidance) and confirm `ps aux | grep bridge.js` comes back empty |
 | The verdict says `value-layer: NOT-CONFIGURED` | Expected on a fresh clone, and **not** a failure: the shape patterns ran and passed, but the identity checks (your name, your handle) are not configured, and the verdict says so rather than implying coverage it does not have. Set up the value layer: `mkdir -p ~/.config/leak && cp scripts/leak-patterns.local.example.tsv ~/.config/leak/patterns.tsv`, then fill it in. It lives outside the repo on purpose — a tracked file naming those identifiers is the leak the gate exists to prevent |
 | The verdict says `CONFIGURED BUT INERT` or `CONFIGURED BUT EMPTY` | The value layer exists and checks nothing: the entries are still `<YOUR_...>` placeholders, or the file has no entries. `./scripts/check-values-configured.sh` is the same check as a standalone command, and the pre-commit hook runs it |
 | You had `swedish-groceries` installed | It was renamed to `swedish-food-nutrition`. The name-based collision check cannot see a rename (different `name:`), so you now have a silent functional duplicate. Retire the old directory before/after installing. Field-tested 2026-09-12: scripts are byte-identical between the two, so nothing is lost |
