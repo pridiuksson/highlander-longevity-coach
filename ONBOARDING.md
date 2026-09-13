@@ -347,7 +347,11 @@ blueprint does *not* silently create a job; it adds a suggestion you accept:
 
 A fresh box has no delivery target, so decide where the message should land before you accept.
 `--deliver` accepts `origin`, `local`, `telegram`, `discord`, `signal`, `platform:chat_id`, or
-`bot-chat[:profile]`:
+`bot-chat[:profile]` — the grammar of the validated Hermes (v0.21.2); newer releases add
+platforms in the same shape: a bare platform name delivers to its home channel (`whatsapp`, …),
+`all` fans out to every configured one, and a WhatsApp chat id is the phone number with country
+code, no `+`. The installed version beats this list — `hermes cron create --help` is the
+authority:
 
 ```bash
 hermes cron list
