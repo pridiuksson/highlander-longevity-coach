@@ -16,9 +16,10 @@ metadata:
 
 Take the commits that landed on the current branch and open a pull request. Two invariants:
 
-1. **Never run `git checkout`, `git switch`, or `git checkout -b`.** Branch creation writes a ref
-   without moving `HEAD`. Anything watching `HEAD` — an editor, another agent on the same checkout —
-   sees nothing.
+1. **Never run `git checkout`, `git switch`, or `git checkout -b` while the PR is open.** Branch
+   creation writes a ref without moving `HEAD`. Anything watching `HEAD` — an editor, another agent
+   on the same checkout — sees nothing. The invariant protects the development phase; after the
+   merge (Step 8), checking out the base branch is correct.
 2. **Every available pre-push gate must pass.** A red gate means stop; do not push and "let CI catch
    it". A gate whose tool is missing is reported as unverified — never skipped silently.
 
@@ -186,6 +187,22 @@ PR — server-side, so the local `--no-verify` bypass does not apply. It runs th
 **Local state**: HEAD still on `<current-branch>` — no checkout performed.
 ```
 
+## Step 8 — Post-merge sync
+
+If you (or the user) merged the PR, bring the clone back in line before reporting done. Run this
+**on the base branch** — if HEAD is still on the merged feature branch (its upstream is gone),
+checking the base out now is correct: the no-checkout invariant protects the PR phase, which is
+over.
+
+```bash
+git pull --ff-only      # fast-forward the base branch to the merge commit
+git fetch --prune       # drop remote-tracking refs for branches the merge deleted
+```
+
+If the pull reports divergence, stop and report — someone moved the base; do not rebase or force.
+If the PR body carried `Fixes #<n>`, confirm the merge closed the issue; if it did not, close it
+per `@work` Step 9 — never by hand while CI is red.
+
 ## Already on a feature branch
 
 If `git branch --show-current` is not `main`: skip branch creation, push the current branch
@@ -201,6 +218,7 @@ Step 2. The no-checkout invariant is satisfied trivially.
 | Branch name exists on origin | Append `-2`, `-3`, … |
 | `git push` fails (non-fast-forward) | Report the error. Do **not** force-push. |
 | `gh pr create` fails | Report; the branch is already pushed, so the PR can be opened by hand. |
+| Post-merge pull reports divergence | Report; do not rebase or force — someone moved the base; resolve with the user. |
 
 ## When to use
 

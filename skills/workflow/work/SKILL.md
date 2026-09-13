@@ -113,7 +113,7 @@ Verification: <paste Step 6 results>
 No blocking findings → ship. Blocking findings → fix, re-run Step 6, re-review **once**. Still
 blocked → surface to the user. Maximum one re-review cycle; after that the issue needs a human.
 
-Two rules make this a real gate rather than a formality:
+Three rules make this a real gate rather than a formality:
 
 - **`@peer-review` runs in a separate context** — a different CLI model, or a subagent (which may be
   the same model: a second *context*, not a second *model*). Hand it the artifacts and the diff, not
@@ -121,6 +121,12 @@ Two rules make this a real gate rather than a formality:
 - **Judge objections on evidence, not tone.** A finding backed by a file, a command, or a specific
   mechanism is blocking. A finding that is merely asserted can be answered with your verified facts.
   Do not wave away an evidenced objection because you ran the review.
+- **Fallback chain when no separate context exists** — exhaust the routing above (peer CLI, then
+  spawned subagent), then the **orchestrating agent** reviews the delivered diff (its hand-off is
+  your ship report plus the diff — not your summary of why the work is right), and only as a last
+  resort a self-review, which must be flagged prominently in the ship report ("peer-review
+  separation NOT available"). A flagged self-review is a process finding for the orchestrator to
+  close, not a reason to skip the gate.
 
 ## Step 8 — Ship
 
