@@ -59,7 +59,7 @@ reference docs carry deliberate `<value>` redactions where the authors' measurem
 The gate below enforces that over the working tree; the identity/path/health patterns also run over
 the history of the ref being built — never `--all`, so one branch's content cannot fail another
 branch's build. The full-history **secrets** pass is a separate `gitleaks --log-opts="--all"`, and
-the repo-wide `--all` identity audit is run on purpose before a release or a public flip — see
+the repo-wide `--all` identity audit is run on purpose before a release or a history rewrite — see
 [CONTRIBUTING.md](./CONTRIBUTING.md):
 
 ```bash
@@ -74,8 +74,9 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the rest of the pre-push checks.
 
 ## Status
 
-Private, pre-release. **No tagged release yet** — pin by commit (`git rev-parse HEAD`) rather than
-by `main`, which moves. Validated against Hermes Agent v0.21.0 (2026.8.31).
+Public, pre-release. **No tagged release yet** — pin by commit (`git rev-parse HEAD`) rather than
+by `main`, which moves. Validated against Hermes Agent v0.21.0 (2026.8.31). All changes land as
+pull requests: `main` is branch-protected, and the leak-gate check must pass before merge.
 
 The sanitization method and the per-file dispositions are recorded in the authoring workspace,
 which is not published.
