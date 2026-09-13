@@ -2,7 +2,7 @@
 name: peer-review
 license: MIT
 description: "Use BEFORE acting on any unverified assumption or guess. Quick second opinion from a different LLM via CLI (~15s). Catches blind spots, prevents confident errors. DEFAULT reflex for any uncertainty."
-version: 2.2.0
+version: 2.3.0
 author: ported from oracle
 platforms: [linux]
 prerequisites:
@@ -100,6 +100,7 @@ For command-code and agy CLI quirks (flags, file access scope, output format, ti
 - **Empty responses.** A CLI can exit 0 with empty stdout (no output at all). The script treats this as failure and falls through to the next tier. If all tiers produce empty output, the prompt likely confused the model or triggered a safety filter. Retry with a shorter, more specific prompt.
 - **File access scope.** Both CLIs scope file access to their working directory (`$HOME` by default). If the peer claims it can't read a file, check that the path is under `$HOME` or set `PEER_REVIEW_WORKDIR` to the right directory.
 - **mimo install pitfall (resolved 2026-07-18).** The `mimo` CLI must be installed from `mimo.xiaomi.com` (`curl -fsSL https://mimo.xiaomi.com/install | bash`), NOT from npm. `npm i -g mimocode` installs an unrelated opencode fork that is interactive-only and breaks the chain — it rejects `mimo run "..."` with exit 0, which would silently inject error text as the peer's response. The Xiaomi installer only modifies `~/.bashrc` (not `/usr/local/bin` or `/etc/profile`), so non-interactive shells need the profile-sourcing preamble to find it. See `references/cli-quirks.md` for full mimo invocation details.
+- **`timeout` is GNU coreutils — absent on stock macOS (FIXED 2026-09-13).** Every tier invoked `timeout 180 <cli>`; on macOS the missing binary itself exits 127, so all three installed CLIs "failed" with the identical code and the chain reported exit 3 despite nothing being wrong with the CLIs. `run_timeout` now falls back to `gtimeout`, then to a perl alarm. Symptom signature: identical failure codes across unrelated CLIs means the shared invocation wrapper is broken, not the CLIs. See `references/cli-quirks.md`.
 - **Editing a `.sh` script can silently strip the execute bit.** A prior session rewrote `grill-adversary.sh` (the sibling skill's adversary script) and it landed as mode 600 — unreadable as a script, every invocation failed with "Permission denied" looking like a broken skill. If a script suddenly stops working after any edit, check `ls -la` for mode before debugging the content. Correct mode for these scripts is 711 (matching siblings).
 
 ## Maintaining the CLI chain
@@ -114,7 +115,7 @@ When updating, installing, or debugging any CLI in the fallback chain (command-c
 sudo mv /usr/local/bin/command-code /tmp/cc.bak
 sudo mv ~/.local/bin/agy /tmp/agy.bak
 export PATH="$HOME/.mimocode/bin:$PATH"   # if mimo (only on ~/.bashrc PATH)
-timeout 60 ${HERMES_SKILL_DIR}/scripts/peer-review.sh "Reply with exactly: TIER_OK"
+${HERMES_SKILL_DIR}/scripts/peer-review.sh "Reply with exactly: TIER_OK"   # no `timeout 60` wrapper — timeout is GNU coreutils, absent on stock macOS; the script bounds each tier itself and your tool-level timeout bounds the call
 sudo mv /tmp/cc.bak /usr/local/bin/command-code
 sudo mv /tmp/agy.bak ~/.local/bin/agy
 ```

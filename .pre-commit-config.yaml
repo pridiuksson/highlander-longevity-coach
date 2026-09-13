@@ -1,10 +1,28 @@
 # Convenience only — CI is the enforcement (a local hook is bypassable with --no-verify).
+#
+# This file is config for the pre-commit framework, which is NOT installed by anything in this
+# repo — until you install it and wire it into git, these hooks run nowhere:
+#
+#   pipx install pre-commit && pre-commit install
+#
+# The value layer is local per-owner config, so the second hook below can never fail on its
+# absence; it fails only when the layer is configured and useless (see scripts/check-values-configured.sh).
 repos:
   - repo: local
     hooks:
       - id: leak-gate
         name: leak gate (identity / path / health)
         entry: scripts/leak-scan.sh .
+        language: script
+        pass_filenames: false
+        always_run: true
+      # The shape layer above enforces itself. The value layer is local config that can be
+      # silently absent, so it gets its own check: it fails when the layer is set up but inert
+      # or pointing at a missing file, and passes with a notice when it was never configured.
+      # Failing on simple absence would block contributors for a condition they cannot fix.
+      - id: leak-gate-values
+        name: leak gate (value layer configured)
+        entry: scripts/check-values-configured.sh
         language: script
         pass_filenames: false
         always_run: true

@@ -6,7 +6,7 @@ turn, and this folder ships three worked scaffolds to start from.
 | Template | Flavour | Best suited to |
 |---|---|---|
 | [`Olle/`](./Olle/) | **Operator.** Direct, high-agency, verification as a pre-flight gate. | Technically senior users who want an agent that pushes back. |
-| [`Maria/`](./Maria/) | **Assistant.** Warm, explains, proposes before acting. | Domain experts who are new to AI. |
+| [`Maria/`](./Maria/) | **Assistant.** Warm, explains, proposes before acting. | Domain experts who want a collaborator. The template's fluency assumptions are written for AI newcomers — adapt per [ONBOARDING step 7](../ONBOARDING.md) when your expert is not one. |
 | [`Els/`](./Els/) | **Middle ground + contributor.** Assisted, but technically comfortable and works on this repo. | Technical users who want coaching *and* to hack on the skills. |
 
 ## The three files
@@ -35,21 +35,27 @@ Two properties matter more than the stage names:
 
 ## Instantiating a template
 
-```bash
-cp -r Profile/Els ~/my-profile
-```
+[ONBOARDING.md](../ONBOARDING.md) step 7 owns this. It interviews the person, matches them against
+the registry above, and adapts the winner — read it before copying anything by hand. The one trap
+it exists to prevent: the three files only work where Hermes actually reads them (`SOUL.md` →
+`~/.hermes/SOUL.md`, `USER.md`/`MEMORY.md` → `~/.hermes/memories/`). Copying the folder somewhere
+Hermes never looks silently does nothing. No gateway restart is needed for profile files — they
+are read fresh every turn.
 
-1. **Put the three files where your Hermes actually reads them** — `SOUL.md`, `USER.md` and
-   `MEMORY.md` in your profile directory. Copying the folder somewhere Hermes never looks is the
-   most common way this silently does nothing; [ONBOARDING.md](../ONBOARDING.md) step 7 has the
-   concrete layout.
-2. **Replace every `<PLACEHOLDER>`.** Nothing in these files should still contain angle brackets
-   when you are done.
-3. **Delete anything that does not apply.** A template with sections you do not use is worse than
-   a shorter accurate one.
-4. Keep the `MEMORY.md` rent rule — it is what stops memory becoming a landfill.
-5. Restart the gateway **if you also installed skills** — it caches the skill catalogue at startup.
-   Profile files are read fresh, so a restart is not what makes them take effect.
+## Adding a bundled profile
+
+The step-7 framework matches against whatever the registry above contains, so a new profile needs
+no change to ONBOARDING.md — it needs to carry its own self-description. A bundled profile is:
+
+1. A directory with the three files, written generic — scaffolds, placeholders, no real data (see
+   below). Reuse the common placeholder taxonomy (`<USER>`, `<AGE>`, `<CITY>`, `<ROLE>`,
+   `<LANGUAGE>`, `<MODALITIES>`, `<INJURIES>`, `<INTOLERANCES>`, `<MEDICATIONS>`, `<DEVICE>`,
+   `<CADENCE>`); add fields only where the health content demands them.
+2. The same loop block as the others — **Ingest → Verify → Interpret → Decide → Plan → Deliver
+   proactively → Learn**.
+3. A row in the table above, concrete about who it fits. That row is what the matcher reads.
+
+The gate (`./scripts/leak-scan.sh .`) applies as everywhere else.
 
 ## These are scaffolds, not redactions
 

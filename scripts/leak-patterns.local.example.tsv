@@ -1,0 +1,44 @@
+# leak-patterns.local.example.tsv — the VALUE LAYER template.
+#
+# Copy this OUTSIDE the repository and fill in your real identifiers:
+#
+#     mkdir -p ~/.config/leak
+#     cp scripts/leak-patterns.local.example.tsv ~/.config/leak/patterns.tsv
+#     $EDITOR ~/.config/leak/patterns.tsv
+#     ./scripts/leak-scan.sh .
+#
+# The gate finds ~/.config/leak/patterns.tsv automatically. Point it elsewhere with
+# `--patterns-extra FILE` or $LEAK_PATTERNS_EXTRA.
+#
+# DO NOT copy this file into the repository, and do not commit a filled-in copy. The gate refuses
+# to run with the value layer inside the tree: `find` enumerates it, its own patterns match its own
+# text, and both ways out of that (ignoring it, or widening the self-exclusion) are evasion
+# surfaces. Naming your identifiers in a tracked file is the leak this layer exists to prevent.
+#
+# Format: NAME<TAB>REGEX. Values are PCRE, so escape metacharacters — a name containing `.` or `+`
+# must be written `\.` or `\+`, or it will match more than you meant. A literal tab cannot appear
+# in a value, because the tab is the field separator; the gate rejects a malformed line outright
+# rather than guessing at what was meant.
+#
+# The verdict reports how many of these are applied, and says NOT-CONFIGURED when this file is
+# absent. Both states are legitimate. What is not legitimate is a PASS being read as identity
+# coverage when the layer never ran.
+#
+# NOTE the <YOUR_...> tokens above. They are deliberate and they are load-bearing: the gate treats
+# an entry still containing one as INERT and says so, so copying this file without editing it is
+# reported as `CONFIGURED BUT INERT` rather than passing as coverage. If you rewrite an entry,
+# delete the token — and do not replace it with prose like `Firstname|Lastname`, which the detector
+# cannot tell apart from a real value.
+
+# Your name(s), as they would appear in prose, in a path, or on a git author line. This is the one
+# risk shape patterns cannot cover, which is why the layer exists at all.
+identity-name	(?i)\b(<YOUR_GIVEN_NAME>|<YOUR_FAMILY_NAME>)\b
+
+# Your GitHub handle. Allowed in hand-written scaffolding (README / ONBOARDING / CONTRIBUTING /
+# LICENSE / .github/**), because the repo legitimately points at you there; flagged anywhere inside
+# skills/** or Profile/**.
+owner-handle	(?i)<YOUR_GITHUB_HANDLE>
+
+# Optional, and only if the repository is named something you must not publish. If the repo will be
+# public under its own name, leave this out — a public repo's own name is not a secret.
+#repo-name	\b<YOUR_PRIVATE_REPO>\b

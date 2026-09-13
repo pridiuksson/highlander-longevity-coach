@@ -9,9 +9,8 @@ A health-coach kit for the Hermes agent: reusable skills, the coaching loop that
 and profile templates to instantiate. It is a coach, not a dashboard — the skills collect and verify
 data; the loop decides what is worth saying and learns from whether it landed.
 
-**Publish boundary.** `skills/` is the published kit. `Profile/`, `scripts/`, and the root docs are
-scaffolding around it. The repo is intended to become public, so everything here is written as if it
-already is.
+**Publish boundary.** `skills/` is the published kit. `Box/`, `Profile/`, `scripts/`, and the root docs are
+scaffolding around it. The repo is public, so everything here is written for public eyes.
 
 ## The one rule: the leak gate
 
@@ -25,8 +24,8 @@ Treat everything you commit as public: no personal health data, no real names, n
 no hosts — in a skill body, a fixture, a commit message, or a branch name. Keep placeholders
 (`<USER>`, `<YOUR_HEALTH_DIR>`) and drop the values. `CONTRIBUTING.md` has the full rule.
 
-CI (`.github/workflows/leak-gate.yml`) re-runs the gate on every push and PR over the tree and the
-full history — including secrets over history — so a red gate blocks the merge. The local hook and
+CI (`.github/workflows/leak-gate.yml`) re-runs the gate on every push and PR — the tree scan, this
+ref's history, and a full-history secrets pass — so a red gate blocks the merge. The local hook and
 the `workflow/` skills exist so you never push something CI will reject. Note the gate walks with
 `find`, not `git`: gitignored `staging/` is scanned too.
 
@@ -71,21 +70,29 @@ before acting on an assumption), `grill` (adversarial, null hypothesis = no, for
 
 ## Pre-push checks
 
-`@create-pr` runs a diff check plus the four checks below. The tree gate, the skill validator, and
-the history identity scan are mandatory. The fourth — secrets over the full history — needs
-`gitleaks` installed; if it is missing, report the secrets checks as **unverified**, never as clean.
+`@create-pr` runs a diff check plus the five checks below. The tree gate, the skill validator, the
+history identity scan, and the authorship check are mandatory. The fifth — secrets over the full
+history — needs `gitleaks` installed; if it is missing, report the secrets checks as **unverified**,
+never as clean.
 
 ```bash
 ./scripts/leak-scan.sh .                     # tree: identity / path / health + secrets
 
 python3 scripts/validate-skills.py .         # skill structure + README consistency
 
-git log -p --all -- . \
+git log -p HEAD -- . \
   ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
-  | ./scripts/leak-scan.sh --no-gitleaks -   # full history
+  | ./scripts/leak-scan.sh --no-gitleaks -   # this ref's history — see CONTRIBUTING on why not --all
+
+./scripts/check-git-identities.sh            # authorship. The scan above cannot see it: it drops
+                                             # Author:/Commit: lines when splitting the log into
+                                             # per-file diffs, so no pattern can fire on one
 
 gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 ```
+
+The authorship check is separate because authorship is the one thing that cannot be edited after
+publication. Every commit carries it forever, and no content pattern can reach it.
 
 ## Working style
 
@@ -95,7 +102,9 @@ gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 - **Verify, don't assert.** Prefer running a command over reasoning about what it would do; when a
   claim comes from elsewhere, check it against the source before repeating it.
 - **Delegate with enough context.** A subagent cannot see this file or the conversation unless you
-  put the relevant part in its prompt.
+  put the relevant part in its prompt. Constrain its output too: a delegated agent that narrates at
+  length can exhaust its budget before shipping anything — require terse progress and a bounded
+  final report.
 - **Stay lean.** Offload durable facts into the docs rather than long-lived scratch files.
 
 ## Docs index
@@ -106,6 +115,7 @@ gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 | [ONBOARDING.md](./ONBOARDING.md) | From clone to a working coach |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | The gate, layout, and how to change a skill |
 | [Profile/README.md](./Profile/README.md) | The three profile templates |
+| [Box/Nebius/nebius-cpu-box-cookbook.md](./Box/Nebius/nebius-cpu-box-cookbook.md) | Stand up a coach box on Nebius via the `nebius` CLI, agent-executed |
 
 ## Do not
 

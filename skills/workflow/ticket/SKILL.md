@@ -83,7 +83,7 @@ Every issue uses this structure. Omit a section only when it is genuinely empty,
 ```bash
 ./scripts/leak-scan.sh .              # expect: PASS
 python3 scripts/validate-skills.py .  # expect: OK
-git log -p --all -- . ':(exclude)scripts/leak-patterns.tsv' \
+git log -p HEAD -- . ':(exclude)scripts/leak-patterns.tsv' \
   ':(exclude)scripts/leak-scan.sh' | ./scripts/leak-scan.sh --no-gitleaks -   # expect: PASS
 ```
 
@@ -93,7 +93,11 @@ git log -p --all -- . ':(exclude)scripts/leak-patterns.tsv' \
 ```
 
 Rules: no reference to a conversation; every path exists at time of writing; every verify command
-is runnable and deterministic; dependencies cite issue numbers, not descriptions.
+is runnable and deterministic; dependencies cite issue numbers, not descriptions. Two more, learned
+the hard way: a verify command must **observe the asserted behavior** — the exit code and the
+stdout/stderr output that proves it; do not bury it under a redirect. And when
+the fix touches a working code path, the body must pin that behavior first: name a check that
+fails if the current, correct behavior regresses.
 
 ## Step 4 — Peer-review the body (gate)
 

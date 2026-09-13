@@ -85,8 +85,8 @@ python3 scripts/validate-skills.py .  # expect: OK (only if skills/** changed)
 If a verify command is genuinely stale or wrong, find a replacement that is **at least as strict**,
 and document the discrepancy. You may not relax a check to make it pass.
 
-The complete pre-push gate set — the full-history leak scan and the full-history `gitleaks` pass —
-runs in `@create-pr` Step 2, so Step 8 is not optional. Note that a tree `PASS` carrying
+The complete pre-push gate set — the diff check plus the five checks in `AGENTS.md` ("Pre-push
+checks") — runs in `@create-pr` Step 2, so Step 8 is not optional. Note that a tree `PASS` carrying
 `gitleaks not found — secrets pass SKIPPED` is **not** a clean secrets result; surface it.
 
 Report:
@@ -113,7 +113,7 @@ Verification: <paste Step 6 results>
 No blocking findings → ship. Blocking findings → fix, re-run Step 6, re-review **once**. Still
 blocked → surface to the user. Maximum one re-review cycle; after that the issue needs a human.
 
-Two rules make this a real gate rather than a formality:
+Three rules make this a real gate rather than a formality:
 
 - **`@peer-review` runs in a separate context** — a different CLI model, or a subagent (which may be
   the same model: a second *context*, not a second *model*). Hand it the artifacts and the diff, not
@@ -121,6 +121,12 @@ Two rules make this a real gate rather than a formality:
 - **Judge objections on evidence, not tone.** A finding backed by a file, a command, or a specific
   mechanism is blocking. A finding that is merely asserted can be answered with your verified facts.
   Do not wave away an evidenced objection because you ran the review.
+- **Fallback chain when no separate context exists** — exhaust the routing above (peer CLI, then
+  spawned subagent), then the **orchestrating agent** reviews the delivered diff (its hand-off is
+  your ship report plus the diff — not your summary of why the work is right), and only as a last
+  resort a self-review, which must be flagged prominently in the ship report ("peer-review
+  separation NOT available"). A flagged self-review is a process finding for the orchestrator to
+  close, not a reason to skip the gate.
 
 ## Step 8 — Ship
 
@@ -132,8 +138,8 @@ Two rules make this a real gate rather than a formality:
 Put `Fixes #<n>` in the PR body (the `create-pr` template's Summary) so merging closes the issue.
 
 **If there is no PR to open** (docs-only, or the issue asks for no code change), run the full
-pre-push gate set from `@create-pr` Step 2 yourself — the tree gate, the full-history leak scan,
-`validate-skills.py`, and `gitleaks --log-opts="--all"` — before finishing. Those gates live in
+pre-push gate set from `@create-pr` Step 2 yourself — the diff check plus the five checks in
+`AGENTS.md` ("Pre-push checks") — before finishing. Those gates live in
 `@create-pr`; skipping the PR does not skip them. State explicitly that no PR was opened, and why.
 
 ## Step 9 — Close and report
