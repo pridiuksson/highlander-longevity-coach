@@ -91,9 +91,10 @@ consumer wearables into storage on the Hermes Linux server (headless, no Android
   validation of the HR→VO2 line, method-family disagreement triage, era-pooling/
   era-split questions, segment-granularity admissibility) → read
   `references/vo2max-estimation-lessons.md` FIRST: sensitivity-analyze a contested
-  prior BEFORE debating it (HRmax 205-vs-198 was a −0.8 non-issue), validate the line
-  on its most extreme fresh point (maximal rep sat at 95.3% of anchored estimate),
-  convergent-evidence ranking incl. quarantined-for-cause methods (Uth at low RHR),
+  prior BEFORE debating it (the competing HRmax anchors were a non-issue), validate
+  the line on its most extreme fresh point (the maximal rep sat just under the
+  anchored estimate), convergent-evidence ranking incl. quarantined-for-cause methods
+  (Uth at low RHR),
   formula-vs-data precedent (Tanaka off by a wide margin). Re-verified 2026-09-20
   (deliberation run-015): memos are hypotheses never SoT — re-derive prose claims from
   raw data; pooled multi-era fits are LAGGING estimates, not "conservative floors"
@@ -247,8 +248,8 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   mapping.
 - **Join sleep-stage minutes by `sleep_id` = session uuid, never by date
   containment.** Date-keyed containment drops every stage after UTC midnight —
-  most of the night — cutting REM 60–90 min/night while leaving duration intact;
-  the distortion reads as a REM deficit that isn't there.
+  most of the night — cutting a large share of each night's REM while leaving
+  duration intact; the distortion reads as a REM deficit that isn't there.
 - **Gate sleep-window RMSSD on window coverage and window sanity before trusting
   extremes.** (a) Cap each HRV window's weight at its true overlap with the sleep
   window — uncapped sums overstate coverage and front-load late-night high-RMSSD
@@ -329,8 +330,8 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   identical calendar window before any year-over-year claim.
 - **Trend-in-a-mixed-population trap (2026-08-29, HRR series):** a year-over-year
   metric computed over ALL workouts can be pure workout-mix drift — the recovery-HR
-  drop looked like it doubled 2022→2026 (10→34), survived starting-HR controls,
-  yet runs-only was FLAT (unchanged across years): 2022-23 was e-bike commutes
+  drop looked like it doubled 2022→2026, survived starting-HR controls, yet
+  runs-only was FLAT (unchanged across years): 2022-23 was e-bike commutes
   (sub-maximal), 2024-26 runs. Before calling any cross-year trend a fitness change:
   stratify by activity type AND re-run within the dominant type; check whether the
   metric is mechanically bounded by a session-intensity proxy (here: hr_start). A
@@ -339,14 +340,14 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
 - **Era-stratify BEFORE celebrating a tail effect (2026-08-29, deep-sleep run-tail):**  "deep ≥90-min nights 3× enriched after runs" (Fisher p=0.005, survives the
   pre-registered ×8 family) still collapsed when split by a life-event boundary —
   5 of the 6 "tail" nights sat pre-cohabitation, and the post-boundary group mean
-  fell below baseline (run-night deep 89.8 pre vs 46.7 post). Multiplicity
-  correction is NOT the last defense: an unexamined era boundary (move-in,
+  fell below baseline (run-night deep time dropped sharply post-boundary).
+  Multiplicity correction is NOT the last defense: an unexamined era boundary (move-in,
   firmware wave, season, job change) can manufacture or erase a tail. For any
   claim resting on <20 events, list the events, plot them on the calendar, and
   check what fraction predates each candidate boundary.
 - **Duration-band control before naming a "modality floor" (2026-08-29):** an
-  e-bike-only deep-sleep "floor" (−6 min vs baseline) shrank to −2 min noise once
-  nights were compared within a fixed duration band (7.0–7.5h) — the group just
+  e-bike-only deep-sleep "floor" (a few minutes below baseline) shrank into noise
+  once nights were compared within a fixed duration band (7.0–7.5h) — the group just
   slept less overall. Before crediting a group difference to the group itself,
   re-run the comparison inside duration bands; if ordering scrambles across
   bands, the effect is duration, not modality.
@@ -401,9 +402,9 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   per-workout HR sidecars hold 11-59 samples (fragments), so sidecar means deviate
   from device summary means by a non-trivial margin. Density-gate (hr_n ≥ 300) any
   sidecar-vs-summary comparison; for sparse streams the summary wins. Conversely a
-  recovery curve legitimately outranks a STALE summary max (proven: summary 165 vs
-  curve 171 where no sidecar exists) — gate maxima on physiological bounds
-  (40-210), never "curve ≤ summary".
+  recovery curve legitimately outranks a STALE summary max (proven: a stale summary
+  max sat below the curve max where no sidecar exists) — gate maxima on plausible
+  physiological bounds, never "curve ≤ summary".
 - **Enum-code mapping: pair real events, don't guess from docs (2026-08-30).** HC
   webhook exercise codes are Android ints, not Samsung's: 79=walk(→1001), 8=bike
   (→11007), 56=run(→1002), 44=bodycombat(→7003), 0=gym(→15002) — mapped by
