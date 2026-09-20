@@ -103,15 +103,25 @@ a "conservative floor" or "bound" — Simpson-type direction is not guaranteed.
 **Pre-register the adoption threshold** before comparing the two points: the
 threshold is the parameter (a ±1.0-unit margin was adopted here) and it is what
 makes the comparison a test rather than a story. The observed gap is the receipt
-— an era-split point exceeding the pooled point by 1.83 ± 0.28 units across
-bootstrap seeds — and its size is not an expected effect for anyone else.
+— an era-split point exceeding the pooled point by 2.01 ± 0.33 units across
+20 bootstrap seeds, every seed past the threshold — and its size is not an
+expected effect for anyone else. **Fix ONE canonical bootstrap implementation
+and quote its numbers**: CI width is implementation-sensitive (an independent
+reviewer's implementation of the same data gave a materially narrower CI), and
+the era-split CI runs WIDER than pooled (95% width 17.3 vs 13.2 units here) —
+bias reduction costs width, because the split discards a third of the segments.
+Do not mix percentiles from different implementations into one paragraph.
 Before any TREND-slope claim ships, run a random-run-intercept mixed model
 (segments within runs within eras); cluster bootstrap by date is only a partial
 fix for within-run correlation. Point estimates are unaffected. **Check the
 within-run slope before trusting a fitted trend slope:** with the run intercept
-removed it is typically statistically zero (cluster-robust CI crossing 0) because
-within-run segments span only a narrow speed range — ±5% here, a general hazard
-rather than a quirk of this dataset. The cross-sectional fitted slope is then a
+removed it is typically statistically zero (cluster-robust CI crossing 0; here
++0.032 [−0.083, +0.148]) because within-run segments span only a narrow speed
+range — ±5% here, a general hazard rather than a quirk of this dataset. The
+cluster-robust sandwich must carry the (x−mean) leverage factor inside each
+cluster sum — an early draft dropped it and halved the CI width, which flips
+"well-identified zero" into "under-powered"; the conclusion survived, but the
+width claim did not. The cross-sectional fitted slope is then a
 BETWEEN-run/era regression, and trend claims must come from matched-speed/pace
 comparisons, never from the fitted slope.
 
