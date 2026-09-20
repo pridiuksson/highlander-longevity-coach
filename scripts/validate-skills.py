@@ -13,6 +13,10 @@ TOKEN TAXONOMY (enforced here, documented in CONTRIBUTING.md)
   * redaction class — allowed, and intentionally still visible. Values the sanitizer removed
     because they were somebody's measurements: `<value>`, `<VALUE>`, `<YOUR_RESTING_HR_BPM>`, ...
     Excision of every one of these is not possible without inventing data; see CONTRIBUTING.md.
+    The class carries ONE restriction, enforced below: a redaction is never glued to a number or
+    an arrow, because `<value>→<value>` is a broken expression rather than a redaction. The
+    syntax class is exempt — `<slug>.md` and `<trend>%` are legitimate — so the check names the
+    class it applies to rather than matching every angle-bracket token.
   * syntax class — allowed. Metavariables in usage strings and filename patterns: `<uuid>`,
     `<prompt>`, `<name>`, `<YYYYMMDDHHMMSS>`, ...
 
@@ -50,8 +54,15 @@ SUBSTITUTION_CLASS = re.compile(
     r"YOUR_PROFILE_NAME|YOUR_PRIVATE_REPO|YOUR_GIVEN_NAME|YOUR_FAMILY_NAME|"
     r"YOUR_GITHUB_HANDLE|USER|PLACEHOLDER)>")
 
-# Allowed, but never mid-expression: that means the sanitizer cut a number out.
-CORRUPT_VALUE_RE = re.compile(r"<value>(?=[\d%→–]|-\d)|(?<=[\d%→])<value>")
+# Allowed, but never mid-expression: that means the sanitizer cut a number out. This applies to
+# the whole redaction class, not to <value> alone — the identical cut lands inside a <YOUR_*>
+# token (a real one shipped as `(40-<YOUR_RESTING_HR_BPM>)`), and a <value>-only rule cannot see
+# it. Syntax-class metavariables are deliberately excluded: `<slug>.md` and `<trend>%` are
+# legitimate, and flagging them would make this check noise.
+REDACTION_TOKEN = r"<(?:value|VALUE|YOUR_[A-Z_]+)>"
+CORRUPT_VALUE_RE = re.compile(
+    REDACTION_TOKEN + r"(?=[\d%→–]|-\d)" + r"|" + r"(?<=[\d%→–-])" + REDACTION_TOKEN
+)
 # A skill must not hardcode the install root; ${HERMES_SKILL_DIR} survives any layout.
 # Matches the plain form, the doubled form, and shell-default corruption like
 # ${HERMES_HOME:-$HOME$HERMES_HOME} — all of which resolve to a path that may not exist.
@@ -148,9 +159,12 @@ for sk, depth in iter_skills(root):
         for tok in sorted(set(SUBSTITUTION_CLASS.findall(content))):
             problems.append(f"{where}: fill-in token <{tok}> never resolves — declare a "
                             f"metadata.hermes.config key or use ${{HERMES_SKILL_DIR}}")
-        if CORRUPT_VALUE_RE.search(content):
-            problems.append(f"{where}: redacted value glued to a number (<value> mid-expression) — "
-                            f"excise the fragment rather than leaving a broken expression")
+        for _ln, _line in enumerate(content.splitlines(), 1):
+            glued = CORRUPT_VALUE_RE.search(_line)
+            if glued:
+                problems.append(f"{where}:{_ln}: redaction '{glued.group(0)}' glued to a number or "
+                                f"an arrow — excise the fragment rather than leaving a broken "
+                                f"expression")
         for hit in sorted(set(INSTALL_ROOT_RE.findall(content))):
             problems.append(f"{where}: hardcodes the install root ({hit}) — use "
                             f"${{HERMES_SKILL_DIR}} or name the other skill")
