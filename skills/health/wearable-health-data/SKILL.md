@@ -90,18 +90,17 @@ consumer wearables into storage on the Hermes Linux server (headless, no Android
 - **VO2max estimation work** (anchor debates, sensitivity questions, out-of-sample
   validation of the HR→VO2 line, method-family disagreement triage, era-pooling/
   era-split questions, segment-granularity admissibility) → read
-  `references/vo2max-estimation-lessons.md` FIRST: sensitivity-analyze a contested
-  prior BEFORE debating it (the competing HRmax anchors were a non-issue), validate
-  the line on its most extreme fresh point (the maximal rep sat just under the
-  anchored estimate), convergent-evidence ranking incl. quarantined-for-cause methods
-  (Uth at low RHR),
+  `references/vo2max-estimation-lessons.md` FIRST — it tags every number as a method
+  parameter or a one-dataset receipt: sensitivity-analyze a contested prior BEFORE
+  debating it (the competing HRmax anchors were a non-issue), validate the line on its
+  most extreme fresh point (the maximal rep sat just under the anchored estimate),
+  convergent-evidence ranking incl. quarantined-for-cause methods (Uth at low RHR),
   formula-vs-data precedent (Tanaka off by a wide margin). Re-verified 2026-09-20
   (deliberation run-015): memos are hypotheses never SoT — re-derive prose claims from
   raw data; pooled multi-era fits are LAGGING estimates, not "conservative floors"
-  (era-split won a pre-registered R1 test at Δ=1.83 ± 0.28 across bootstrap seeds,
-  all > 1.0); Health-Connect has NO speed channel for any run (per-window speed is
-  sidecar-only; HC HR during runs IS ~1 Hz) and any new segment class must pass a
-  degrade-and-gate simulation first.
+  (era-split won a pre-registered R1 test, receipt in the reference); Health-Connect has
+  NO speed channel for any run (per-window speed is sidecar-only; HC HR during runs IS
+  ~1 Hz), and any new segment class must pass a degrade-and-gate simulation first.
 - **Researching a Samsung Health derived metric** — what it claims to measure, whether
   it's validated, official bands/thresholds, community score ranges (e.g. the AGEs
   index `com.samsung.health.advanced_glycation_endproduct`) → read
