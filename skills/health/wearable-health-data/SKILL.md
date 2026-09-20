@@ -86,14 +86,21 @@ consumer wearables into storage on the Hermes Linux server (headless, no Android
   lands → read `references/screenshot-workout-parsing.md` FIRST — dual-pass
   vision+OCR process ("ocr, vision, cross-match", user-prescribed), cross-match
   layers, pixel-tolerance limits, and the details-screen-arbitrates-chart-pixels
-  rule (a chart read missed a <YOUR_RESTING_HR_BPM> max that the summary screen settled).
+  rule (a chart read missed the session max HR that the summary screen settled).
 - **VO2max estimation work** (anchor debates, sensitivity questions, out-of-sample
-  validation of the HR→VO2 line, method-family disagreement triage) → read
+  validation of the HR→VO2 line, method-family disagreement triage, era-pooling/
+  era-split questions, segment-granularity admissibility) → read
   `references/vo2max-estimation-lessons.md` FIRST: sensitivity-analyze a contested
   prior BEFORE debating it (HRmax 205-vs-198 was a −0.8 non-issue), validate the line
   on its most extreme fresh point (maximal rep sat at 95.3% of anchored estimate),
   convergent-evidence ranking incl. quarantined-for-cause methods (Uth at low RHR),
-  formula-vs-data precedent (Tanaka off <YOUR_RESTING_HR_BPM>).
+  formula-vs-data precedent (Tanaka off by a wide margin). Re-verified 2026-09-20
+  (deliberation run-015): memos are hypotheses never SoT — re-derive prose claims from
+  raw data; pooled multi-era fits are LAGGING estimates, not "conservative floors"
+  (era-split won a pre-registered R1 test at Δ=1.83 ± 0.28 across bootstrap seeds,
+  all > 1.0); Health-Connect has NO speed channel for any run (per-window speed is
+  sidecar-only; HC HR during runs IS ~1 Hz) and any new segment class must pass a
+  degrade-and-gate simulation first.
 - **Researching a Samsung Health derived metric** — what it claims to measure, whether
   it's validated, official bands/thresholds, community score ranges (e.g. the AGEs
   index `com.samsung.health.advanced_glycation_endproduct`) → read
@@ -322,8 +329,8 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   identical calendar window before any year-over-year claim.
 - **Trend-in-a-mixed-population trap (2026-08-29, HRR series):** a year-over-year
   metric computed over ALL workouts can be pure workout-mix drift — the recovery-HR
-  drop looked like it doubled 2022→2026 (10→<YOUR_RESTING_HR_BPM>), survived starting-HR controls,
-  yet runs-only was FLAT (~<YOUR_RESTING_HR_BPM> all years): 2022-23 was e-bike commutes
+  drop looked like it doubled 2022→2026 (10→34), survived starting-HR controls,
+  yet runs-only was FLAT (unchanged across years): 2022-23 was e-bike commutes
   (sub-maximal), 2024-26 runs. Before calling any cross-year trend a fitness change:
   stratify by activity type AND re-run within the dominant type; check whether the
   metric is mechanically bounded by a session-intensity proxy (here: hr_start). A
@@ -392,11 +399,11 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   changed → what it means for you.
 - **Sparse sidecar streams defer to device summaries** (2026-08-29): 2021-23
   per-workout HR sidecars hold 11-59 samples (fragments), so sidecar means deviate
-  from device summary means by up to <YOUR_RESTING_HR_BPM>. Density-gate (hr_n ≥ 300) any
+  from device summary means by a non-trivial margin. Density-gate (hr_n ≥ 300) any
   sidecar-vs-summary comparison; for sparse streams the summary wins. Conversely a
   recovery curve legitimately outranks a STALE summary max (proven: summary 165 vs
   curve 171 where no sidecar exists) — gate maxima on physiological bounds
-  (40-<YOUR_RESTING_HR_BPM>), never "curve ≤ summary".
+  (40-210), never "curve ≤ summary".
 - **Enum-code mapping: pair real events, don't guess from docs (2026-08-30).** HC
   webhook exercise codes are Android ints, not Samsung's: 79=walk(→1001), 8=bike
   (→11007), 56=run(→1002), 44=bodycombat(→7003), 0=gym(→15002) — mapped by
