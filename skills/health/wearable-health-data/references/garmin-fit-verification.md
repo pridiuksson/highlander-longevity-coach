@@ -48,7 +48,8 @@ Time-only join `ABS((julianday(f.start_utc) - julianday(w.start_utc))*86400.0) <
   Garmin re-emits each RHR reading into every day's monitoring_b file. Dedupe
   (DISTINCT per day) before treating 15,973 as a reading count.
 - resting_hr: min 41, med 47, max 66, none >80, none <35, none NULL.
-  current_day_resting_hr: 1872 NULL, 2 >80, 12 <35 (both plausible at <YOUR_RESTING_HR_BPM> edge/-).
+  current_day_resting_hr: 1872 NULL, 2 >80, 12 <35 (both plausible as resting-HR
+  readings at the scale's extremes).
 - Range 2016-05-23 → 2021-08-26 (1922 days) ≈ 8.3 rows/day → snapshot cadence.
 - 73 monitoring_b files have ZERO rhr rows — legitimate (contain only `monitoring`,
   no `monitoring_hr_data`); not a parse bug.

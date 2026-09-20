@@ -62,7 +62,8 @@ Field name `TimestampGMT` meant what it said. Local = stored + 2h winter /
 
 Recorded negatives (tests that could NOT discriminate — kept so nobody
 re-runs them hoping): RHR-in-window containment (13.2% vs 10.0% — all-day
-sampling makes it mushy); RHR circadian trough (near-flat 46.7–48.<YOUR_RESTING_HR_BPM>).
+sampling makes it mushy); RHR circadian trough (near-flat across the trough, so it has
+no discriminating shape).
 Also circular, hence worthless: the healthsync import row being
 minute-identical in Samsung's UTC column (proves the importer's assumption,
 not the source's semantics).

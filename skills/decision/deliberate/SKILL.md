@@ -125,7 +125,7 @@ Read the data file(s) (e.g., `health.baseline_doc`). Every expert receives the f
 
 ## Parent probes + corrections ledger (validated runs 006/007, 2026-08-29)
 
-Before Phase 1: run cheap deterministic checks yourself on any contested number in the brief (sensitivity analyses, confound controls, era/matched-window strata, multiplicity families) and write results into the brief as PARENT PROBES. Experts deliberate judgment over measurable facts — never let them guess something a 10-second probe answers. Validated examples: HRmax sensitivity (`est = a + b×HRmax` ⇒ ±<YOUR_RESTING_HR_BPM> = ±0.55 → "inert"); cohab-era stratum exposing a run-tail as era-confounded; duration-band control collapsing a "floor" effect.
+Before Phase 1: run cheap deterministic checks yourself on any contested number in the brief (sensitivity analyses, confound controls, era/matched-window strata, multiplicity families) and write results into the brief as PARENT PROBES. Experts deliberate judgment over measurable facts — never let them guess something a 10-second probe answers. Validated examples: HRmax sensitivity (`est = a + b×HRmax` ⇒ perturbing the prior by a few bpm moved the estimate well under a unit → "inert"); cohab-era stratum exposing a run-tail as era-confounded; duration-band control collapsing a "floor" effect.
 
 When evidence lands MID-deliberation: append it to a numbered CORRECTIONS LEDGER in the brief + `debate.json` (`phases.pre_delib_corrections`), and inject into every later phase with explicit wording that it OVERRIDES stale claims. All five run-006 corrections were conservative downgrades and every one propagated to visible expert retractions.
 

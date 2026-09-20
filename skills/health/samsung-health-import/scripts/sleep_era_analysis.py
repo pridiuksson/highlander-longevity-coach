@@ -6,9 +6,9 @@ Usage: python3 sleep_era_analysis.py            (full monthly table + era summar
        python3 sleep_era_analysis.py --bp 2026-01   (explicit breakpoint YYYY-MM)
 
 Key measurement rules encoded here (see references/sleep-analysis-findings.md):
-- ALL analysis on ts_utc (ts_local mixes Cyprus/Stockholm zones).
+- ALL analysis on ts_utc (ts_local mixes the Vilnius/Stockholm zones).
 - Night-key: substr(datetime(start_utc,'-18 hours'),1,10).
-- Wake = morning HR-rise hour (first hour 03-10 where HR >= night-min+<YOUR_RESTING_HR_BPM>),
+- Wake = morning HR-rise hour (first hour 03-10 where HR >= night-min+12),
   NOT tracked session end (watch stops at detected wake, user stays in bed).
 - Era comparisons: winter-vs-winter only (photoperiod dominates; adjacent-month
   comparisons and rolling-mean breakpoint detection manufacture false steps).

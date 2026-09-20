@@ -36,7 +36,7 @@ shoe cadence), NOT duplicates, NOT phone-only runs. Do not delete them.
   drop_120 for the 1 short-window curve), `recovery_hr_point` (1 Hz).
 - Curves start median 0.6 s after workout end. Curve hr_start outranks stale
   summary max_hr (one workout: summary 165 vs curve 171, NO sidecar exists).
-- Semantics: runs hold drop_120 ≈ <YOUR_RESTING_HR_BPM> since 2022; all-workout year series
+- Semantics: runs hold drop_120 ≈ <value> since 2022; all-workout year series
   (18/10/34/32/34) is a workout-MIX effect — never read as fitness trend.
   Session-level reads (hill run 2026-08-23: drop 82 vs p90 52) are
   the actionable signal.

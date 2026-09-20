@@ -34,14 +34,16 @@ Galaxy Watch 7 → Samsung Health → Health Connect
   N=2). Payload key is `type`, not `exercise_type`.
 - **HR:** ~1 s stream INCLUDING workout samples; export `heart_rate` table =
   hourly PASSIVE-tracker bins (mean/min/max). Active-hour bins differ by
-  construction (gym hour: exp mean 91 vs HC 121); passive hours match ±<YOUR_RESTING_HR_BPM>.
+  construction (gym hour: exp mean 91 vs HC 121); passive hours match within a few bpm.
   Never compare HC hourly means to export bins without excluding workout windows.
 - **Body composition DOES sync** (June research doc wrong): weight kg, body_fat
   **PERCENTAGE** (export `body_fat_mass` is a kg MASS — convert kg = pct × weight/100).
-  Verified cross-checks (crossmatch checks EVERY snapshot vs export by exact ts):
-  08-25 HC 12.13% × 67.<YOUR_WEIGHT_KG> = 8.<YOUR_WEIGHT_KG> = export body_fat_mass (OK); 08-30 12.87% × <YOUR_WEIGHT_KG>
-  = **8.<YOUR_WEIGHT_KG>** is HC-first (no export row). Do NOT fixate on the "12.87% ≡ 8.<YOUR_WEIGHT_KG>" pairing —
-  that was WRONG arithmetic from an early pass; 8.21 belongs to the 08-25 snapshot.
+  Verified cross-checks (crossmatch checks EVERY snapshot vs export by exact ts): for a
+  given snapshot, HC's body-fat percentage × weight must equal the export's
+  `body_fat_mass` for the SAME timestamp. That identity is the check; match on the
+  timestamp, and re-derive it rather than quoting a pairing from an earlier pass — an
+  early pass paired a percentage with the wrong snapshot's mass, and the arithmetic being
+  internally consistent did not make the pairing right.
   BMI, height, BMR watts also arrive. Skeletal muscle mass: export-only.
 - **Sleep sessions:** HC keeps session fragmentation (evening-doze + main night;
   02:26 splits) that export merges night-level. ANY comparison must first group
@@ -87,7 +89,7 @@ Galaxy Watch 7 → Samsung Health → Health Connect
   approval (outbound to device); DB writes via heredoc blocked — write script
   files (`~/tmp/*.py`), run them.
 - Receiver `vitals` UNIQUE key includes `value` (upstream, vendored unmodified) —
-  a ±<YOUR_RESTING_HR_BPM> jitter on the same second across pulls would dup a row; negligible
+  a bpm-scale jitter on the same second across pulls would dup a row; negligible
   at 1 Hz today, patch on next re-vendor.
 - Export `body_composition.ts_local` is stale-UTC-labeled (extras-parser family
   missed by the 08-16 tz fix) — never coach/derive from that column; cross-match
