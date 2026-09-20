@@ -86,14 +86,21 @@ consumer wearables into storage on the Hermes Linux server (headless, no Android
   lands → read `references/screenshot-workout-parsing.md` FIRST — dual-pass
   vision+OCR process ("ocr, vision, cross-match", user-prescribed), cross-match
   layers, pixel-tolerance limits, and the details-screen-arbitrates-chart-pixels
-  rule (a chart read missed a <YOUR_RESTING_HR_BPM> max that the summary screen settled).
+  rule (a chart read missed the session max HR that the summary screen settled).
 - **VO2max estimation work** (anchor debates, sensitivity questions, out-of-sample
-  validation of the HR→VO2 line, method-family disagreement triage) → read
-  `references/vo2max-estimation-lessons.md` FIRST: sensitivity-analyze a contested
-  prior BEFORE debating it (HRmax 205-vs-198 was a −0.8 non-issue), validate the line
-  on its most extreme fresh point (maximal rep sat at 95.3% of anchored estimate),
+  validation of the HR→VO2 line, method-family disagreement triage, era-pooling/
+  era-split questions, segment-granularity admissibility) → read
+  `references/vo2max-estimation-lessons.md` FIRST — it tags every number as a method
+  parameter or a one-dataset receipt: sensitivity-analyze a contested prior BEFORE
+  debating it (the competing HRmax anchors were a non-issue), validate the line on its
+  most extreme fresh point (the maximal rep sat just under the anchored estimate),
   convergent-evidence ranking incl. quarantined-for-cause methods (Uth at low RHR),
-  formula-vs-data precedent (Tanaka off <YOUR_RESTING_HR_BPM>).
+  formula-vs-data precedent (Tanaka off by a wide margin). Re-verified 2026-09-20
+  (deliberation run-015): memos are hypotheses never SoT — re-derive prose claims from
+  raw data; pooled multi-era fits are LAGGING estimates, not "conservative floors"
+  (era-split won a pre-registered R1 test, receipt in the reference); Health-Connect has
+  NO speed channel for any run (per-window speed is sidecar-only; HC HR during runs IS
+  ~1 Hz), and any new segment class must pass a degrade-and-gate simulation first.
 - **Researching a Samsung Health derived metric** — what it claims to measure, whether
   it's validated, official bands/thresholds, community score ranges (e.g. the AGEs
   index `com.samsung.health.advanced_glycation_endproduct`) → read
@@ -228,6 +235,38 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
 
 ## Pitfalls
 
+- **Exercise→night-after pairing is NOT the −18h sleep night-key.** The −18h rule
+  groups SLEEP sessions to nights only. For "night after session X": a session
+  06:00–24:00 local belongs to its own date's night; 00:00–06:00 to the previous
+  night. Deriving workout night keys by subtracting 18h pairs every daytime
+  session with the PREVIOUS night and quietly inverts night-after deltas.
+- **HC-payload timestamps are UTC ISO strings — convert before any lived-clock
+  display.** Printing payload `Z` times as if local shifts every displayed hour
+  by the UTC offset; the same failure class as the CSV `*_utc` audit. Convert to
+  the local zone (e.g. `Europe/Stockholm`) before display AND before session→night
+  mapping.
+- **Join sleep-stage minutes by `sleep_id` = session uuid, never by date
+  containment.** Date-keyed containment drops every stage after UTC midnight —
+  most of the night — cutting a large share of each night's REM while leaving
+  duration intact; the distortion reads as a REM deficit that isn't there.
+- **Gate sleep-window RMSSD on window coverage and window sanity before trusting
+  extremes.** (a) Cap each HRV window's weight at its true overlap with the sleep
+  window — uncapped sums overstate coverage and front-load late-night high-RMSSD
+  hours; quarantine nights under ~5h covered (report the value as missing, not a
+  number). (b) Exclude single windows whose rmssd_mean is non-physiological
+  (>200 ms; sleep-onset motion artifacts) from any sleep-window mean — a single
+  artifact window can fabricate an "exceptional" night.
+- **Never run recovery-HR (drop_120) on modalities that end on a strength/cooldown
+  block.** HR is still RISING at those class ends, so "drops" go negative; the HRR
+  series is defined for steady-endurance ends (runs) only.
+- **HR channel resolution: verify it before deriving threshold minutes.** HC-payload
+  heart_rate can be near-1 Hz samples grouped inside 1-minute buckets (dense during
+  workouts, sparse at rest) — NOT 2-minute bins as commonly assumed. A bin-max ×2
+  "minutes above threshold" rule overcounted several-fold vs true per-sample counting
+  in a real audit; count individual samples (seconds / 60) for threshold minutes, and
+  validate mean/max against the device's native 1 Hz sidecar on a bridge session
+  (agreement within a beat-per-minute is expected) before pooling across pipelines.
+
 - **Skills drift from pipeline truth — sweep before closing the session.** After any
   session that changes parser semantics, rebuilds a DB, or rewrites runbook numbers,
   grep every skill + reference that documents the changed behavior and fix them in the
@@ -290,8 +329,8 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   identical calendar window before any year-over-year claim.
 - **Trend-in-a-mixed-population trap (2026-08-29, HRR series):** a year-over-year
   metric computed over ALL workouts can be pure workout-mix drift — the recovery-HR
-  drop looked like it doubled 2022→2026 (10→<YOUR_RESTING_HR_BPM>), survived starting-HR controls,
-  yet runs-only was FLAT (~<YOUR_RESTING_HR_BPM> all years): 2022-23 was e-bike commutes
+  drop looked like it doubled 2022→2026, survived starting-HR controls, yet
+  runs-only was FLAT (unchanged across years): 2022-23 was e-bike commutes
   (sub-maximal), 2024-26 runs. Before calling any cross-year trend a fitness change:
   stratify by activity type AND re-run within the dominant type; check whether the
   metric is mechanically bounded by a session-intensity proxy (here: hr_start). A
@@ -300,14 +339,14 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
 - **Era-stratify BEFORE celebrating a tail effect (2026-08-29, deep-sleep run-tail):**  "deep ≥90-min nights 3× enriched after runs" (Fisher p=0.005, survives the
   pre-registered ×8 family) still collapsed when split by a life-event boundary —
   5 of the 6 "tail" nights sat pre-cohabitation, and the post-boundary group mean
-  fell below baseline (run-night deep 89.8 pre vs 46.7 post). Multiplicity
-  correction is NOT the last defense: an unexamined era boundary (move-in,
+  fell below baseline (run-night deep time dropped sharply post-boundary).
+  Multiplicity correction is NOT the last defense: an unexamined era boundary (move-in,
   firmware wave, season, job change) can manufacture or erase a tail. For any
   claim resting on <20 events, list the events, plot them on the calendar, and
   check what fraction predates each candidate boundary.
 - **Duration-band control before naming a "modality floor" (2026-08-29):** an
-  e-bike-only deep-sleep "floor" (−6 min vs baseline) shrank to −2 min noise once
-  nights were compared within a fixed duration band (7.0–7.5h) — the group just
+  e-bike-only deep-sleep "floor" (a few minutes below baseline) shrank into noise
+  once nights were compared within a fixed duration band (7.0–7.5h) — the group just
   slept less overall. Before crediting a group difference to the group itself,
   re-run the comparison inside duration bands; if ordering scrambles across
   bands, the effect is duration, not modality.
@@ -360,11 +399,11 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
   changed → what it means for you.
 - **Sparse sidecar streams defer to device summaries** (2026-08-29): 2021-23
   per-workout HR sidecars hold 11-59 samples (fragments), so sidecar means deviate
-  from device summary means by up to <YOUR_RESTING_HR_BPM>. Density-gate (hr_n ≥ 300) any
+  from device summary means by a non-trivial margin. Density-gate (hr_n ≥ 300) any
   sidecar-vs-summary comparison; for sparse streams the summary wins. Conversely a
-  recovery curve legitimately outranks a STALE summary max (proven: summary 165 vs
-  curve 171 where no sidecar exists) — gate maxima on physiological bounds
-  (40-<YOUR_RESTING_HR_BPM>), never "curve ≤ summary".
+  recovery curve legitimately outranks a STALE summary max (proven: a stale summary
+  max sat below the curve max where no sidecar exists) — gate maxima on plausible
+  physiological bounds, never "curve ≤ summary".
 - **Enum-code mapping: pair real events, don't guess from docs (2026-08-30).** HC
   webhook exercise codes are Android ints, not Samsung's: 79=walk(→1001), 8=bike
   (→11007), 56=run(→1002), 44=bodycombat(→7003), 0=gym(→15002) — mapped by

@@ -10,11 +10,16 @@ page, 97-entry table), NOT per-account values. The *code→label* is fixed; only
 - 10007 = "Circuit training, moderate effort"
 - 10006 = sit-ups, 10008 = mountain climbers (calisthenics block)
 - 15002 = "Weight machine" (user overlay: gym-strength session)
-- 7003 = "Martial arts, moderate pace (Judo, Jujitsu, Karate, Taekwondo)" (user overlay 2026-08-29: BodyCombat; 9 sessions Jul 22-Aug 26 2026, ~41min mean, meanHR 137)
+- 7003 = "Martial arts, moderate pace (Judo, Jujitsu, Karate, Taekwondo)" (user overlay: combat-cardio group class)
 - 11007 = "Cycling" (user overlay: with-distance=regular bike; no-distance + 2026 Stockholm = e-bike commute)
 - 9002 = "Yoga" (user overlay: Bikram hot yoga)
 - 1001 = "Walking" (user overlay: auto-walk)
 - 1002 = "Running"
+
+A `user overlay:` entry is the account-specific half of the mapping — the activity YOUR
+export files under that code. The session count, mean duration and mean HR that verified
+an overlay belong to the dataset it was verified against, so re-derive yours (count
+sessions per code, compare their durations and mean HR) instead of copying a row's stats.
 
 ## Manual vs auto provenance (raw `source_type` column, NOT in sqlite — parser drops it)
 Read from the raw `com.samsung.health.exercise.*.csv` `source_type` field:

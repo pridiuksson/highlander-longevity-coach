@@ -73,7 +73,7 @@ Build a table of signature rows × candidate hypotheses, gradable SUPPORTS / WEA
 - HRV/RMSSD + RHR same-window (load signal; night-after-new-modality ≈ rest
   nights kills the ACUTE-load version, but chronic-load onset still counts —
   check whether the decay start-week coincides with a new modality: Aug 2026
-  decay began W30, exactly the BodyCombat start week).
+  decay began W30, exactly the combat-cardio start week).
 - **inversion check** — only on VERIFIED series. "Deep peaked at the LATEST
   bedtime" was itself an artifact of the fabricated bedtime series; the paradox
   dissolved when the x-axis was corrected. An inversion argument is worth
