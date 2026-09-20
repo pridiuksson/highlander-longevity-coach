@@ -10,7 +10,7 @@ page, 97-entry table), NOT per-account values. The *code→label* is fixed; only
 - 10007 = "Circuit training, moderate effort"
 - 10006 = sit-ups, 10008 = mountain climbers (calisthenics block)
 - 15002 = "Weight machine" (user overlay: gym-strength session)
-- 7003 = "Martial arts, moderate pace (Judo, Jujitsu, Karate, Taekwondo)" (user overlay 2026-08-29: BodyCombat; 9 sessions Jul 22-Aug 26 2026, ~41min mean, meanHR 137)
+- 7003 = "Martial arts, moderate pace (Judo, Jujitsu, Karate, Taekwondo)" (user overlay: combat-cardio group class; 9 sessions over ~5 weeks, ~41min mean, meanHR ~137 — placeholder values for the overlay row)
 - 11007 = "Cycling" (user overlay: with-distance=regular bike; no-distance + 2026 Stockholm = e-bike commute)
 - 9002 = "Yoga" (user overlay: Bikram hot yoga)
 - 1001 = "Walking" (user overlay: auto-walk)

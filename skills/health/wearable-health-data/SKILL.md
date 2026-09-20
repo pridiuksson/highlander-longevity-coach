@@ -228,6 +228,38 @@ Full per-platform table + gh-CLI field quirks + 100-repo survey workflow:
 
 ## Pitfalls
 
+- **Exercise→night-after pairing is NOT the −18h sleep night-key.** The −18h rule
+  groups SLEEP sessions to nights only. For "night after session X": a session
+  06:00–24:00 local belongs to its own date's night; 00:00–06:00 to the previous
+  night. Deriving workout night keys by subtracting 18h pairs every daytime
+  session with the PREVIOUS night and quietly inverts night-after deltas.
+- **HC-payload timestamps are UTC ISO strings — convert before any lived-clock
+  display.** Printing payload `Z` times as if local shifts every displayed hour
+  by the UTC offset; the same failure class as the CSV `*_utc` audit. Convert to
+  the local zone (e.g. `Europe/Stockholm`) before display AND before session→night
+  mapping.
+- **Join sleep-stage minutes by `sleep_id` = session uuid, never by date
+  containment.** Date-keyed containment drops every stage after UTC midnight —
+  most of the night — cutting REM 60–90 min/night while leaving duration intact;
+  the distortion reads as a REM deficit that isn't there.
+- **Gate sleep-window RMSSD on window coverage and window sanity before trusting
+  extremes.** (a) Cap each HRV window's weight at its true overlap with the sleep
+  window — uncapped sums overstate coverage and front-load late-night high-RMSSD
+  hours; quarantine nights under ~5h covered (report the value as missing, not a
+  number). (b) Exclude single windows whose rmssd_mean is non-physiological
+  (>200 ms; sleep-onset motion artifacts) from any sleep-window mean — a single
+  artifact window can fabricate an "exceptional" night.
+- **Never run recovery-HR (drop_120) on modalities that end on a strength/cooldown
+  block.** HR is still RISING at those class ends, so "drops" go negative; the HRR
+  series is defined for steady-endurance ends (runs) only.
+- **HR channel resolution: verify it before deriving threshold minutes.** HC-payload
+  heart_rate can be near-1 Hz samples grouped inside 1-minute buckets (dense during
+  workouts, sparse at rest) — NOT 2-minute bins as commonly assumed. A bin-max ×2
+  "minutes above threshold" rule overcounted several-fold vs true per-sample counting
+  in a real audit; count individual samples (seconds / 60) for threshold minutes, and
+  validate mean/max against the device's native 1 Hz sidecar on a bridge session
+  (agreement within a beat-per-minute is expected) before pooling across pipelines.
+
 - **Skills drift from pipeline truth — sweep before closing the session.** After any
   session that changes parser semantics, rebuilds a DB, or rewrites runbook numbers,
   grep every skill + reference that documents the changed behavior and fix them in the
