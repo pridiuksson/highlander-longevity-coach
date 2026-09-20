@@ -27,8 +27,8 @@ the raw export. User-prescribed process, verbatim: "same process as before:
 
 ## Priority: the summary screen ARBITRATES chart pixels
 
-Chart pixel reads carry tolerances: peaks ±3–<YOUR_RESTING_HR_BPM>, troughs ±5–10, rep
-boundaries ±20 s. Details-screen numbers are exact and win every conflict.
+Chart pixel reads carry tolerances of a few bpm on peaks, ±5–10 on troughs and ±20 s on
+rep boundaries. Details-screen numbers are exact and win every conflict.
 
 **Incident that set the rule (2026-08-30):** chart crests read "~175–185,
 nothing reaches 198" → the details screen showed **Max puls 196**. Sustained

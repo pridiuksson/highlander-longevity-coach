@@ -29,8 +29,8 @@ element keys — never hardcode a full filename (export paths carry per-export t
 
 ## Rep-extraction recipe (hill session 048d9b04, worked example)
 
-1. Identify rep windows from the HR stream (smoothed bout detection, e.g. threshold
-   <YOUR_RESTING_HR_BPM>) — NOT from fixed clock windows: smoothed-HR bouts and wall-clock windows
+1. Identify rep windows from the HR stream (smoothed bout detection against a fixed bpm
+   threshold) — NOT from fixed clock windows: smoothed-HR bouts and wall-clock windows
    differ by 15–60 s and mixing them produces mismatched speed/HR pairs.
 2. Per window, aggregate each channel independently (`heart_rate` from the HR channel,
    `speed` from speed channel, `altitude` from location stream — they are separate arrays
