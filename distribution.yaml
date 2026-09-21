@@ -12,7 +12,7 @@ hermes_requires: ">=0.21.0"
 license: MIT
 author: highlander-longevity-coach contributors
 distribution_owned:
-  # Skills (the published kit — 23 committed SKILL.md files in 9 stages)
+  # Skills (the published kit — 24 committed SKILL.md files in 9 stages)
   - skills/decision/deliberate
   - skills/decision/grill
   - skills/decision/loop
@@ -20,6 +20,7 @@ distribution_owned:
   - skills/decision/plan
   - skills/evidence/evidence-loop
   - skills/evidence/find-evidence
+  - skills/evidence/memory-reality-check
   - skills/evidence/supplement-spec-verification
   - skills/health/garmin-import
   - skills/health/nutrition-advisory
