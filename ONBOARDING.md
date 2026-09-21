@@ -420,6 +420,45 @@ Access is custody, not ownership: the operator's SSH key is for provisioning, th
 credentials (`authorized_keys`, channel tokens in `.env`) belong to the tenant, and closing the
 engagement means verifying the operator's key no longer authenticates.
 
+### Create the tenant's profile first (multi-tenant box)
+
+Steps 2–3 install into whichever profile's `~/.hermes` you run them from — correct on a
+single-person box, wrong on a fleet box where every person runs as their own Hermes profile
+(`~/.hermes/profiles/<name>/`): a `cp -r` there lands the kit in the operator's profile and
+the tenant never sees it. This repo is also a **profile distribution** — `distribution.yaml`
+at the root declares everything the kit owns — so install it natively into the tenant's
+profile:
+
+```bash
+hermes profile install ~/highlander-longevity-coach --name <tenant> -y
+```
+
+The install **creates** the profile — do not pre-create one with `hermes profile create`
+first, or the install refuses (an existing profile wants `--force`, which overwrites in
+place). Over non-interactive SSH, pass `-y` (the install otherwise prompts `Proceed with
+install? [y/N]`, and a prompt with no tty is read as "no") — or use `ssh -t` as the WhatsApp
+pairing below does.
+
+That puts the skills, the `Profile/` templates, and the docs into
+`~/.hermes/profiles/<tenant>/` and touches nothing of the tenant's own state: `.env`,
+`state.db`, memories, and sessions are user-owned and never overwritten (this kit ships no
+cron jobs, so any you add survive an update too). From there, run the kit's steps against
+**that** profile — the rest of this doc writes bare `hermes`, which on a fleet box targets
+the operator's own profile: prefix tenant-side commands with `hermes -p <tenant>`, most
+critically step 5 (`hermes -p <tenant> config set …`), step 9 (`hermes -p <tenant> cron …`),
+and any `gateway restart`/`whatsapp` pairing. Step 4's validators keep running from the
+clone — `scripts/` is scaffolding and ships only in the repo.
+
+- Step 7's three files go in **that profile's** home —
+  `~/.hermes/profiles/<tenant>/{SOUL.md,memories/USER.md,memories/MEMORY.md}`.
+- If another profile on the box already runs a WhatsApp bridge, give this one its own port:
+  `bridge_port:` in the `whatsapp:` block of the tenant's `config.yaml` (a fresh install
+  ships no `config.yaml` — create it; default 3000, and two bridges on one port crash-loop
+  each other; see Troubleshooting).
+- Keep recording the clone's `git rev-parse HEAD` for step 7's `derived_from` line — the
+  install also writes provenance into the profile (`hermes profile info <tenant>` shows
+  name, version, source, installed_at), which complements but does not replace the commit.
+
 ### Status check first — the checklist is resumable
 
 A box rarely arrives virgin: an installer may have run steps 1–5 already. Audit before you act;
@@ -428,6 +467,7 @@ off-PATH otherwise — step 0):
 
 ```bash
 ssh <user>@<host> "bash -lc 'hermes --version; hermes gateway status; hermes skills list; hermes cron list; hermes doctor; git -C ~/highlander-longevity-coach rev-parse HEAD; ls -d ~/.hermes/skills.bak-*'"
+ssh <user>@<host> "for p in ~/.hermes/profiles/*/; do [ -f \"\$p/distribution.yaml\" ] && echo \"\$p: distribution-managed\"; done; bash -lc 'hermes profile list'"
 ssh <user>@<host> "ls -la ~/.hermes/SOUL.md ~/.hermes/memories ~/health 2>/dev/null"
 ssh <user>@<host> "grep -nE '^WHATSAPP' ~/.hermes/.env; ls ~/.hermes/whatsapp/session/creds.json 2>/dev/null"
 ssh <user>@<host> "grep -nE 'health_dir|baseline_doc|timezone|quiet_hours|provider' ~/.hermes/config.yaml"
@@ -436,6 +476,7 @@ ssh <user>@<host> "python3 ~/highlander-longevity-coach/scripts/validate-skills.
 
 | Evidence on the box | Step already done |
 |---|---|
+| `distribution.yaml` in a profile under `~/.hermes/profiles/<name>/`, or `hermes profile info <name>` reporting a manifest | tenant profile created from this distribution (multi-tenant flow) |
 | `git -C … rev-parse HEAD` prints a SHA | 1 |
 | `ls -d ~/.hermes/skills.bak-*` matches | 2 |
 | kit stages under `~/.hermes/skills/`, `--installed` run from the box's clone comes back clean | 3, 4 |
@@ -535,6 +576,23 @@ git pull && git rev-parse HEAD        # new version — record it
    so neither is touched. That is exactly why no path is hand-edited into a skill.
 3. `hermes gateway restart`.
 
+**Distribution-managed profiles update differently.** If the tenant's profile was created
+with `hermes profile install` (multi-tenant flow), the copy steps above are the single-box
+path, not theirs: `git pull` in the clone first (update re-reads the *recorded* source — for
+a local directory that is the clone as-is, so the pull is a prerequisite, not optional),
+then `hermes profile update <tenant> -y`. There is no `--source` flag; the update re-pulls
+whatever source the profile's manifest recorded at install time — to change it, install
+again with `--force`. Update replaces only the paths `distribution.yaml` owns and leaves
+everything user-owned — `.env`, `state.db`, memories, sessions, config (unless
+`--force-config`) — untouched. The step-2 collision check still matters for a hand-copied
+box; for owned skills the shadowing half of the trap goes (an owned directory is replaced
+whole) but the rename half does not: a skill dropped from a later manifest is **not
+pruned**, so retire the old directory by hand when a rename lands. A skill the tenant
+customizes survives only outside the owned set: tenant-made skills belong under the
+profile's `skills/` tree, and because this manifest lists each skill explicitly, any path
+it does not list (say `skills/mine/…`) is never replaced by `update`.
+The symlink ban below applies unchanged.
+
 **Do not symlink the skills instead.** A symlink carries no recorded revision, so you can never
 tell whether a given skill is the version you think it is, and drift becomes undetectable — which
 is the failure the repo's versioning design exists to prevent.
@@ -556,7 +614,7 @@ is the failure the repo's versioning design exists to prevent.
 | The gateway ignores a new skill | It cached the catalogue — restart it |
 | The leak gate is red | **Do not proceed.** Read the report; it names the pattern and the line |
 | The weekly job never fires | Check the delivery target — a fresh box has none configured (step 9) |
-| WhatsApp bridge dies instantly, `EADDRINUSE` on `127.0.0.1:3000` in `~/.hermes/whatsapp/bridge.log` | Another WhatsApp gateway (GOWA, WAHA, …) holds the port — the gateway cannot self-heal a container-owned holder. Stop it, confirm `ss -ltnp | grep :3000` is empty, restart the gateway (tenant flow, WhatsApp) |
+| WhatsApp bridge dies instantly, `EADDRINUSE` on `127.0.0.1:3000` in `~/.hermes/whatsapp/bridge.log` | Another WhatsApp gateway (GOWA, WAHA, …) holds the port — the gateway cannot self-heal a container-owned holder. Stop it, confirm `ss -ltnp | grep :3000` is empty, restart the gateway (tenant flow, WhatsApp). On a fleet box the holder may be a **second Hermes profile's own bridge** — set a distinct `bridge_port:` in each profile's `whatsapp:` config block instead of stopping a sibling tenant's gateway |
 | The coach answers the wrong phone, or messages someone who never paired | `WHATSAPP_ALLOWED_USERS` / `WHATSAPP_HOME_CHANNEL` do not match the **paired** account — the QR scan decided it, not the env. Re-point the env at the paired account or re-pair with the intended one, then restart the gateway |
 | `WHATSAPP_ENABLED=false` but the bridge still spawns | Observed on v0.21.2 with a `whatsapp:` block in `config.yaml` — the flag is not a reliable kill switch there. `hermes gateway stop` for pairing windows; to disable outright, remove the variable from `.env` (Hermes' own adapter guidance) and confirm `ps aux | grep bridge.js` comes back empty |
 | Gateway exits `78/CONFIG`: `WhatsApp enabled but not paired` | `WHATSAPP_ENABLED=true` landed before the QR scan — the preflight refuses cleanly instead of crash-looping. Pair (`hermes whatsapp`), then `hermes gateway start`; the failed unit recovers on the next start |
