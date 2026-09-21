@@ -1,0 +1,54 @@
+name: highlander-longevity-coach
+version: "2026.09.21-0"
+description: >
+  Health-coach kit for the Hermes agent: a reusable skills bundle plus profile
+  templates (Olle / Maria / Els) for long-form coaching of a hybrid
+  athlete (gym-dominant + optional running / health data). The coaching loop
+  lives in SKILL.md files; profile templates live under Profile/.
+  This distribution carries the skills and templates only — per-tenant
+  personal data (SOUL.md, USER.md, MEMORY.md, health records) lives in
+  the tenant's profile directory and is never distributed.
+hermes_requires: ">=0.21.0"
+license: MIT
+author: highlander-longevity-coach contributors
+distribution_owned:
+  # Skills (the published kit — 24 committed SKILL.md files in 9 stages)
+  - skills/decision/deliberate
+  - skills/decision/grill
+  - skills/decision/loop
+  - skills/decision/peer-review
+  - skills/decision/plan
+  - skills/evidence/evidence-loop
+  - skills/evidence/find-evidence
+  - skills/evidence/memory-reality-check
+  - skills/evidence/supplement-spec-verification
+  - skills/health/garmin-import
+  - skills/health/nutrition-advisory
+  - skills/health/samsung-health-import
+  - skills/health/wearable-health-data
+  - skills/nutrition/meal-planning
+  - skills/nutrition/swedish-food-nutrition
+  - skills/onboarding/demo
+  - skills/planning/schedule-management
+  - skills/proactive/proactive-coach
+  - skills/quality/eval-health
+  - skills/workflow/commit
+  - skills/workflow/contributions
+  - skills/workflow/create-pr
+  - skills/workflow/ticket
+  - skills/workflow/work
+  # Profile scaffolds (templates — include all three profile flavors
+  # so a new tenant is matched to the right coaching tone; user data
+  # in the profile dirs is NOT owned by this manifest and is preserved).
+  - Profile/README.md
+  - Profile/Olle
+  - Profile/Maria
+  - Profile/Els
+  # The coaching loop definition (read by the agent at turn start)
+  - ONBOARDING.md
+  # Repository conventions (leak gate, contribution, setup)
+  - AGENTS.md
+  - CONTRIBUTING.md
+  # Identify / version (this file — always owned, never a secret)
+  - distribution.yaml
+env_requires: []
