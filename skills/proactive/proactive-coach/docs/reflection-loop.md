@@ -1,6 +1,11 @@
 # Reflection Loop — Stage 7 (Learn) Extension
 
 Reference: devops-agent PR #22 (`feat/proactive-reflection-self-adjust`).
+Source paper: arXiv 2605.06717 — "Agentic Coding Needs Proactivity, Not Just Autonomy"
+(Bui & Evangelopoulos, Google Labs). Design is a MANUAL Learning Lift proxy
+(SKILL.md §Relation to source, 196-202): reply-rate via ledger.py (acted/ignored)
+is NOT insight quality; action space mapped {notify=draft/recommend,
+stay-silent=hold, O3 interruption=ALERT exempt).
 Design: profile-isolated, ledger-based self-adjustment for proactive cron delivery.
 
 Mechanism (existing ledger.py):
