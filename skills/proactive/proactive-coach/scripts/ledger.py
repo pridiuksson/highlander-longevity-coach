@@ -8,6 +8,7 @@ Usage:
   ledger.py add SOURCE CLASS HEADLINE...      # prints new entry id
   ledger.py resolve ID acted|ignored|corrected|dropped
   ledger.py report [--json]                   # stats + recommendations, prunes >90d
+  ledger.py reflect [--json]                  # schedule recommendations (read-only)
   ledger.py pending                           # unresolved entries
 
 Stdlib only. Concurrency-safe via fcntl lock. File: $HERMES_HOME/scripts/.state/insight-ledger.jsonl
@@ -26,6 +27,12 @@ LOCK = LEDGER + ".lock"
 PRUNE_DAYS = 90
 PAUSE_STREAK = 3          # consecutive ignored ...
 PAUSE_SPAN_DAYS = 7       # ... AND streak must span at least this many days
+# --- reflect: schedule recommendations (stage 7). Never auto-applied. ---
+REFLECT_MIN_SAMPLES = 5   # settled deliveries a source needs before a shift is suggested,
+                          # and they must fall on this many separate delivery days
+REFLECT_RECENCY_DAYS = 30  # ... inside this window, so a stale habit cannot drive it
+REFLECT_FAST_LATENCY_H = 4  # ... with a median bookkeeping age at or under this
+REFLECT_SHIFT_HOURS = 2   # one step from the recorded baseline, never cumulative
 VALID_OUTCOMES = {"acted", "ignored", "corrected", "dropped"}
 
 
@@ -114,8 +121,12 @@ def _report_data():
     return kept, now
 
 
-def cmd_report(as_json=False):
-    entries, now = _report_data()
+def _analyze(entries, now):
+    """Pure aggregation over ledger entries — no I/O and no pruning.
+
+    `report` and `reflect` share this so the ignore-streak rule, the ALERT-class
+    exclusion and the pending ages cannot drift apart between the two commands.
+    """
     per = defaultdict(lambda: {"acted": 0, "ignored": 0, "corrected": 0, "dropped": 0, "pending": 0})
     # track ignore streaks in delivery order
     ordered = sorted([e for e in entries if e["status"] != "pending"], key=lambda e: e["ts"])
@@ -147,6 +158,17 @@ def cmd_report(as_json=False):
                 per[e["source"]].get("oldest_pending_age_h", 0),
                 int((now - dt.datetime.fromtimestamp(e["ts"], dt.timezone.utc)).total_seconds() / 3600),
             )
+    return {
+        "sources": per,
+        "pause_candidates": pause_candidates,
+        "alert_ignores": alert_ignores,
+    }
+
+
+def cmd_report(as_json=False):
+    entries, now = _report_data()
+    a = _analyze(entries, now)
+    per, pause_candidates, alert_ignores = a["sources"], a["pause_candidates"], a["alert_ignores"]
     if as_json:
         print(json.dumps({"sources": dict(per), "pause_candidates": pause_candidates}, ensure_ascii=False, indent=2))
         return
@@ -165,6 +187,109 @@ def cmd_report(as_json=False):
         if d.get("pending"):
             note += f" | {d['pending']} pending (oldest {d.get('oldest_pending_age_h', 0)}h) — resolve at next contact"
         print(f"{src:28} {d['acted']:>6} {d['ignored']:>5} {d['corrected']:>5} {d['dropped']:>5} {d['pending']:>5}  {note}".rstrip())
+
+
+def _median(values):
+    n = len(values)
+    if n == 0:
+        return None
+    mid = n // 2
+    return values[mid] if n % 2 else (values[mid - 1] + values[mid]) / 2.0
+
+
+def _reply_latency_h(entries, now):
+    """Per-source (delivery_day, latency_h) samples, sorted by latency.
+
+    `ts` is stamped when the delivery is ledgered; `resolved_ts` when the agent
+    closes it. The gap is a bookkeeping age, not an observation of the user's
+    clock — see SKILL.md on honest scope before reading anything into it. The
+    delivery day is kept so five entries from one day cannot pass as five
+    independent fast hits.
+    """
+    cutoff = now.timestamp() - REFLECT_RECENCY_DAYS * 86400
+    per_source = defaultdict(list)
+    for e in entries:
+        if e["status"] in ("acted", "corrected") and e.get("resolved_ts") and e["ts"] >= cutoff:
+            day = int(e["ts"] // 86400)  # UTC delivery day, for sample independence
+            per_source[e["source"]].append((day, (e["resolved_ts"] - e["ts"]) / 3600.0))
+    return {src: sorted(v, key=lambda pair: pair[1]) for src, v in per_source.items()}
+
+
+def _window_ignored(entries, now):
+    """Ignored count inside the recency window.
+
+    A lifetime count would let one ignore from months ago block an acceleration
+    forever, even after the source started landing every week.
+    """
+    cutoff = now.timestamp() - REFLECT_RECENCY_DAYS * 86400
+    counts = defaultdict(int)
+    for e in entries:
+        if e["status"] == "ignored" and e["ts"] >= cutoff:
+            counts[e["source"]] += 1
+    return counts
+
+
+def _recommendations(entries, now):
+    """One schedule recommendation per source. Pure: reads entries, writes nothing."""
+    a = _analyze(entries, now)
+    latencies = _reply_latency_h(entries, now)
+    ignored_recent = _window_ignored(entries, now)
+    recs = []
+    for src, d in sorted(a["sources"].items()):
+        settled = d["acted"] or d["ignored"] or d["corrected"] or d["dropped"]
+        if not settled:
+            continue  # nothing has been delivered-and-closed yet; a schedule call now is noise
+        action, offset = "hold", 0
+        if a["alert_ignores"].get(src, 0) >= PAUSE_STREAK:
+            action = "fix"
+            reason = (f"{a['alert_ignores'][src]} ALERT-class ignores — the watcher is telling you "
+                      f"something is broken; fix that, never pause an alert")
+        elif src in a["pause_candidates"]:
+            pc = a["pause_candidates"][src]
+            action = "cooldown"
+            reason = (f"{pc['streak']} consecutive ignored DIGESTs over {pc['span_days']}d "
+                      f"— reduce cadence or pause (human-confirm)")
+        else:
+            sample = latencies.get(src, [])
+            n = len(sample)
+            distinct_days = len({day for day, _ in sample})
+            med = _median([h for _, h in sample])
+            if (n >= REFLECT_MIN_SAMPLES and distinct_days >= REFLECT_MIN_SAMPLES
+                    and ignored_recent.get(src, 0) == 0
+                    and med is not None and med <= REFLECT_FAST_LATENCY_H):
+                action, offset = "shift_earlier", -REFLECT_SHIFT_HOURS
+                reason = (f"{n} settled on {distinct_days} separate days in the last "
+                          f"{REFLECT_RECENCY_DAYS}d, none ignored, median bookkeeping age "
+                          f"{med:.1f}h — try one step earlier than the recorded baseline "
+                          f"(human-confirm)")
+            else:
+                reason = "insufficient or mixed evidence — keep the current schedule"
+        recs.append({
+            "source": src,
+            "action": action,
+            "offset_hours": offset,
+            "reason": reason,
+            "counts": {k: d[k] for k in ("acted", "ignored", "corrected", "dropped", "pending") if k in d},
+            "ignored_recent": ignored_recent.get(src, 0),
+            "window_days": REFLECT_RECENCY_DAYS,
+            "confirm_required": True,
+        })
+    return recs
+
+
+def cmd_reflect(as_json=False):
+    entries = _load()  # read-only: reflect never writes and never prunes
+    recs = _recommendations(entries, _now())
+    if as_json:
+        print(json.dumps({"recommendations": recs}, ensure_ascii=False, indent=2))
+        return
+    if not recs:
+        print("nothing to reflect on — no settled deliveries in the ledger")
+        return
+    print(f"{'source':28} {'action':14} {'offset':>7}  why")
+    for r in recs:
+        offset = f"{r['offset_hours']:+}h" if r["offset_hours"] else "—"
+        print(f"{r['source']:28} {r['action']:14} {offset:>7}  {r['reason']}")
 
 
 def cmd_pending():
@@ -187,6 +312,8 @@ def main():
         cmd_resolve(args[0], args[1])
     elif cmd == "report":
         cmd_report(as_json="--json" in args)
+    elif cmd == "reflect":
+        cmd_reflect(as_json="--json" in args)
     elif cmd == "pending":
         cmd_pending()
     else:

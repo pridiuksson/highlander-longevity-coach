@@ -68,6 +68,9 @@ silent-unless-transition by construction.
    pass.
 6. **Emit at most ONE message**, classified, or none.
 7. **Ledger** what you sent — and what you rejected, with the reason.
+8. **Reflect** — run `scripts/ledger.py` with `report` (it prunes entries past 90 days and shows how
+   each source has landed) and then with `reflect`. If reflect recommends a schedule change,
+   surface that one recommendation to the user for confirmation. Never apply it silently.
 
 If the crunch produces nothing that clears the gate, that is a successful run: ledger a silent
 sweep and stop. Do not manufacture an insight to justify the schedule.
@@ -151,6 +154,7 @@ timezone, pinned explicitly at every comparison.
 scripts/ledger.py add SOURCE CLASS HEADLINE   # → prints id; call AFTER the message is sent
 scripts/ledger.py resolve ID acted|ignored|corrected|dropped
 scripts/ledger.py report                       # per-source stats + recommendations
+scripts/ledger.py reflect [--json]             # schedule recommendations; read-only
 scripts/ledger.py pending                      # unresolved entries
 ```
 
@@ -172,11 +176,56 @@ scripts/ledger.py pending                      # unresolved entries
 - **ALERT sources are never pause candidates.** Repeated ignored ALERTs mean the underlying
   failure is still unfixed — the report should say "fix the failure", not "pause the alert".
 
+### Reflection — the schedule recommendation
+
+`report` tells you how the deliveries landed. `reflect` turns that into an actual decision about
+the schedule, which is the step that makes this loop a loop rather than a diary:
+
+```bash
+scripts/ledger.py reflect --json     # → {"recommendations": [{source, action, offset_hours, ...}]}
+```
+
+One recommendation per source, always with `confirm_required: true`:
+
+| Action | Fires when | Means |
+|---|---|---|
+| `fix` | an ALERT-class source has ≥3 ignores | The watcher is working — the thing it watches is broken. Fix that; never quiet the alert. |
+| `cooldown` | ≥3 consecutive `ignored` DIGESTs spanning ≥7 days | Reduce the cadence or pause the source. Cadence is the lever, not the hour. |
+| `shift_earlier` | ≥5 settled deliveries on ≥5 separate days inside 30 days, none ignored **in that window**, median bookkeeping age ≤4h | The message is landing. Try one step earlier than the recorded baseline. |
+| `hold` | anything else, including thin data | Keep the schedule. This is the default and the common answer. |
+
+Rules that matter more than the table:
+
+- **It is read-only.** `reflect` writes nothing, prunes nothing, and never edits a cron
+  expression. It ends in a recommendation a human confirms — the same reason `report` says
+  "human-confirm" rather than acting.
+- **Offsets are one step from the recorded baseline, never cumulative.** Storing a drift and
+  re-applying it each week walks a schedule somewhere nobody chose.
+- **One step is small on purpose** (`REFLECT_SHIFT_HOURS`). At a weekly cadence a few hours is
+  close to noise; the meaningful lever for an ignored source is cadence, which is the human's
+  call, not the script's.
+- **Any shift must still land inside quiet hours** (see above). A recommendation that moves a
+  DIGEST outside the configured window is not a recommendation.
+
 ### Honest scope
 
 This ledger measures **reply rate** — did the user react — not insight quality. It is a crude
 proxy for the paper's Learning Lift, and it should be described that way rather than dressed up
 as a quality metric.
+
+**`reflect` inherits that limit, and one more.** The ledger has no timestamp of *when the user
+reacted*. The only latency available is `resolved_ts − ts`: the gap between the delivery being
+ledgered and the agent closing it. That is a **bookkeeping age** — it measures when the reviewer
+got round to resolving the entry, not when the person read it. Resolve an entry in the same
+session it was added and the "latency" is minutes regardless of human behaviour, which is exactly
+how a `shift_earlier` recommendation could be manufactured out of nothing.
+
+The evidence bar in `reflect` (`REFLECT_MIN_SAMPLES`, `REFLECT_RECENCY_DAYS`,
+`REFLECT_FAST_LATENCY_H`, plus the requirement that the samples fall on separate delivery days)
+exists to keep that failure out, not because those constants are tuned. Treat a `shift_earlier`
+as a hypothesis to put to the user, never as a measurement of their convenience. The direction
+with real evidence behind it is `cooldown`: sustained ignores are the user's actual behaviour,
+and they are recorded per delivery.
 
 What the recorded *rejects* give you that the reply rate cannot: a count of what the gate stopped.
 If reject volume is high and reply rate is high, the gate is working. If reject volume is zero,
@@ -199,4 +248,5 @@ The action space here maps to the paper's `{notify, question, draft, stay silent
 DIGEST are notify variants, SILENT is stay-silent. The ledger's acted/ignored/corrected stream is
 a manual Learning Lift proxy measuring reaction rather than the paper's full insight-quality
 metrics, and the escalation rule is the feedback-updated interruption policy (O3) in its crudest
-deployable form.
+deployable form. `reflect` is where that policy actually closes: the same outcome stream now
+moves the schedule instead of only annotating a report — and every move still ends at a human yes.
