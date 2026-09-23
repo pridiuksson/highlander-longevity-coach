@@ -44,6 +44,7 @@ distribution_owned:
   - Profile/Olle
   - Profile/Maria
   - Profile/Els
+  - Profile/Concise
   # The coaching loop definition (read by the agent at turn start)
   - ONBOARDING.md
   # Repository conventions (leak gate, contribution, setup)
