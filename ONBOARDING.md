@@ -449,12 +449,16 @@ critically step 5 (`hermes -p <tenant> config set …`), step 9 (`hermes -p <ten
 and any `gateway restart`/`whatsapp` pairing. Step 4's validators keep running from the
 clone — `scripts/` is scaffolding and ships only in the repo.
 
+- **Prevent stock skill pollution:** Place `.no-bundled-skills` in the tenant profile immediately
+  (`touch ~/.hermes/profiles/<tenant>/.no-bundled-skills`). Without this marker, subsequent
+  Hermes updates re-seed unversioned stock skills (including macOS-only tools on Linux) into
+  the tenant's `skills/` tree, diluting Highlander's curated 24-skill set.
 - Step 7's three files go in **that profile's** home —
   `~/.hermes/profiles/<tenant>/{SOUL.md,memories/USER.md,memories/MEMORY.md}`.
-- If another profile on the box already runs a WhatsApp bridge, give this one its own port:
-  `bridge_port:` in the `whatsapp:` block of the tenant's `config.yaml` (a fresh install
-  ships no `config.yaml` — create it; default 3000, and two bridges on one port crash-loop
-  each other; see Troubleshooting).
+- If another profile on the box already runs a WhatsApp bridge, allocate an explicit port:
+  `bridge_port:` in the `whatsapp:` block of the tenant's `config.yaml` (default 3000 for the
+  operator/default profile, 3001 for tenant 1, 3002 for tenant 2... two bridges on one port crash-loop
+  each other; see Troubleshooting). Enforce allowlist privacy with `dm_policy: allowlist`.
 - Keep recording the clone's `git rev-parse HEAD` for step 7's `derived_from` line — the
   install also writes provenance into the profile (`hermes profile info <tenant>` shows
   name, version, source, installed_at), which complements but does not replace the commit.
@@ -559,6 +563,60 @@ On the box (`hermes` is off-PATH otherwise — step 0):
 Custody: the session directory grants full access to that WhatsApp account — `chmod 700`, treat
 it like a password. Closing the engagement means unlinking the box from the account (WhatsApp →
 Settings → Linked Devices), the same way the operator's SSH key is verified gone.
+
+### Remote / Headless Pairing (Telegram & Multi-Tenant Flow)
+
+When the tenant is not sitting with the operator at a console, interactive ASCII QR codes over `ssh -t` fail or scramble on mobile. The headless pairing tool (`scripts/pair-whatsapp-tenant.py`) solves this by running the Baileys bridge in `--pair-json --pair-only` mode in a detached daemon, rendering a high-contrast PNG image, and emitting a `MEDIA:<path>` tag that Hermes messaging gateways deliver directly to Telegram or mobile chats:
+
+```bash
+# Start background pairing daemon and output MEDIA path
+python3 scripts/pair-whatsapp-tenant.py --profile <tenant> --start
+
+# Check current pairing state
+python3 scripts/pair-whatsapp-tenant.py --profile <tenant> --status
+
+# Stop pairing daemon if needed
+python3 scripts/pair-whatsapp-tenant.py --profile <tenant> --stop
+```
+
+- **WhatsApp 408 disconnects are normal:** WhatsApp rotates pairing QR codes every ~20s and closes unscanned sockets after ~2.5 minutes with `reason 408` (*Request Timeout*). The pairing daemon catches this automatically, reconnects, and refreshes the QR image without crash-looping or alarming the operator.
+- **Active QR window & rotation:** WhatsApp rotates QR data every ~20s. If the tenant delays scanning past ~2 minutes, the pairing daemon automatically refreshes the image on disk; checking `--status` provides the updated path and status for re-sending if necessary.
+- **Automatic .env update:** When the tenant scans the QR code from their phone, the daemon captures the phone digits from the `connected` event, updates the tenant's `.env` atomically (with `0600` permissions) with `WHATSAPP_ENABLED=true`, `WHATSAPP_HOME_CHANNEL`, and `WHATSAPP_ALLOWED_USERS` (preserving existing `WHATSAPP_MODE=bot` if configured), and exits cleanly.
+
+### Persistent Gateway Unit (systemd)
+
+On a multi-tenant box, run each tenant's gateway under a dedicated user service (`~/.config/systemd/user/hermes-gateway-<tenant>.service`), or install it via Hermes if your version supports per-profile services:
+
+```ini
+[Unit]
+Description=Hermes Gateway - <tenant>
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h
+ExecStart=%h/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main --profile <tenant> gateway run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+```
+
+Reload and enable after pairing:
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now hermes-gateway-<tenant>.service
+```
+*(Keep the unit stopped until pairing completes: preflight requires `session/creds.json` on disk; starting before pairing exits `78/CONFIG`).*
+
+### Handover State Sanitization
+
+Before handing the coach over to the tenant, clear any test or probe turns run by the operator from the tenant's database to guarantee a pristine baseline:
+
+```bash
+python3 -c "import sqlite3, os; conn = sqlite3.connect(os.path.expanduser('~/.hermes/profiles/<tenant>/state.db')); cur = conn.cursor(); cur.execute('DELETE FROM sessions'); cur.execute('DELETE FROM messages'); cur.execute('DELETE FROM session_model_usage'); conn.commit()"
+```
 
 ## Updating
 
