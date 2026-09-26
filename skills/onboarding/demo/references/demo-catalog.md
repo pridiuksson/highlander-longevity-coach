@@ -8,7 +8,9 @@ Every entry: what it shows, `min_facts` (needed before it can run for real), and
 
 ## Tier A — live
 
-### swedish-food-nutrition — the flagship
+(Live skills run on the user's actual question or inputs. Note: Wearable imports elevate to Tier A live ONLY if an export archive is already present on the box; otherwise they run as Tier B shadow.)
+
+### swedish-food-nutrition (Track 2 Flagship: Metabolic & Nutrition)
 
 - **Shows:** real grocery API, no auth, real prices right now.
 - **min_facts:** none (defaults to Hemköp; better with `city` or store preference).
@@ -16,6 +18,7 @@ Every entry: what it shows, `min_facts` (needed before it can run for real), and
   show price per kg, name the skill out loud.
 - **reward for `diet`:** price 3 protein staples matching the declared diet at the nearest chain.
 - **reward for `city`:** pick the store chain actually near them.
+- **Note:** DO NOT pitch to Track 1 (athletic/performance) users unless they explicitly ask about grocery pricing.
 
 ### find-evidence — the credibility demo
 
@@ -63,10 +66,13 @@ Every entry: what it shows, `min_facts` (needed before it can run for real), and
 
 ## Tier B — shadow (never fabricate)
 
-### garmin-import / samsung-health-import / wearable-health-data
+### apple-health-import / garmin-import / samsung-health-import / wearable-health-data (Track 1 Flagship)
 
-- **Shows:** export → gated import → normalized `health.db` pipeline, using the skills' own
+- **Shows:** export → gated import → normalized SQLite pipeline, using the skills' own
   redacted reference docs as the worked example.
+- **min_facts:** `wearable_hardware` (Apple Watch, Garmin, Galaxy Watch)
+- **tour:** detect or ask which wearable they wear; show the SQLite schema, parse or preview RHR/HRV/VO2max/sleep pipeline.
+- **reward for `wearable_hardware`:** configure ingestion pipeline and preview recovery metric baselines.
 - **Close with:** the exact command the user runs when they have the export, and the gate suite
   that must pass before any number is trusted.
 
@@ -87,16 +93,28 @@ Every entry: what it shows, `min_facts` (needed before it can run for real), and
 
 ---
 
-## Learn-mode question ladder (highest value first)
+## Learn-mode question ladder (goal-conditional, highest value first)
 
-1. `diet` (reward: priced staples) — cheap to answer, unlocks two skills
+### Track 1: Athletic & Performance
+1. `wearable_hardware` (reward: initialize Apple/Garmin/Samsung ingestion pipeline)
+2. `training_split` / current weekly volume (reward: concurrent training periodization review)
+3. `weight_kg` + `activity_level` (reward: protein target range via `nutrition-advisory`)
+4. A performance or recovery question they want answered (reward: `find-evidence` run)
+5. `sleep_window` (reward: recovery digest quiet-hours preview)
+
+### Track 2: Metabolic & Everyday Nutrition
+1. `diet` (reward: priced protein staples at nearest chain)
 2. `city` / nearest store chain (reward: right store, right timezone for quiet hours)
-3. A question they want answered, free text (reward: find-evidence run)
-4. `weight_kg` + `activity_level` (reward: protein range) — PII, so only after rapport
-5. `sleep_window` (reward: quiet-hours preview)
-6. `supplements` (reward: spec verification)
-7. Hard constraint for meal-planning (reward: a planned day)
-8. `language` / reply style (reward: write it to USER.md, reply in it next message)
+3. A food or biomarker question, free text (reward: `find-evidence` run)
+4. `weight_kg` + `activity_level` (reward: protein target range)
+5. Hard constraint for meal-planning (reward: a planned day)
+
+### Track 3: Sleep, Stress & Deliberation
+1. `sleep_window` (reward: quiet-hours preview and digest delivery scheduling)
+2. A real decision the user is currently weighing (reward: `grill` or `deliberate` run)
+3. `wearable_hardware` / recovery tracking preference (reward: HRV/RHR wearable tracking preview)
+4. `evening_winddown_constraint` (reward: caffeine/screen cutoff schedule preview)
+5. `supplements` / sleep stack (reward: spec verification via `supplement-spec-verification`)
 
 ## State schema (`$HERMES_HOME/data/demo/state.json`)
 

@@ -81,21 +81,52 @@ Two modes:
 
 ## Tour mode — the demo catalog
 
-Pick demos by what the user reveals. Full recipes with commands: `references/demo-catalog.md`.
+Pick demos conditionally by the user's declared goal — never force irrelevant demos. Full recipes with commands: `references/demo-catalog.md`.
+
+### Goal-Conditional Dispatch (20/80 Rule)
+
+At tour start, inspect `USER.md` for `# Primary Objectives` or `Primary:`. If unspecified, ask ONE quick triage question:
+*"What is your primary focus for the next 90 days? (1) Strength & Cardio Performance, (2) Nutrition & Metabolic Health, or (3) Sleep, Stress & Deliberation?"*
+
+Dispatch strictly to the corresponding track:
+
+| Goal Track | Primary Live / Shadow Demos | Never Pitch Unless Asked |
+|---|---|---|
+| **Track 1: Athletic / Performance** (Strength, Cardio, Endurance, Wearables) | `apple-health-import`, `garmin-import`, `samsung-health-import`, `nutrition-advisory` (protein targets & periodization) | Swedish grocery store pricing / `swedish-food-nutrition` |
+| **Track 2: Metabolic / Nutrition** (Diet, Blood Sugar, Weight, Everyday Meals) | `swedish-food-nutrition` (live store search & pricing), `meal-planning`, `supplement-spec-verification` | Heavy wearable telemetry pipelines |
+| **Track 3: Sleep / Cognitive / Deliberation** (Recovery, Stress, Executive Decisions) | `proactive-coach` (quiet-hours preview & recovery digest), `deliberate` / `grill` / `peer-review` | Grocery pricing |
+
+### First-Day Plain-English Metric Grounding (Anti-Jargon Rule)
+
+When introducing biometric indicators or clinical concepts for the first time during Day 0–7 onboarding, ground them in plain, relatable English before quoting raw numbers:
+
+| Metric / Term | First-Day Plain-English Grounding |
+|---|---|
+| **HRV (SDNN / rMSSD)** | *"Your autonomic recovery reserve — essentially how ready your nervous system is to absorb physical stress or training load today."* |
+| **Resting Heart Rate (RHR)** | *"Your baseline cardiovascular efficiency — a multi-day creep upward usually signals accumulated fatigue, dehydration, or an oncoming immune response."* |
+| **VO2 Max** | *"Your aerobic engine ceiling — the maximum rate at which your body can pump and utilize oxygen during high-intensity output."* |
+| **Sleep Stages (Deep / REM)** | *"Deep sleep is physical restoration (tissue repair and growth hormone release); REM sleep is neurological restoration (memory consolidation and emotional calibration)."* |
+| **GERD / TLESR** | *"Transient relaxations of your lower esophageal sphincter — acid washing upward because the muscular valve temporarily loosens, triggered by sugar or large late meals."* |
+| **Concurrent Interference (AMPK vs mTORC1)** | *"The muscle vs endurance cellular signal clash — heavy lifting tells muscles to grow, while long cardio right next to it sends an endurance signal that can blunt that growth."* |
+
+Once grounded during the onboarding tour, steady-state conversations transition to dense, concise reporting without repeating explanatory definitions.
 
 | Tier | Skills | Demo style |
 |---|---|---|
-| **A — live** | swedish-food-nutrition, find-evidence, supplement-spec-verification, nutrition-advisory, meal-planning, deliberate, grill, peer-review, loop, plan, ticket/commit/create-pr/work, schedule-management | Run for real on the user's own question. Swedish grocery APIs work with no auth — this is the flagship "it just works" demo |
-| **B — shadow** | garmin-import, samsung-health-import, wearable-health-data, evidence-loop, proactive-coach, eval-health | Show the pipeline + redacted reference docs; name the one export/command that turns it live. Label it clearly: "this runs when you have X". **Pitch each Tier-B skill at most once ever** (tracked via the facts map's `pitched_once` flag, catalog §state) — after that, only if the user asks about it |
+| **A — live** | swedish-food-nutrition, find-evidence, supplement-spec-verification, nutrition-advisory, meal-planning, deliberate, grill, peer-review, loop, plan, ticket/commit/create-pr/work, schedule-management | Run for real on the user's own question matching their goal track. |
+| **B — shadow** | apple-health-import, garmin-import, samsung-health-import, wearable-health-data, evidence-loop, proactive-coach, eval-health | Show the pipeline + redacted reference docs; name the one export/command that turns it live. Label it clearly: "this runs when you have X". **Pitch each Tier-B skill at most once ever** (tracked via the facts map's `pitched_once` flag, catalog §state) — after that, only if the user asks about it |
 
 Tour session shape:
 
 1. Check state; greet by what is already known (never re-ask).
-2. Ask up to 3 questions — each chosen to unlock a demo (see catalog `min_facts`). Skip allowed
-   on every one, no guilt.
-3. Run 1-2 Tier-A demos **on the user's actual answer/question**.
-4. Write learned facts to their homes (rule 2), update state.
-5. Close with the **unlock path**: what works now → what one export/credential would add → what
+2. Identify user's declared goal track (from `USER.md` or 1 quick triage question).
+3. Ask up to 2 goal-aligned questions chosen to unlock a demo in their track. Skip allowed on every one, no guilt.
+4. Run 1-2 Tier-A or Tier-B demos **on the user's actual goal and data**.
+5. Write learned facts to their homes (rule 2), update state.
+6. **Organic naming ask:** Once real value has been demonstrated, casually ask:
+   *"By the way, what would you like to call me as your coach?"*
+   If the user answers, update `<AGENT_NAME>` in `SOUL.md` and record the preference in `USER.md`.
+7. Close with the **unlock path**: what works now → what one export/credential would add → what
    the system becomes in a month. One screen, no essay.
 
 ## Learn mode — the cron
