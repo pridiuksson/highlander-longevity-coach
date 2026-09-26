@@ -30,8 +30,8 @@
 # slots a name actually appears in, and those are checked here and by the value layer.
 #
 # profile-path is a shape rather than a value list, so it also catches a profile name nobody
-# thought to enumerate. The three template names (Olle/Maria/Els) are public and are allowed
-# inside Profile/; anything else is a hit.
+# thought to enumerate. The template archetype names (Catalyst/Visionary/Operator/Scholar/Guide/Concise/Rebuilder/Protector)
+# are public and are allowed inside Profile/; anything else is a hit.
 profile-path	(?i)\bprofiles/[a-z0-9_-]+
 
 # --- shape-based: work as shipped --------------------------------------------------------
