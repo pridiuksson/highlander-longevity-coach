@@ -76,7 +76,7 @@ try_cli() {
 
     case "$cli" in
         command-code)
-            run_timeout 180 command-code -p "$(cat "$prompt_file")" --skip-onboarding -t </dev/null 2>/dev/null
+            run_timeout 180 command-code -p "$(cat "$prompt_file")" --tools-all --skip-onboarding -t </dev/null 2>/dev/null
             ;;
         agy)
             run_timeout 180 agy -p "$(cat "$prompt_file")" --dangerously-skip-permissions --print-timeout 180s </dev/null 2>/dev/null

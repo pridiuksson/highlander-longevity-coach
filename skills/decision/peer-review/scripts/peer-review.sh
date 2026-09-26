@@ -48,7 +48,7 @@ done
 set -e
 
 # cd to the workspace so CLIs with cwd-scoped file access can see user files.
-WORKDIR="${PEER_REVIEW_WORKDIR:-$HOME}"
+WORKDIR="${PEER_REVIEW_WORKDIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "$WORKDIR" || { echo "Error: Failed to cd to '$WORKDIR'" >&2; exit 1; }
 
 PROMPT="${1:-}"
@@ -86,7 +86,7 @@ try_cli() {
 
     case "$cli" in
         command-code)
-            run_timeout 180 command-code -p "$(cat "$prompt_file")" --skip-onboarding -t </dev/null 2>/dev/null
+            run_timeout 180 command-code -p "$(cat "$prompt_file")" --tools-all --skip-onboarding -t </dev/null 2>/dev/null
             ;;
         agy)
             run_timeout 180 agy -p "$(cat "$prompt_file")" --dangerously-skip-permissions --print-timeout 180s </dev/null 2>/dev/null

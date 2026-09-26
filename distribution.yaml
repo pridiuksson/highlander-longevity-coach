@@ -2,9 +2,9 @@ name: highlander-longevity-coach
 version: "2026.09.21-0"
 description: >
   Health-coach kit for the Hermes agent: a reusable skills bundle plus profile
-  templates (Olle / Maria / Els) for long-form coaching of a hybrid
-  athlete (gym-dominant + optional running / health data). The coaching loop
-  lives in SKILL.md files; profile templates live under Profile/.
+  templates (Catalyst, Visionary, Operator, Scholar, Guide, Concise, Rebuilder,
+  Protector) and modular clinical scaffolds for long-form coaching.
+  The coaching loop lives in SKILL.md files; profile templates live under Profile/.
   This distribution carries the skills and templates only — per-tenant
   personal data (SOUL.md, USER.md, MEMORY.md, health records) lives in
   the tenant's profile directory and is never distributed.
@@ -37,14 +37,19 @@ distribution_owned:
   - skills/workflow/create-pr
   - skills/workflow/ticket
   - skills/workflow/work
-  # Profile scaffolds (templates — include all three profile flavors
+  # Profile scaffolds (templates — include all profile archetypes
   # so a new tenant is matched to the right coaching tone; user data
   # in the profile dirs is NOT owned by this manifest and is preserved).
   - Profile/README.md
-  - Profile/Olle
-  - Profile/Maria
-  - Profile/Els
+  - Profile/scaffolds
+  - Profile/Catalyst
+  - Profile/Visionary
+  - Profile/Operator
+  - Profile/Scholar
+  - Profile/Guide
   - Profile/Concise
+  - Profile/Rebuilder
+  - Profile/Protector
   # The coaching loop definition (read by the agent at turn start)
   - ONBOARDING.md
   # Repository conventions (leak gate, contribution, setup)
