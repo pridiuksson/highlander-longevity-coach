@@ -22,6 +22,7 @@ distribution_owned:
   - skills/evidence/find-evidence
   - skills/evidence/memory-reality-check
   - skills/evidence/supplement-spec-verification
+  - skills/health/apple-health-import
   - skills/health/garmin-import
   - skills/health/nutrition-advisory
   - skills/health/samsung-health-import

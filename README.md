@@ -26,7 +26,7 @@ CONTRIBUTING.md
 
 | Stage | Skills |
 |---|---|
-| **Ingest** | `samsung-health-import`, `garmin-import`, `wearable-health-data` |
+| **Ingest** | `apple-health-import`, `samsung-health-import`, `garmin-import`, `wearable-health-data` |
 | **Verify** | `evidence-loop`, `find-evidence`, `memory-reality-check` |
 | **Interpret** | `nutrition-advisory`, `supplement-spec-verification`, `meal-planning`, `swedish-food-nutrition` |
 | **Decide** | `peer-review` → `grill` → `deliberate` |

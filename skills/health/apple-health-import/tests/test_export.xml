@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HealthData [
+<!ELEMENT HealthData (ExportDate|Record|Workout)*>
+]>
+<HealthData locale="en_US">
+  <ExportDate value="2026-09-01 12:00:00 +0200"/>
+
+  <!-- Resting Heart Rate -->
+  <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Apple Watch" unit="count/min" value="58" startDate="2026-08-20 07:15:00 +0200" endDate="2026-08-20 07:15:00 +0200"/>
+  <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Apple Watch" unit="count/min" value="61" startDate="2026-08-21 07:20:00 +0200" endDate="2026-08-21 07:20:00 +0200"/>
+  <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Apple Watch" unit="count/min" value="59" startDate="2026-08-22 07:10:00 +0200" endDate="2026-08-22 07:10:00 +0200"/>
+
+  <!-- HRV SDNN -->
+  <Record type="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" sourceName="Apple Watch" unit="ms" value="48.5" startDate="2026-08-20 03:30:00 +0200" endDate="2026-08-20 03:31:00 +0200"/>
+  <Record type="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" sourceName="Apple Watch" unit="ms" value="52.1" startDate="2026-08-21 04:15:00 +0200" endDate="2026-08-21 04:16:00 +0200"/>
+  <Record type="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" sourceName="Apple Watch" unit="ms" value="44.2" startDate="2026-08-22 03:50:00 +0200" endDate="2026-08-22 03:51:00 +0200"/>
+
+  <!-- VO2 Max -->
+  <Record type="HKQuantityTypeIdentifierVO2Max" sourceName="Apple Watch" unit="mL/min·kg" value="41.5" startDate="2026-08-20 18:30:00 +0200" endDate="2026-08-20 18:30:00 +0200"/>
+  <Record type="HKQuantityTypeIdentifierVO2Max" sourceName="Apple Watch" unit="mL/min·kg" value="42.0" startDate="2026-08-22 17:45:00 +0200" endDate="2026-08-22 17:45:00 +0200"/>
+
+  <!-- Sleep Analysis Night 1: 2026-08-20 into 2026-08-21 (Night key: 2026-08-20) -->
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisInBed" startDate="2026-08-20 22:30:00 +0200" endDate="2026-08-21 06:45:00 +0200"/>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAsleepCore" startDate="2026-08-20 23:00:00 +0200" endDate="2026-08-21 01:00:00 +0200"/>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAsleepDeep" startDate="2026-08-21 01:00:00 +0200" endDate="2026-08-21 02:30:00 +0200"/>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAsleepCore" startDate="2026-08-21 02:30:00 +0200" endDate="2026-08-21 04:00:00 +0200"/>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAsleepREM" startDate="2026-08-21 04:00:00 +0200" endDate="2026-08-21 05:45:00 +0200"/>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAwake" startDate="2026-08-21 05:45:00 +0200" endDate="2026-08-21 06:00:00 +0200"/>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAsleepCore" startDate="2026-08-21 06:00:00 +0200" endDate="2026-08-21 06:30:00 +0200"/>
+
+  <!-- Sleep Analysis Night 2: 2026-08-21 into 2026-08-22 (Night key: 2026-08-21) -->
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAsleepDeep" startDate="2026-08-21 23:30:00 +0200" endDate="2026-08-22 01:00:00 +0200"/>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAsleepREM" startDate="2026-08-22 01:00:00 +0200" endDate="2026-08-22 02:45:00 +0200"/>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" value="HKCategoryValueSleepAnalysisAsleepCore" startDate="2026-08-22 02:45:00 +0200" endDate="2026-08-22 06:30:00 +0200"/>
+
+  <!-- Workouts -->
+  <Workout workoutActivityType="HKWorkoutActivityTypeRunning" duration="45.0" durationUnit="min" startDate="2026-08-20 17:45:00 +0200" endDate="2026-08-20 18:30:00 +0200" sourceName="Apple Watch">
+    <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" sum="420" unit="kcal"/>
+    <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" sum="6.5" unit="km"/>
+    <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" average="148" maximum="172" unit="count/min"/>
+  </Workout>
+
+  <Workout workoutActivityType="HKWorkoutActivityTypeFunctionalStrengthTraining" duration="50.0" durationUnit="min" startDate="2026-08-21 16:00:00 +0200" endDate="2026-08-21 16:50:00 +0200" sourceName="Apple Watch">
+    <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" sum="280" unit="kcal"/>
+    <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" average="124" maximum="155" unit="count/min"/>
+  </Workout>
+
+</HealthData>
