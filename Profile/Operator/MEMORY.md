@@ -16,6 +16,7 @@
 - A correction from the user replaces the prior entry outright.
 - **Never store a measured value here.** Values live in the baseline file; this file may only say
   where the current value lives.
+- Track active feedback loops and accountability gaps explicitly.
 
 ## Archive
 

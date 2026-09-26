@@ -308,7 +308,7 @@ while IFS=$'\t' read -r name ere; do
           [ -n "$_m" ] || continue
           _seen=1
           _seg=$(printf '%s' "$_m" | sed -E 's#^.*/##' | tr '[:upper:]' '[:lower:]')
-          case "$_seg" in olle|maria|els) ;; *) _ok=0;; esac
+          case "$_seg" in olle|maria|els|operator|guide|scholar|catalyst|visionary|rebuilder|protector|concise) ;; *) _ok=0;; esac
         done < <(printf '%s' "$content" | pcre_matches "$ere" 2>/dev/null)
         [ "$_seen" -eq 1 ] && [ "$_ok" -eq 1 ] && _allow=1
         [ "$_allow" -eq 1 ] && continue
@@ -323,7 +323,7 @@ while IFS=$'\t' read -r name ere; do
             [ -n "$_m" ] || continue
             _seen=1
             _seg=$(printf '%s' "$_m" | sed -E 's#^.*/##' | tr '[:upper:]' '[:lower:]')
-            case "$_seg" in olle|maria|els) ;; *) _ok=0;; esac
+            case "$_seg" in olle|maria|els|operator|guide|scholar|catalyst|visionary|rebuilder|protector|concise) ;; *) _ok=0;; esac
           done < <(printf '%s' "$content" | pcre_matches "$ere" 2>/dev/null)
           [ "$_seen" -eq 1 ] && [ "$_ok" -eq 1 ] && _allow=1
           [ "$_allow" -eq 1 ] && continue
