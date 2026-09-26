@@ -122,6 +122,46 @@ Every `SOUL.md` here carries the canonical loop block:
    If there is nothing meaningful to say, say nothing.
 7. **Learn** — observe adherence, record outcomes, adapt to feedback, and audit memory context rent.
 
+## Health Data Memory Architecture (`~/health/<tenant>.md`)
+
+`USER.md` is injected into the model context on every turn. Raising `user_char_limit` to 4,000+ characters to fit clinical history is an anti-pattern: it bloats context, inflates latency, and wastes context budget on steady-state turns.
+
+Instead, Highlander follows the **pointer memory architecture** (proven in multi-agent fleet operations):
+- **`USER.md` stays lean (<1,300 chars):** Stores identity, origin/timezone, 90-day primary anchors, communication style, and file pointers:
+  ```markdown
+  - **Health Data & Hardware:**
+    - Hardware: Apple Watch (data in `data/apple_health.db`).
+    - Clinical & Dietary Runbook: `~/health/<tenant>.md` (pathology, dietary rules, periodization).
+  ```
+- **`~/health/<tenant>.md`:** Stores comprehensive clinical histories, diagnostic criteria (e.g. GERD/TLESR mechanisms, gastrointestinal triggers, iron panels), detailed meal timing, and periodization interference rules.
+- **`~/health/<tenant>-verified-data.md`:** Stores verified wearable runbooks, hardware eras, and sensor calibration baselines.
+
+The agent queries these files as needed using file tools rather than paying permanent memory rent on every turn.
+
+## Autonomous Execution for Messaging Profiles (WhatsApp / Telegram)
+
+When deploying a coaching persona for remote mobile messaging (WhatsApp, Telegram, Signal), interactive command approval prompts (`/approve`) stall execution and break the asynchronous coaching loop.
+
+Messaging profiles should pre-wire autonomous execution in their `config.yaml`:
+```yaml
+approvals:
+  mode: "off"
+  destructive_slash_confirm: false
+command_allowlist:
+  - execute_code
+  - terminal
+  - write_file
+  - edit_file
+```
+And pass `Environment="HERMES_ACCEPT_HOOKS=1"` and `Environment="HERMES_YOLO_MODE=1"` into their systemd service units.
+
+## Persona Naming Architecture
+
+All `SOUL.md` templates ship with the `<AGENT_NAME>` placeholder rather than a fixed default persona name.
+The agent operates unnamed at the start. Once initial rapport is built and the first useful value is delivered (towards the end of the onboarding tour in the `demo` skill), the coach casually invites the user to name them:
+*"By the way, what would you like to call me as your coach?"*
+When the user provides a name, the agent updates `<AGENT_NAME>` in `SOUL.md` and persists the preference in `USER.md`.
+
 ## Instantiating a Template
 
 [ONBOARDING.md](../ONBOARDING.md) Step 7 walks through the interactive persona interview and setup.

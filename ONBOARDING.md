@@ -298,6 +298,12 @@ Then:
    stated expectations differ from the template's defaults, bend the tone lines and record the
    delta. A template with unused sections is worse than a shorter accurate one.
 4. **Keep the `MEMORY.md` rent rule.** It is what stops memory turning into a landfill.
+5. **Health Data Memory Architecture (`~/health/<tenant>.md`).** Do NOT raise `user_char_limit`
+   to 4,000+ characters to fit extensive medical histories or dietary protocols: bloating `USER.md`
+   wastes model context on every turn. Instead, keep `USER.md` lean (<1,300 chars) with high-level
+   anchors and pointers (`Health Data: ~/health/<tenant>.md, DB: data/apple_health.db`). Put extensive
+   clinical histories, diagnostic mechanisms, and meal guardrails into a dedicated
+   `~/health/<tenant>.md` document where skills and the agent read them as needed.
 
 Re-matching later — the person changes, or the registry grows — replaces only `SOUL.md`:
 `USER.md` and `MEMORY.md` belong to the person and survive the swap.
@@ -414,6 +420,12 @@ Run it interactively right now:
 demo
 ```
 
+The tour is **goal-conditional (20/80 rule)**: it detects your declared 90-day objectives and branches
+into Track 1 (Athletic / Wearables), Track 2 (Metabolic / Nutrition), or Track 3 (Sleep / Deliberation)
+— it will never pitch grocery pricing to a performance athlete. It introduces biometric concepts (HRV,
+RHR, VO2 max, sleep stages) with intuitive plain-English grounding before citing raw numbers, and at the
+end of the tour, casually invites you to name your coach.
+
 Or accept its daily suggestion instead — the same `/suggestions` flow as step 9 (the skill
 ships a `blueprint:` in its frontmatter, so after the step-3 gateway restart it appears as a
 pending suggestion; accept it and the learn cron asks at most a couple of casual questions per
@@ -443,6 +455,12 @@ outside the repo entirely, e.g. `~/highlander-scratch/<tenant>/`, and treat it a
 Access is custody, not ownership: the operator's SSH key is for provisioning, the box's
 credentials (`authorized_keys`, channel tokens in `.env`) belong to the tenant, and closing the
 engagement means verifying the operator's key no longer authenticates.
+
+**Autonomous approvals over messaging channels.** When onboarding a tenant on WhatsApp, Telegram,
+or Signal, interactive tool approval prompts (`/approve`) stall execution and break the mobile coaching
+flow. Configure `approvals.mode: "off"` and `command_allowlist: [execute_code, terminal, write_file, edit_file]`
+in the tenant's `config.yaml`, and set `Environment="HERMES_ACCEPT_HOOKS=1"` and `Environment="HERMES_YOLO_MODE=1"`
+in their systemd service unit (`~/.config/systemd/user/hermes-gateway-<tenant>.service`).
 
 ### Create the tenant's profile first (multi-tenant box)
 
@@ -619,6 +637,8 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=%h
+Environment="HERMES_ACCEPT_HOOKS=1"
+Environment="HERMES_YOLO_MODE=1"
 ExecStart=%h/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main --profile <tenant> gateway run
 Restart=on-failure
 RestartSec=5
