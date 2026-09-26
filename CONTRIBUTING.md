@@ -211,10 +211,13 @@ coaching loop.
 **Skills never import across their own boundary.** Duplicate a small reference, or point at the
 owning skill's path. Shared state is how two skills drift apart.
 
-## Contributor profile
+## Contributor workflow
 
-`Profile/Els/` is the contributor profile — it carries the same coaching loop as the others, plus
-a contributor lane with the conventions above. It is a template: copy it, do not edit it in place.
+Repository contributor conventions are decoupled from coaching personas. Any profile can contribute
+to this repository by following `AGENTS.md` and using the `skills/workflow/` suite (`@ticket`, `@work`,
+`@commit`, `@create-pr`). For users who want rigorous evidence verification and deep technical inspections,
+[`Profile/Scholar/`](./Profile/Scholar/) and [`Profile/Operator/`](./Profile/Operator/) provide the most
+natural pairing.
 
 ## Changing a skill
 

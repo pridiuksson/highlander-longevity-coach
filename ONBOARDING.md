@@ -239,13 +239,21 @@ dimensions below against the *current* registry, never against a list frozen in 
 human working alone answers the same questions for themselves. The questions below are the floor,
 not the script — derive the discriminating ones from the registry rows:
 
-- What do you want from Hermes — an operator that pushes back and verifies before it acts, an
-  assistant that explains and asks first, or something in between?
-- When something breaks, do you read the logs yourself?
-- Will you work on this kit's skills, or only be coached?
-- The facts that fill the template: name, age, sex, city, occupation, language, wearable device,
-  training, hard constraints (injuries, intolerances, medications), and how much proactive contact
-  you want.
+- **Motivational orientation & dynamic:** What kind of coaching presence do you want?
+  - High-energy spark, streak celebration, and ending every turn with an immediate action? (`Catalyst`)
+  - 50-year vitality horizon, cognitive longevity, and compression of morbidity? (`Visionary`)
+  - Direct, unpadded sparring partner who pushes back and demands verification? (`Operator`)
+  - Rigorous clinical trial evidence, effect sizes, and raw biomarker trends? (`Scholar`)
+  - Warm executive concierge who explains the 'why' and absorbs the QA burden? (`Guide`)
+  - Strictly concise, mobile-first takeaways with single-question check-ins? (`Concise`)
+  - Radical psychological safety and gentle micro-wins after burnout or injury? (`Rebuilder`)
+  - Calming anchor to de-escalate wearable anxiety (orthosomnia/CGMs) and enforce deloads? (`Protector`)
+- **Biometric relationship:** Does tracking your data energize you, or does it trigger hyper-vigilance and anxiety? (If anxiety or orthosomnia is present, start with `Protector`).
+- **State vs. trait context:** Are you in an acute rebuilding or recovery phase? (`Rebuilder` and `Protector` include intentional graduation check-ins to transition to `Catalyst`, `Operator`, or `Scholar` once baseline stability is restored).
+- **Clinical & biological stage:** What physiological scaffold from `Profile/scaffolds/` applies to your `USER.md`? Highlander provides 10 modular scaffolds across proactive vitality and life-stage transitions:
+  - *Proactive Engines (Medicine 3.0):* Mitochondrial vitality (Zone 2, PGC-1alpha), cognitive neurolongevity (BDNF, glymphatic wash, vagal tone), or centenarian athletic reserve (Centenarian Decathlon, loaded carries).
+  - *Life-Stage Modules:* Female cycle periodization, perimenopause longevity, male cardiometabolic, concurrent training, elder sarcopenia, metabolic reset (GLP-1), or pregnancy/postpartum.
+- The baseline facts: name, age, city, occupation, language, wearable devices, and primary goals.
 
 **Enumerate candidates from the registry, not from this doc.**
 [`Profile/README.md`](./Profile/README.md) holds the living list and each profile's
@@ -254,12 +262,10 @@ is considered too.
 
 **Assess on the dimensions that drive fit:**
 
-- **Style of authority** — pushback-first, explain-first, or in between. The axis the bundled
-  profiles are built around.
-- **Technical fluency** — decides how much gets explained versus done, and breaks style ties.
-- **Contribution intent** — some profiles carry a contributor lane, some don't.
-- **Health context** — age, sex, device, constraints. These never choose the persona: they decide
-  which template sections survive the delete step below, and which import skill step 8 will need.
+- **Motivational orientation** — whether the user needs momentum acceleration, uncompromising intellectual sparring, decision offloading, gentle habit scaffolding, or autonomic down-regulation.
+- **Authority style** — pushback-first, explain-first, action-first, or restorative calm.
+- **Cognitive & mobile bandwidth** — verbose analysis vs. ultra-concise mobile bullets (`Concise`).
+- **Clinical scaffolding** — selected independently from `Profile/scaffolds/` (featuring the Two-Layer Architecture: Vitality Ceiling + Clinical Floor) and dropped into `USER.md`.
 
 **Recommend with a reason.** Name the closest match and say in one sentence why; offer the
 runner-up. The persona is the user's call — the agent recommends and, on confirmation, does the
@@ -317,6 +323,24 @@ A second person on the same box is a **Hermes profile**, not a second set of mem
 profile under `~/.hermes/profiles/<name>/` carries its own `config.yaml`, state, gateway service,
 and local memory store. Instantiate the templates per profile rather than mixing two people's
 `USER.md` into one store.
+
+### The Adoption & Daily Usage Lifecycle
+
+Highlander is engineered around a 30-day progressive onboarding lifecycle that transitions smoothly from guided exploration into autonomous coaching stewardship:
+
+- **Day 0 (Instant Match & Zero-Data Tour):**
+  - **Persona & Scaffold Triage:** User selects 1 of 8 `SOUL.md` personas via the 10-second triage tree, and drops 1 of 10 `USER.md` scaffolds (Two-Layer: Vitality Ceiling + Clinical Floor) into `~/.hermes/memories/USER.md`.
+  - **Pre-flight Gate:** Confirm profile loading with one question ("what are my hard constraints?").
+  - **Interactive Tour (`demo` skill):** Run real live Tier-A skills (e.g. Swedish food nutrition, evidence lookups, meal planning) immediately on the user's real questions without requiring wearable data. Max 3 questions, skip always offered.
+- **Day 7 (Verification & Baseline Habituation):**
+  - **Ingest & Verify:** First device export imported (`garmin-import` or `samsung-health-import`) into `health.db`. The `evidence-loop` skill verifies raw numbers before interpretation and flags cross-sensor discrepancies.
+  - **Learn-Cron Progression:** The daily `demo` learn-cron asks at most 1 question per fire (max 3 daily asks shared cap) outside quiet hours, writing facts directly to `baseline.md` and rewarding every answer immediately.
+  - **First Weekly Digest (`proactive-coach`):** Evaluates rolling weekly trends against personal baselines within the preferred quiet-hours delivery window. Checks progress toward Vitality Ceiling targets (e.g. Zone 2 volume, loaded carries) while verifying Clinical Floor safety parameters. If there is nothing meaningful to say, the coach stays silent.
+- **Day 30 (Graduation & Autonomous Stewardship):**
+  - **`demo` Graduation:** Upon reaching 21 asks or 30 days, the `demo` skill automatically retires its learn-cron and transfers all proactive responsibilities to `proactive-coach`.
+  - **Longitudinal Audit (`eval-health`):** Comprehensive 30-day evaluation of biomarkers and training trends against the scaffold's two layers (e.g. autonomic recovery trends, resting heart rate, strength metrics).
+  - **State vs. Trait Graduation Review:** Users who began in acute recovery or anxious states (`Rebuilder`, `Protector`) assess whether baseline stability warrants graduating to high-agency sparring (`Operator`), streak acceleration (`Catalyst`), or clinical biohacking (`Scholar`).
+  - **Memory Rent Audit:** Prune and consolidate `MEMORY.md` working state to ensure active feedback loops pay rent and prevent context saturation.
 
 ## 8. First run
 
@@ -708,7 +732,7 @@ First real tenant, first non-self onboarding — the run that produced the opera
 1. The box arrived pre-provisioned through step 5 (clone, backup, skills, config all in place);
    a linear reading would have redone all of it. The status-check table is that day's probe,
    written down.
-2. The profile matched `Maria/` on the authority axis and missed on its fluency assumption —
+2. The profile matched `Guide/` on the authority axis and missed on its fluency assumption —
    the tenant is an AI professional, not a newcomer. Adapt-harder worked exactly as step 7
    predicts; the registry row now carries the warning.
 3. Agent-fill ran with operator approval; the step-7 operator variant and the first-session
