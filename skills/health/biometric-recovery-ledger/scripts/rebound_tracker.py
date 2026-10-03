@@ -344,25 +344,30 @@ def generate_report(db_path: Path) -> Dict[str, Any]:
     return {"interventions": summary}
 
 
-def get_verified_hypotheses(db_path: Path, min_observations: int = 10) -> List[Dict[str, Any]]:
-    """Return habit hypotheses that reach N >= 10 unconfounded observations."""
+def get_verified_hypotheses(
+    db_path: Path,
+    min_observations: int = 10,
+    min_rebound_delta_sigma: float = 1.0,
+) -> List[Dict[str, Any]]:
+    """Return habit hypotheses that reach N >= 10 unconfounded observations and positive delta."""
     report = generate_report(db_path)
     hypotheses = []
     for itype, stats in report["interventions"].items():
         if stats["unconfounded_rebound_count"] >= min_observations:
             avg_delta = stats["avg_unconfounded_rebound_delta_sigma"]
-            delta_str = f"{avg_delta:+.2f}σ" if avg_delta is not None else "N/A"
-            hypotheses.append({
-                "intervention_type": itype,
-                "unconfounded_n": stats["unconfounded_rebound_count"],
-                "avg_rebound_delta_sigma": avg_delta,
-                "avg_rebound_sigma": stats["avg_unconfounded_rebound_sigma"],
-                "avg_subjective_rating": stats["avg_subjective_rating"],
-                "epistemic_statement": (
-                    f"Associated with {delta_str} recovery delta relative to dip trough "
-                    f"under unconfounded conditions (correlated observation; non-causal)."
-                ),
-            })
+            if avg_delta is not None and avg_delta >= min_rebound_delta_sigma:
+                delta_str = f"{avg_delta:+.2f}σ"
+                hypotheses.append({
+                    "intervention_type": itype,
+                    "unconfounded_n": stats["unconfounded_rebound_count"],
+                    "avg_rebound_delta_sigma": avg_delta,
+                    "avg_rebound_sigma": stats["avg_unconfounded_rebound_sigma"],
+                    "avg_subjective_rating": stats["avg_subjective_rating"],
+                    "epistemic_statement": (
+                        f"Associated with {delta_str} recovery delta relative to dip trough "
+                        f"under unconfounded conditions (correlated observation; non-causal)."
+                    ),
+                })
     return hypotheses
 
 
@@ -404,6 +409,7 @@ def main():
     # Hypotheses
     hyp_p = subparsers.add_parser("hypotheses")
     hyp_p.add_argument("--min-n", type=int, default=10)
+    hyp_p.add_argument("--min-delta", type=float, default=1.0)
 
     args = parser.parse_args()
     db_path = Path(args.db).expanduser()
@@ -436,7 +442,16 @@ def main():
     elif args.command == "report":
         print(json.dumps(generate_report(db_path), indent=2))
     elif args.command == "hypotheses":
-        print(json.dumps(get_verified_hypotheses(db_path, args.min_n), indent=2))
+        print(
+            json.dumps(
+                get_verified_hypotheses(
+                    db_path,
+                    min_observations=args.min_n,
+                    min_rebound_delta_sigma=args.min_delta,
+                ),
+                indent=2,
+            )
+        )
     else:
         parser.print_help()
 
