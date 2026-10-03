@@ -175,11 +175,31 @@ Run `matrix shell new --name auth` or launch a terminal tab from the Matrix OS w
 hermes model
 ```
 
-Pick your preferred model provider (e.g. Nous free tier, OpenRouter, Anthropic, or OpenAI).
-Alternatively, add your API key to `~/.hermes/.env`:
+Pick your preferred model provider (e.g. Google Gemini, Nous, OpenRouter, Anthropic, or OpenAI).
 
+#### Option 1: Google Gemini (Fast, Free Tier / Inexpensive, Multimodal Voice)
+```bash
+# 1. Add your Google API key to ~/.hermes/.env
+matrix run --project=main -C . -- bash -lc 'echo "GOOGLE_API_KEY=<KEY>" >> ~/.hermes/.env'
+
+# 2. Configure model inference to Gemini 3.8 Flash
+matrix run --project=main -C . -- bash -lc '
+hermes config set model.provider gemini
+hermes config set model.default gemini-3.8-flash
+'
+
+# 3. (Optional) Configure Gemini TTS for voice audio (voice notes over WhatsApp / Telegram)
+matrix run --project=main -C . -- bash -lc '
+hermes config set tts.provider gemini
+hermes config set tts.gemini.model gemini-3.8-flash-tts
+hermes config set tts.gemini.voice Kore
+'
+```
+
+#### Option 2: OpenRouter or Anthropic
 ```bash
 matrix run --project=main -C . -- bash -lc 'echo "OPENROUTER_API_KEY=<KEY>" >> ~/.hermes/.env'
+# or: echo "ANTHROPIC_API_KEY=<KEY>" >> ~/.hermes/.env
 ```
 
 Verify with a quick round-trip before proceeding:
@@ -275,19 +295,20 @@ Matrix desktop:
      'cp /opt/matrix/app/shell/public/agent-logos/hermes-agent.png ~/system/icons/hermes.png'
    ```
 
-2. **Scaffold and build the Hermes app**:
+2. **Scaffold and build the Hermes launcher app**:
    ```bash
    matrix run --project=main -C . -- bash -lc '
    cp -r ~/apps/_template-vite ~/apps/hermes
+
    cat << "EOF" > ~/apps/hermes/matrix.json
    {
      "name": "Hermes Agent",
      "slug": "hermes",
-     "description": "Hermes AI Longevity Coach & Agent control center",
+     "description": "Hermes AI Longevity Coach control center",
      "version": "1.0.0",
      "category": "utilities",
      "icon": "hermes",
-     "author": "Matrix OS",
+     "author": "Highlander Longevity Coach",
      "runtime": "vite",
      "runtimeVersion": "^1.0.0",
      "scope": "personal",
@@ -300,15 +321,97 @@ Matrix desktop:
      }
    }
    EOF
+
+   cat << "EOF" > ~/apps/hermes/src/App.tsx
+   export default function App() {
+     return (
+       <div style={{
+         minHeight: "100vh",
+         backgroundColor: "#09090b",
+         color: "#f4f4f5",
+         fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+         padding: "32px",
+         boxSizing: "border-box"
+       }}>
+         <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "24px" }}>
+           <div style={{ fontSize: "36px" }}>🏔️</div>
+           <div>
+             <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>Highlander Longevity Coach</h1>
+             <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#a1a1aa" }}>Hermes Agent running on Matrix OS</p>
+           </div>
+         </div>
+         <div style={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+           <h3 style={{ margin: "0 0 8px", fontSize: "14px", color: "#fafafa" }}>Coach, Not a Dashboard</h3>
+           <p style={{ margin: 0, fontSize: "13px", color: "#a1a1aa", lineHeight: "1.5" }}>
+             Highlander operates autonomously in the background. It ingests wearable telemetry, verifies claims against individual baselines, and delivers concise morning check-ins via WhatsApp or Telegram.
+           </p>
+         </div>
+         <div style={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "8px", padding: "16px" }}>
+           <h3 style={{ margin: "0 0 8px", fontSize: "14px", color: "#fafafa" }}>Terminal Quick Commands</h3>
+           <pre style={{ margin: 0, padding: "12px", backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "6px", fontSize: "12px", color: "#60a5fa", overflowX: "auto" }}>
+             hermes                          # Interactive CLI session
+             hermes gateway status           # Check background service
+             hermes cron list                # View scheduled check-ins
+           </pre>
+         </div>
+       </div>
+     );
+   }
+   EOF
+
    cd ~/apps/hermes && npm install && npm run build
    '
    ```
 
 3. **Pin to Desktop**:
    Add the app entry (`apps/hermes/index.html`) to the desktop icon grid via the OS-view state API
-   or using the `add_app_to_desktop` tool. The icon will appear live on your Matrix desktop.
+   or using the `add_app_to_desktop` tool in Matrix OS. The icon will appear live on your Matrix desktop.
 
-### B8 — ⛔ handback (human takes over)
+### B8 — Wire WhatsApp Channel & Voice Gateway (Matrix OS specific)
+
+The coach operates seamlessly over WhatsApp using Hermes's built-in Baileys bridge and Google Gemini for instantaneous voice transcription (STT) and voice note responses (TTS):
+
+1. **Configure WhatsApp bridge port & autonomous execution**:
+   Matrix OS web desktop runs on port 3000. To prevent port collision (`EADDRINUSE`), route the Hermes WhatsApp bridge to port 3010:
+   ```bash
+   matrix run --project=main -C . -- bash -lc '
+   hermes config set platforms.whatsapp.bridge_port 3010
+   hermes config set platforms.whatsapp.enabled true
+   hermes config set approvals.mode off
+   echo "HERMES_YOLO_MODE=1" >> ~/.hermes/.env
+   echo "HERMES_ACCEPT_HOOKS=1" >> ~/.hermes/.env
+   '
+   ```
+
+2. **Enable voice STT & TTS tools**:
+   ```bash
+   matrix run --project=main -C . -- bash -lc '
+   hermes tools enable stt
+   hermes tools enable tts
+   '
+   ```
+
+3. **Pair your WhatsApp account**:
+   Use the repository's headless pairing daemon (which renders a QR code PNG image for remote pairing) or run interactive pairing:
+   ```bash
+   matrix run --project=main -C highlander-longevity-coach -- bash -lc \
+     'python3 scripts/pair-whatsapp-tenant.py --start'
+   ```
+   Alternatively, run interactive pairing via terminal (`matrix shell`):
+   ```bash
+   hermes whatsapp
+   ```
+   Scan the QR code from WhatsApp on your phone (**Settings → Linked Devices → Link a Device**).
+
+4. **Restart the gateway**:
+   ```bash
+   matrix run --project=main -C . -- bash -lc '
+   hermes gateway restart
+   hermes gateway status
+   '
+   ```
+
+### B9 — ⛔ handback (human takes over)
 
 The automated box setup is complete. **Do not put personal data into git or logs** — the
 remaining steps are personal and interactive:
@@ -356,3 +459,5 @@ If you want to decommission or reset the Matrix coach box:
 | `gitleaks` missing or leak-scan exits `2` | Binary not installed on the Matrix computer | Run B1 commands to download and install gitleaks 8.30.1 into `/usr/local/bin` |
 | Gateway does not see new skills after copy | Skill catalogue is cached in memory | Run `hermes gateway restart` and verify with `hermes gateway status` (B5) |
 | `hermes -z` fails with `not connected to any AI provider` | Model credentials missing on fresh install | Complete stop-point B3 (`hermes model` or `OPENROUTER_API_KEY` in `~/.hermes/.env`) |
+| WhatsApp bridge fails with `EADDRINUSE` | Port 3000 collides with Matrix OS web desktop | Set `hermes config set platforms.whatsapp.bridge_port 3010` (B8) |
+| Voice notes not generating audio | STT/TTS tools disabled in Hermes configuration | Run `hermes tools enable stt` and `hermes tools enable tts` (B8) |
