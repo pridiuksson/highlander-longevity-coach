@@ -14,6 +14,7 @@ Token Factory) are already an option in the cookbooks' credential step.
 
 | Provider | Cookbook |
 |---|---|
+| Matrix | [Matrix/](./Matrix/matrix-box-cookbook.md) — Matrix OS computer via the Matrix CLI (`@finnaai/matrix`) |
 | Nebius | [Nebius/](./Nebius/nebius-cpu-box-cookbook.md) — CPU-only VM from zero via the `nebius` CLI |
 
 To add a provider, copy the shape of an existing cookbook and keep the contract: agent-executable,
