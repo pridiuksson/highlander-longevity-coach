@@ -13,7 +13,10 @@ from dialogue_triage import (
     classify_appraisal,
     recommend_micro_action,
     DialogueSession,
+    ephemeral_audio_scratch,
 )
+import tempfile
+import os
 
 
 class TestStressDialogue(unittest.TestCase):
@@ -89,6 +92,32 @@ class TestStressDialogue(unittest.TestCase):
         self.assertEqual(session.status, "CRISIS_HALT")
         self.assertTrue(res["crisis_detected"])
         self.assertIn("988", res["message"])
+
+    def test_voice_acoustic_fail_safe(self):
+        """Empty audio transcript or low confidence must trigger fail-safe grounding."""
+        session = DialogueSession()
+        # Case 1: Empty transcript from unparseable audio
+        res1 = session.process_voice_input("")
+        self.assertEqual(res1["status"], "FAIL_SAFE")
+        self.assertIn("988", res1["message"])
+
+        # Case 2: Low confidence audio under acoustic distortion
+        res2 = session.process_voice_input("garbled audio", is_low_confidence=True)
+        self.assertEqual(res2["status"], "FAIL_SAFE")
+        self.assertIn("112", res2["message"])
+
+    def test_ephemeral_audio_scratch_cleanup(self):
+        """Audio scratch files must be strictly unlinked upon context exit."""
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as tmp:
+            tmp_path = tmp.name
+            tmp.write(b"dummy audio bytes")
+
+        self.assertTrue(os.path.exists(tmp_path))
+
+        with ephemeral_audio_scratch(tmp_path):
+            self.assertTrue(os.path.exists(tmp_path))
+
+        self.assertFalse(os.path.exists(tmp_path))
 
 
 if __name__ == "__main__":

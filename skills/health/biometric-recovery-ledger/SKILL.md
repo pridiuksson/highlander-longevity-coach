@@ -67,7 +67,7 @@ python3 ${HERMES_SKILL_DIR}/scripts/rebound_tracker.py record \
   --rating 4
 ```
 
-Verify subsequent night rebound:
+Verify subsequent night rebound (manual values):
 
 ```bash
 python3 ${HERMES_SKILL_DIR}/scripts/rebound_tracker.py verify \
@@ -77,8 +77,26 @@ python3 ${HERMES_SKILL_DIR}/scripts/rebound_tracker.py verify \
   --confounders-json '{"alcohol": false, "late_meal": false}'
 ```
 
+Automatically verify subsequent night rebound directly from database telemetry:
+
+```bash
+python3 ${HERMES_SKILL_DIR}/scripts/rebound_tracker.py auto-verify \
+  --db ${health.db} \
+  --event-id <EVENT_ID> \
+  --confounders-json '{"alcohol": false, "late_meal": false}'
+```
+
 Generate recovery report:
 
 ```bash
 python3 ${HERMES_SKILL_DIR}/scripts/rebound_tracker.py report --db ${health.db}
+```
+
+Audit verified habit hypotheses ($N \ge 10$ unconfounded observations with $\Delta\sigma \ge +1.0$):
+
+```bash
+python3 ${HERMES_SKILL_DIR}/scripts/rebound_tracker.py hypotheses \
+  --db ${health.db} \
+  --min-n 10 \
+  --min-delta 1.0
 ```

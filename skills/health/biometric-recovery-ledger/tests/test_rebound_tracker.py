@@ -176,6 +176,46 @@ class TestReboundTracker(unittest.TestCase):
         self.assertEqual(hyp[0]["intervention_type"], "physiological_sigh")
         self.assertIn("non-causal", hyp[0]["epistemic_statement"])
 
+    def test_hypotheses_delta_sigma_filter(self):
+        """Interventions with N >= 10 but marginal delta (< 1.0 sigma) must not be promoted."""
+        # 10 unconfounded events where rebound delta is +0.8 sigma (resolved, but < 1.0 delta threshold)
+        for i in range(10):
+            eid = record_intervention(
+                db_path=self.db_path,
+                date_str=f"2026-07-{i+1:02d}",
+                trigger_metric="nocturnal_rmssd",
+                baseline_mean=60.0,
+                baseline_std=5.0,
+                deviation_sigma=-1.5,
+                intervention_id=f"act_marginal_{i}",
+                intervention_type="marginal_stretch",
+            )
+            # Next night is 56.5 (sigma = -0.7, delta = +0.8)
+            verify_next_day_rebound(
+                db_path=self.db_path,
+                event_id=eid,
+                next_night_rmssd=56.5,
+                confounder_flags={"alcohol": False},
+            )
+
+        # With default min_delta=1.0, marginal_stretch must NOT qualify
+        hyp = get_verified_hypotheses(
+            self.db_path,
+            min_observations=10,
+            min_rebound_delta_sigma=1.0,
+        )
+        marginal_hyp = [h for h in hyp if h["intervention_type"] == "marginal_stretch"]
+        self.assertEqual(len(marginal_hyp), 0)
+
+        # But if threshold is 0.7, it qualifies
+        hyp_low = get_verified_hypotheses(
+            self.db_path,
+            min_observations=10,
+            min_rebound_delta_sigma=0.7,
+        )
+        marginal_low = [h for h in hyp_low if h["intervention_type"] == "marginal_stretch"]
+        self.assertEqual(len(marginal_low), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,9 @@
 """Cognitive appraisal and stress dialogue triage engine."""
 from __future__ import annotations
 import argparse
+from contextlib import contextmanager
 import json
+import os
 import re
 import sys
 from typing import Any, Dict, List, Optional
@@ -120,6 +122,19 @@ def recommend_micro_action(quadrant: str, persona: str = "Protector") -> Dict[st
         }
 
 
+@contextmanager
+def ephemeral_audio_scratch(file_path: str):
+    """Context manager ensuring immediate shredding/unlinking of voice scratch files."""
+    try:
+        yield file_path
+    finally:
+        if os.path.exists(file_path):
+            try:
+                os.unlink(file_path)
+            except OSError:
+                pass
+
+
 class DialogueSession:
     """Bounded, anti-rumination stress dialogue session."""
 
@@ -179,6 +194,28 @@ class DialogueSession:
                 "appraisal": self.appraisal,
                 "response": response_text,
             }
+
+    def process_voice_input(
+        self,
+        transcript: str,
+        is_low_confidence: bool = False,
+        telemetry: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Safely process transcribed voice input with acoustic fail-safe."""
+        # Acoustic fail-safe: if transcript is empty or low confidence under emotional distress
+        if is_low_confidence or not transcript.strip():
+            return {
+                "status": "FAIL_SAFE",
+                "message": (
+                    "I heard your voice note, but could not clearly make out the words. "
+                    "If you are feeling overwhelmed or in acute distress, please know you are not alone:\n"
+                    "• In the US/Canada: 988 Lifeline\n"
+                    "• In the UK: 116 123 (Samaritans)\n"
+                    "• In Europe: 112\n"
+                    "Take a slow breath. If you have the energy, you can send a short text or try another voice note."
+                ),
+            }
+        return self.process_turn(transcript, telemetry)
 
 
 def main():

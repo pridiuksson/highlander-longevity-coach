@@ -8,6 +8,7 @@ allowed-tools:
   - Glob
   - Agent
   - Write
+  - Bash
 argument-hint: "[run-path | latest]"
 metadata:
   hermes:
@@ -16,6 +17,10 @@ metadata:
         description: "Root of your health data: device exports, SQLite DB, verified-data docs"
         default: "~/health"
         prompt: "Root of your health data: device exports, SQLite DB, verified-data docs"
+      - key: health.db
+        description: "SQLite database holding the imported, normalized device data and somatic events"
+        default: "${HERMES_HOME}/data/health.db"
+        prompt: "SQLite database holding the imported, normalized device data and somatic events"
 ---
 
 # Eval Health
@@ -38,6 +43,7 @@ Evaluate the health-coach skill by running golden questions and measuring output
 - Periodically to verify quality hasn't degraded
 - When investigating why a specific phase underperformed
 - When calibrating validator sensitivity
+- During periodic quality reviews to audit longitudinal somatic recovery and memory hygiene
 
 ## Process
 
@@ -330,6 +336,22 @@ Rule: Any dimension with ⚠️ gets a note in improvement suggestions explainin
 2. {template adjustment}
 3. {orchestration change}
 ```
+
+## Longitudinal Somatic Recovery Audit
+
+When evaluating multi-week coaching quality or running periodic health audits, verify that closed-loop somatic learning adheres to empirical standards:
+
+1. **Query the Recovery Ledger:**
+   Inspect somatic habit aggregation using the `biometric-recovery-ledger` skill:
+   ```bash
+   python3 skills/health/biometric-recovery-ledger/scripts/rebound_tracker.py report --db ${health.db}
+   python3 skills/health/biometric-recovery-ledger/scripts/rebound_tracker.py hypotheses --db ${health.db} --min-n 10 --min-delta 1.0
+   ```
+2. **Audit Dimensions:**
+   - **Unconfounded Resolution:** Verify that unconfounded recovery events show positive rebound delta ($\Delta\sigma$).
+   - **Confounder Filter Activity:** Confirm that lifestyle shocks (alcohol, late dinners, athletic workouts) are actively flagged and not silently ignored.
+   - **Hypothesis Promotion Threshold:** Ensure that only interventions with $N \ge 10$ unconfounded observations across distinct weeks and average recovery delta $\ge +1.0\sigma$ are candidate for durable habits.
+   - **Pointer Memory Discipline:** Cross-reference `MEMORY.md` (via the `memory-reality-check` skill) to verify that raw rebound events and unconfirmed hypotheses NEVER leaked into durable memory without explicit human confirmation.
 
 ## Constraints
 
