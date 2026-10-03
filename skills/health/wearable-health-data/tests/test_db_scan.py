@@ -88,7 +88,8 @@ class TestDatabaseScan(unittest.TestCase):
         for i in range(35):
             dt = anchor_date - timedelta(days=35 - i)
             noise = float((i % 5) - 2)
-            val = (50.0 + noise) if i < 28 else 35.0
+            # Acute dip of 2 days (i >= 33) following the heavy workout
+            val = (50.0 + noise) if i < 33 else 35.0
             self.conn.execute("INSERT INTO hrv_sdnn VALUES (?, ?)", (f"{dt.isoformat()} 05:00:00", val))
             self.conn.execute("INSERT INTO resting_hr VALUES (?, ?)", (dt.isoformat(), 58.0))
             self.conn.execute("INSERT INTO workouts VALUES (?, 300.0, 45.0)", (f"{dt.isoformat()} 16:00:00",))
@@ -104,6 +105,48 @@ class TestDatabaseScan(unittest.TestCase):
         self.assertEqual(res["metric_name"], "hrv_sdnn")
         self.assertEqual(res["status"], "PHYSICAL_LOAD_CONFIRMED")
         self.assertTrue(res["suppress_outreach"])
+
+    def test_apple_schema_scan_overtraining(self):
+        """Persistent multi-day dip (>= 3 days) with heavy workout must trigger OVERTRAINING_RISK."""
+        self.conn.executescript("""
+            DROP TABLE IF EXISTS hrv_sdnn;
+            DROP TABLE IF EXISTS workouts;
+            DROP TABLE IF EXISTS resting_hr;
+            CREATE TABLE hrv_sdnn (
+                ts TEXT,
+                value REAL
+            );
+            CREATE TABLE workouts (
+                start TEXT,
+                energy_kcal REAL,
+                duration_min REAL
+            );
+            CREATE TABLE resting_hr (
+                date TEXT,
+                value REAL
+            );
+        """)
+
+        anchor_date = datetime(2026, 10, 3).date()
+        for i in range(35):
+            dt = anchor_date - timedelta(days=35 - i)
+            noise = float((i % 5) - 2)
+            # Persistent dip for 5 days (i >= 30)
+            val = (50.0 + noise) if i < 30 else 35.0
+            self.conn.execute("INSERT INTO hrv_sdnn VALUES (?, ?)", (f"{dt.isoformat()} 05:00:00", val))
+            self.conn.execute("INSERT INTO resting_hr VALUES (?, ?)", (dt.isoformat(), 58.0))
+            self.conn.execute("INSERT INTO workouts VALUES (?, 300.0, 45.0)", (f"{dt.isoformat()} 16:00:00",))
+
+        # Heavy workout on prior day
+        self.conn.execute(
+            "UPDATE workouts SET energy_kcal = 800.0, duration_min = 90.0 WHERE substr(start, 1, 10) = '2026-10-02'"
+        )
+        self.conn.commit()
+
+        res = scan_database(self.db_path, "2026-10-03", device_source="apple")
+        self.assertEqual(res["status"], "OVERTRAINING_RISK")
+        self.assertEqual(res["category"], "PHYSICAL_DELOAD")
+        self.assertFalse(res["suppress_outreach"])
 
 
 if __name__ == "__main__":

@@ -16,6 +16,10 @@ metadata:
         description: "IANA timezone for quiet hours (never inferred from the host clock)"
         default: ""
         prompt: "IANA timezone for quiet hours (never inferred from the host clock)"
+      - key: health.db
+        description: "SQLite database holding imported wearable health telemetry"
+        default: "${HERMES_HOME}/data/health.db"
+        prompt: "SQLite database holding imported wearable health telemetry"
     tags: [health, coaching, proactivity, cron]
     source: "arXiv 2605.06717 — Agentic Coding Needs Proactivity, Not Just Autonomy (Bui & Evangelopoulos, Google Labs, 2026)"
     blueprint:
@@ -32,8 +36,8 @@ metadata:
 # Proactive Coach
 
 > **Config.** This skill reads its settings from `config.yaml` (`proactive.quiet_hours`,
-> `proactive.timezone`). The resolved values arrive in the `[Skill config]` block
-> injected when this skill loads — use them, never a hardcoded window or timezone.
+> `proactive.timezone`, `health.db`). The resolved values arrive in the `[Skill config]` block
+> injected when this skill loads — use them, never a hardcoded window, timezone, or path.
 
 ## What this is
 
@@ -74,6 +78,33 @@ silent-unless-transition by construction.
 
 If the crunch produces nothing that clears the gate, that is a successful run: ledger a silent
 sweep and stop. Do not manufacture an insight to justify the schedule.
+
+## Autonomic Baseline Monitoring (Morning Check-In & Crunch)
+
+When evaluating wearable biometric anomalies during the weekly crunch or an optional morning check-in cron, the proactive coach directly inspects the user's `health.db` using the `wearable-health-data` skill:
+
+```bash
+python3 skills/health/wearable-health-data/scripts/baseline_math.py scan \
+  --db ${health.db} \
+  --date <TODAY> \
+  --source auto
+```
+
+### Autonomic Gating & Routing Policy
+
+1. **Normal Variance (`status: NORMAL_VARIANCE` or `slope_break: false`):**
+   Autonomic metrics remain within $\pm 1.0\sigma$ of the 28-day individual baseline. Outcome is strictly **SILENT**.
+2. **Cold Start or Sparse Telemetry (`status: INSUFFICIENT_BASELINE` or `NO_NEW_DATA`):**
+   Fewer than 14 baseline nights or missing sleep telemetry. Never infer distress from missing data. Outcome is strictly **SILENT**.
+3. **Acute Athletic Confounder (`status: PHYSICAL_LOAD_CONFIRMED`, `suppress_outreach: true`):**
+   Prior-day active energy expenditure ($\ge 1.5\times$ baseline kcal) or workout duration ($\ge 90$ mins) explains the autonomic suppression. Suppress cognitive stress outreach. Log as athletic recovery; channel stays **SILENT** (or included in scheduled weekly athletic summary).
+4. **Persistent Overtraining (`status: OVERTRAINING_RISK`, `category: PHYSICAL_DELOAD`):**
+   Autonomic suppression persisting $\ge 3$ consecutive days accompanied by high athletic load. Draft a physical recovery deload candidate. Gate via the 5-test delivery gate before emitting.
+5. **Unexplained Autonomic Dip (`status: UNEXPLAINED_AUTONOMIC_DIP`, `category: COGNITIVE_TRIAGE_CANDIDATE`):**
+   The autonomic nervous system is depressed ($z \le -1.5\sigma$) without high athletic training load.
+   - **Delivery Gate Check:** Verify against `ledger.py` that the user was not already alerted for autonomic dip within the cooldown window ("New" test), that quiet hours permit delivery ("Timely" test), and that the reading is multi-sample rolling baseline ("Grounded" test). If recent outreach was sent, record a reject line to the ledger (`considered "autonomic dip" New`) and stay **SILENT**.
+   - **Pre-Decide Dispatch:** If cleared by the delivery gate, dispatch via `stress-dialogue` (pre-Decide, bypassing adversarial multi-persona debate): warm validate-first posture, 3rd-person observer distancing, hard cap of $\le 3$ conversational turns, and exactly 1 tactical micro-action.
+   - **Zero Memory Persistence on Crisis:** If `CRISIS_HALT` triggers during dialogue, emit crisis hotline resources and immediately terminate. Never persist, summarize, or commit crisis disclosures to `MEMORY.md` or proactive logs.
 
 ## The insight-quality gate
 

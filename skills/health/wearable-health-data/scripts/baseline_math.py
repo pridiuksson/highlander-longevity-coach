@@ -167,11 +167,6 @@ def scan_database(
         return {"status": "ERROR", "reason": f"Database file not found: {db_path}"}
 
     target_dt = datetime.strptime(target_date_str, "%Y-%m-%d").date()
-    eval_start = (target_dt - timedelta(days=7)).isoformat()
-    eval_end = target_dt.isoformat()
-    base_start = (target_dt - timedelta(days=35)).isoformat()
-    base_end = eval_start
-    prior_day = (target_dt - timedelta(days=1)).isoformat()
 
     conn = sqlite3.connect(str(db_path), timeout=30.0)
     conn.row_factory = sqlite3.Row
@@ -182,6 +177,35 @@ def scan_database(
                 "SELECT name FROM sqlite_master WHERE type IN ('table', 'view')"
             ).fetchall()
         }
+
+        # Check if target_dt itself has records (e.g. today's sleep synced), or if latest data is target_dt - 1
+        has_target_data = False
+        target_str = target_dt.isoformat()
+        if "hrv_window" in tables:
+            c = conn.execute(
+                "SELECT 1 FROM hrv_window WHERE substr(start_utc, 1, 10) = ? LIMIT 1",
+                (target_str,),
+            ).fetchone()
+            if c:
+                has_target_data = True
+        elif "hrv_sdnn" in tables:
+            c = conn.execute(
+                "SELECT 1 FROM hrv_sdnn WHERE substr(ts, 1, 10) = ? LIMIT 1",
+                (target_str,),
+            ).fetchone()
+            if c:
+                has_target_data = True
+
+        if has_target_data:
+            eval_end_date = target_dt
+        else:
+            eval_end_date = target_dt - timedelta(days=1)
+
+        eval_start = (eval_end_date - timedelta(days=6)).isoformat()
+        eval_end = (eval_end_date + timedelta(days=1)).isoformat()
+        base_start = (eval_end_date - timedelta(days=34)).isoformat()
+        base_end = eval_start
+        prior_day = (target_dt - timedelta(days=1)).isoformat()
 
         # 1. Autonomic metric series (Samsung RMSSD vs Apple SDNN)
         hrv_base: List[float] = []
@@ -332,11 +356,24 @@ def scan_database(
     finally:
         conn.close()
 
+    # Calculate consecutive trailing dip days in eval window
+    persistent_days = 0
+    if hrv_base and len(hrv_base) >= 14 and hrv_eval:
+        base_mean = sum(hrv_base) / len(hrv_base)
+        variance = sum((x - base_mean) ** 2 for x in hrv_base) / (len(hrv_base) - 1)
+        base_std = math.sqrt(variance)
+        if base_std > 0:
+            for val in reversed(hrv_eval):
+                if (val - base_mean) / base_std <= -1.5:
+                    persistent_days += 1
+                else:
+                    break
+
     workout_context = {
         "prior_day_kcal": prior_kcal,
         "prior_day_duration_mins": prior_duration,
         "baseline_avg_kcal": base_avg_kcal,
-        "persistent_dip_days": 1,
+        "persistent_dip_days": max(1, persistent_days),
     }
 
     result = evaluate_biometric_state(
