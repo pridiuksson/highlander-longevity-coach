@@ -2,7 +2,7 @@
 """Closed-loop somatic recovery and biometric rebound ledger."""
 from __future__ import annotations
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import sqlite3
@@ -158,6 +158,92 @@ def verify_next_day_rebound(
     }
 
 
+def auto_verify_event(
+    db_path: Path,
+    event_id: str,
+    manual_confounders: Optional[Dict[str, bool]] = None,
+) -> Dict[str, Any]:
+    """Look up subsequent night vitals in health.db and automatically verify rebound."""
+    manual_confounders = manual_confounders or {}
+    with get_connection(db_path) as conn:
+        row = conn.execute(
+            "SELECT * FROM biometric_rebound_events WHERE event_id = ?", (event_id,)
+        ).fetchone()
+        if not row:
+            raise KeyError(f"Event not found: {event_id}")
+
+        date_str = row["date_str"]
+        target_dt = datetime.strptime(date_str, "%Y-%m-%d").date()
+        next_date_str = (target_dt + timedelta(days=1)).isoformat()
+
+        tables = {
+            r[0]
+            for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type IN ('table', 'view')"
+            ).fetchall()
+        }
+
+        next_val = None
+        if "hrv_window" in tables:
+            r = conn.execute(
+                """
+                SELECT AVG(rmssd_mean) as val
+                FROM hrv_window
+                WHERE substr(start_utc, 1, 10) = ? AND rmssd_mean > 0 AND rmssd_mean < 250
+                """,
+                (next_date_str,),
+            ).fetchone()
+            if r and r["val"] is not None:
+                next_val = float(r["val"])
+        elif "hrv_sdnn" in tables:
+            r = conn.execute(
+                """
+                SELECT AVG(value) as val
+                FROM hrv_sdnn
+                WHERE substr(ts, 1, 10) = ?
+                """,
+                (next_date_str,),
+            ).fetchone()
+            if r and r["val"] is not None:
+                next_val = float(r["val"])
+
+        if next_val is None:
+            age_hours = (int(time.time()) - row["created_ts"]) / 3600.0
+            if age_hours > 48.0:
+                conn.execute(
+                    "UPDATE biometric_rebound_events SET status = 'expired' WHERE event_id = ?",
+                    (event_id,),
+                )
+                return {"event_id": event_id, "status": "expired", "reason": "No vitals landed within 48h"}
+            return {
+                "event_id": event_id,
+                "status": "pending",
+                "reason": f"No vitals found in database for subsequent night {next_date_str}",
+            }
+
+        workout_confounder = False
+        if "workouts" in tables:
+            w_row = conn.execute(
+                "SELECT SUM(energy_kcal) as kcal FROM workouts WHERE substr(start, 1, 10) = ?",
+                (next_date_str,),
+            ).fetchone()
+            if w_row and w_row["kcal"] and float(w_row["kcal"]) >= 600.0:
+                workout_confounder = True
+        elif "workout" in tables:
+            w_row = conn.execute(
+                "SELECT SUM(calorie) as kcal FROM workout WHERE substr(start_utc, 1, 10) = ?",
+                (next_date_str,),
+            ).fetchone()
+            if w_row and w_row["kcal"] and float(w_row["kcal"]) >= 600.0:
+                workout_confounder = True
+
+        confounders = dict(manual_confounders)
+        if workout_confounder:
+            confounders["heavy_training"] = True
+
+    return verify_next_day_rebound(db_path, event_id, next_val, confounders)
+
+
 def expire_stale_events(db_path: Path, max_age_hours: int = 48) -> int:
     """Transition pending events older than max_age_hours to expired."""
     cutoff_ts = int(time.time()) - (max_age_hours * 3600)
@@ -303,6 +389,11 @@ def main():
     ver_p.add_argument("--next-rmssd", type=float, required=True)
     ver_p.add_argument("--confounders-json", type=str, help='JSON: {"alcohol": false, "late_meal": true}')
 
+    # Auto-Verify (direct from DB)
+    auto_p = subparsers.add_parser("auto-verify")
+    auto_p.add_argument("--event-id", type=str, required=True)
+    auto_p.add_argument("--confounders-json", type=str, help='Optional JSON manual confounders (e.g. alcohol)')
+
     # Expire
     exp_p = subparsers.add_parser("expire")
     exp_p.add_argument("--hours", type=int, default=48)
@@ -334,6 +425,10 @@ def main():
     elif args.command == "verify":
         flags = json.loads(args.confounders_json) if args.confounders_json else {}
         res = verify_next_day_rebound(db_path, args.event_id, args.next_rmssd, flags)
+        print(json.dumps(res, indent=2))
+    elif args.command == "auto-verify":
+        flags = json.loads(args.confounders_json) if args.confounders_json else {}
+        res = auto_verify_event(db_path, args.event_id, flags)
         print(json.dumps(res, indent=2))
     elif args.command == "expire":
         n = expire_stale_events(db_path, args.hours)
