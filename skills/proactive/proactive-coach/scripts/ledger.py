@@ -70,17 +70,24 @@ def _now():
     return dt.datetime.now(dt.timezone.utc)
 
 
-def cmd_add(source, cls, headline):
-    entry = {
-        "id": str(int(_now().timestamp() * 1000)),
-        "ts": int(_now().timestamp()),
-        "source": source,
-        "class": cls.upper(),
-        "headline": headline,
-        "status": "pending",
-    }
-
+def cmd_add(source, cls, headline, dedup_key=None):
     def write():
+        if dedup_key:
+            entries = _load()
+            for e in entries:
+                if e.get("dedup_key") == dedup_key:
+                    sys.stderr.write(f"dedup hit for key {dedup_key}\n")
+                    return e["id"]
+        entry = {
+            "id": str(int(_now().timestamp() * 1000)),
+            "ts": int(_now().timestamp()),
+            "source": source,
+            "class": cls.upper(),
+            "headline": headline,
+            "status": "pending",
+        }
+        if dedup_key:
+            entry["dedup_key"] = dedup_key
         with open(LEDGER, "a", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -307,7 +314,20 @@ def main():
         sys.exit(__doc__)
     cmd, args = sys.argv[1], sys.argv[2:]
     if cmd == "add" and len(args) >= 3:
-        cmd_add(args[0], args[1], " ".join(args[2:]))
+        dedup_key = None
+        filtered_args = []
+        i = 0
+        while i < len(args):
+            if args[i] == "--dedup-key" and i + 1 < len(args):
+                dedup_key = args[i + 1]
+                i += 2
+            else:
+                filtered_args.append(args[i])
+                i += 1
+        if len(filtered_args) >= 3:
+            cmd_add(filtered_args[0], filtered_args[1], " ".join(filtered_args[2:]), dedup_key=dedup_key)
+        else:
+            sys.exit("usage: ledger.py add SOURCE CLASS HEADLINE [--dedup-key KEY]")
     elif cmd == "resolve" and len(args) == 2:
         cmd_resolve(args[0], args[1])
     elif cmd == "report":

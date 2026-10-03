@@ -1,0 +1,350 @@
+#!/usr/bin/env python3
+"""Closed-loop somatic recovery and biometric rebound ledger."""
+from __future__ import annotations
+import argparse
+from datetime import datetime, timezone
+import json
+from pathlib import Path
+import sqlite3
+import sys
+import time
+from typing import Any, Dict, List, Optional
+import uuid
+
+SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS biometric_rebound_events (
+    event_id TEXT PRIMARY KEY,
+    date_str TEXT NOT NULL,
+    trigger_metric TEXT NOT NULL,
+    baseline_mean REAL NOT NULL,
+    baseline_std REAL NOT NULL,
+    deviation_sigma REAL NOT NULL,
+    intervention_id TEXT NOT NULL,
+    intervention_type TEXT NOT NULL,
+    attributed_cause TEXT,
+    subjective_rating INTEGER,
+    next_night_rmssd REAL,
+    rebound_sigma REAL,
+    rebound_delta_sigma REAL,
+    confounder_flags TEXT,
+    created_ts INTEGER NOT NULL,
+    resolved_ts INTEGER,
+    status TEXT CHECK(status IN ('pending', 'resolved', 'unresolved', 'confounded', 'expired'))
+);
+CREATE INDEX IF NOT EXISTS idx_rebound_date ON biometric_rebound_events (date_str);
+CREATE INDEX IF NOT EXISTS idx_rebound_status ON biometric_rebound_events (status);
+"""
+
+
+def get_connection(db_path: Path) -> sqlite3.Connection:
+    """Open connection, set WAL mode, busy timeout, and ensure schema is initialized."""
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    with conn:
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA busy_timeout = 30000;")
+        conn.executescript(SCHEMA_SQL)
+    return conn
+
+
+def record_intervention(
+    db_path: Path,
+    date_str: str,
+    trigger_metric: str,
+    baseline_mean: float,
+    baseline_std: float,
+    deviation_sigma: float,
+    intervention_id: str,
+    intervention_type: str,
+    attributed_cause: Optional[str] = None,
+    subjective_rating: Optional[int] = None,
+) -> str:
+    """Record a new intervention check-in event in pending state."""
+    event_id = f"evt_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}"
+    created_ts = int(time.time())
+
+    with get_connection(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO biometric_rebound_events (
+                event_id, date_str, trigger_metric, baseline_mean, baseline_std,
+                deviation_sigma, intervention_id, intervention_type, attributed_cause,
+                subjective_rating, created_ts, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+            """,
+            (
+                event_id, date_str, trigger_metric, baseline_mean, baseline_std,
+                deviation_sigma, intervention_id, intervention_type, attributed_cause,
+                subjective_rating, created_ts
+            ),
+        )
+    return event_id
+
+
+def verify_next_day_rebound(
+    db_path: Path,
+    event_id: str,
+    next_night_rmssd: float,
+    confounder_flags: Optional[Dict[str, bool]] = None,
+) -> Dict[str, Any]:
+    """Evaluate next-day biometric rebound and enforce confounder exclusion."""
+    confounder_flags = confounder_flags or {}
+    resolved_ts = int(time.time())
+
+    # Check confounders
+    has_confounder = any(
+        confounder_flags.get(k, False)
+        for k in ("alcohol", "late_meal", "bedtime_drift", "heavy_training")
+    )
+    new_status = "confounded" if has_confounder else "resolved"
+
+    with get_connection(db_path) as conn:
+        row = conn.execute(
+            "SELECT * FROM biometric_rebound_events WHERE event_id = ?", (event_id,)
+        ).fetchone()
+
+        if not row:
+            raise KeyError(f"Event not found: {event_id}")
+
+        baseline_mean = row["baseline_mean"]
+        baseline_std = row["baseline_std"]
+        trough_sigma = row["deviation_sigma"]
+
+        rebound_sigma = (
+            round((next_night_rmssd - baseline_mean) / baseline_std, 2)
+            if baseline_std > 0
+            else 0.0
+        )
+        rebound_delta_sigma = round(rebound_sigma - trough_sigma, 2)
+
+        # Physiological recovery condition: vitals rebound within 1.0 sigma of baseline
+        # or improve by at least +0.5 sigma from the trough
+        is_recovered = (rebound_sigma >= -1.0) or (rebound_delta_sigma >= 0.5)
+
+        if has_confounder:
+            new_status = "confounded"
+        elif is_recovered:
+            new_status = "resolved"
+        else:
+            new_status = "unresolved"
+
+        conn.execute(
+            """
+            UPDATE biometric_rebound_events
+            SET next_night_rmssd = ?, rebound_sigma = ?, rebound_delta_sigma = ?,
+                confounder_flags = ?, resolved_ts = ?, status = ?
+            WHERE event_id = ?
+            """,
+            (
+                next_night_rmssd,
+                rebound_sigma,
+                rebound_delta_sigma,
+                json.dumps(confounder_flags),
+                resolved_ts,
+                new_status,
+                event_id,
+            ),
+        )
+
+    return {
+        "event_id": event_id,
+        "status": new_status,
+        "rebound_sigma": rebound_sigma,
+        "rebound_delta_sigma": rebound_delta_sigma,
+        "is_recovered": is_recovered,
+        "has_confounder": has_confounder,
+        "confounder_flags": confounder_flags,
+    }
+
+
+def expire_stale_events(db_path: Path, max_age_hours: int = 48) -> int:
+    """Transition pending events older than max_age_hours to expired."""
+    cutoff_ts = int(time.time()) - (max_age_hours * 3600)
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            """
+            UPDATE biometric_rebound_events
+            SET status = 'expired'
+            WHERE status = 'pending' AND created_ts < ?
+            """,
+            (cutoff_ts,),
+        )
+        return cur.rowcount
+
+
+def generate_report(db_path: Path) -> Dict[str, Any]:
+    """Generate stats grouped by intervention type with confounder separation."""
+    with get_connection(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT intervention_type, status, subjective_rating, rebound_sigma, rebound_delta_sigma
+            FROM biometric_rebound_events
+            """
+        ).fetchall()
+
+    by_type: Dict[str, Any] = {}
+    for r in rows:
+        itype = r["intervention_type"]
+        if itype not in by_type:
+            by_type[itype] = {
+                "total": 0,
+                "resolved_unconfounded": 0,
+                "unresolved": 0,
+                "confounded": 0,
+                "expired": 0,
+                "pending": 0,
+                "ratings": [],
+                "unconfounded_rebound_sigmas": [],
+                "unconfounded_rebound_deltas": [],
+            }
+        entry = by_type[itype]
+        entry["total"] += 1
+        status = r["status"]
+        if status == "resolved":
+            entry["resolved_unconfounded"] += 1
+            if r["rebound_sigma"] is not None:
+                entry["unconfounded_rebound_sigmas"].append(r["rebound_sigma"])
+            if r["rebound_delta_sigma"] is not None:
+                entry["unconfounded_rebound_deltas"].append(r["rebound_delta_sigma"])
+        elif status == "unresolved":
+            entry["unresolved"] += 1
+        elif status == "confounded":
+            entry["confounded"] += 1
+        elif status == "expired":
+            entry["expired"] += 1
+        elif status == "pending":
+            entry["pending"] += 1
+
+        if r["subjective_rating"] is not None:
+            entry["ratings"].append(r["subjective_rating"])
+
+    summary = {}
+    for itype, data in by_type.items():
+        avg_rating = (
+            round(sum(data["ratings"]) / len(data["ratings"]), 2)
+            if data["ratings"]
+            else None
+        )
+        avg_rebound = (
+            round(
+                sum(data["unconfounded_rebound_sigmas"])
+                / len(data["unconfounded_rebound_sigmas"]),
+                2,
+            )
+            if data["unconfounded_rebound_sigmas"]
+            else None
+        )
+        avg_delta = (
+            round(
+                sum(data["unconfounded_rebound_deltas"])
+                / len(data["unconfounded_rebound_deltas"]),
+                2,
+            )
+            if data["unconfounded_rebound_deltas"]
+            else None
+        )
+        summary[itype] = {
+            "total_events": data["total"],
+            "unconfounded_rebound_count": data["resolved_unconfounded"],
+            "unresolved_count": data["unresolved"],
+            "confounded_count": data["confounded"],
+            "expired_count": data["expired"],
+            "avg_subjective_rating": avg_rating,
+            "avg_unconfounded_rebound_sigma": avg_rebound,
+            "avg_unconfounded_rebound_delta_sigma": avg_delta,
+        }
+
+    return {"interventions": summary}
+
+
+def get_verified_hypotheses(db_path: Path, min_observations: int = 10) -> List[Dict[str, Any]]:
+    """Return habit hypotheses that reach N >= 10 unconfounded observations."""
+    report = generate_report(db_path)
+    hypotheses = []
+    for itype, stats in report["interventions"].items():
+        if stats["unconfounded_rebound_count"] >= min_observations:
+            avg_delta = stats["avg_unconfounded_rebound_delta_sigma"]
+            delta_str = f"{avg_delta:+.2f}σ" if avg_delta is not None else "N/A"
+            hypotheses.append({
+                "intervention_type": itype,
+                "unconfounded_n": stats["unconfounded_rebound_count"],
+                "avg_rebound_delta_sigma": avg_delta,
+                "avg_rebound_sigma": stats["avg_unconfounded_rebound_sigma"],
+                "avg_subjective_rating": stats["avg_subjective_rating"],
+                "epistemic_statement": (
+                    f"Associated with {delta_str} recovery delta relative to dip trough "
+                    f"under unconfounded conditions (correlated observation; non-causal)."
+                ),
+            })
+    return hypotheses
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Biometric recovery and rebound ledger")
+    parser.add_argument("--db", type=str, default="~/.hermes/data/health.db", help="Path to SQLite health DB")
+    subparsers = parser.add_subparsers(dest="command")
+
+    # Record
+    rec_p = subparsers.add_parser("record")
+    rec_p.add_argument("--date", type=str, required=True)
+    rec_p.add_argument("--metric", type=str, default="nocturnal_rmssd")
+    rec_p.add_argument("--baseline-mean", type=float, required=True)
+    rec_p.add_argument("--baseline-std", type=float, required=True)
+    rec_p.add_argument("--deviation-sigma", type=float, required=True)
+    rec_p.add_argument("--intervention-id", type=str, required=True)
+    rec_p.add_argument("--intervention-type", type=str, required=True)
+    rec_p.add_argument("--cause", type=str)
+    rec_p.add_argument("--rating", type=int)
+
+    # Verify
+    ver_p = subparsers.add_parser("verify")
+    ver_p.add_argument("--event-id", type=str, required=True)
+    ver_p.add_argument("--next-rmssd", type=float, required=True)
+    ver_p.add_argument("--confounders-json", type=str, help='JSON: {"alcohol": false, "late_meal": true}')
+
+    # Expire
+    exp_p = subparsers.add_parser("expire")
+    exp_p.add_argument("--hours", type=int, default=48)
+
+    # Report
+    subparsers.add_parser("report")
+
+    # Hypotheses
+    hyp_p = subparsers.add_parser("hypotheses")
+    hyp_p.add_argument("--min-n", type=int, default=10)
+
+    args = parser.parse_args()
+    db_path = Path(args.db).expanduser()
+
+    if args.command == "record":
+        eid = record_intervention(
+            db_path=db_path,
+            date_str=args.date,
+            trigger_metric=args.metric,
+            baseline_mean=args.baseline_mean,
+            baseline_std=args.baseline_std,
+            deviation_sigma=args.deviation_sigma,
+            intervention_id=args.intervention_id,
+            intervention_type=args.intervention_type,
+            attributed_cause=args.cause,
+            subjective_rating=args.rating,
+        )
+        print(f"Recorded event: {eid}")
+    elif args.command == "verify":
+        flags = json.loads(args.confounders_json) if args.confounders_json else {}
+        res = verify_next_day_rebound(db_path, args.event_id, args.next_rmssd, flags)
+        print(json.dumps(res, indent=2))
+    elif args.command == "expire":
+        n = expire_stale_events(db_path, args.hours)
+        print(f"Expired {n} stale pending events.")
+    elif args.command == "report":
+        print(json.dumps(generate_report(db_path), indent=2))
+    elif args.command == "hypotheses":
+        print(json.dumps(get_verified_hypotheses(db_path, args.min_n), indent=2))
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
