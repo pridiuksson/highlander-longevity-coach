@@ -2,8 +2,11 @@
 """Rolling baseline computation, slope-break detection, and athletic confounder evaluation."""
 from __future__ import annotations
 import argparse
+from datetime import datetime, timedelta
 import json
 import math
+from pathlib import Path
+import sqlite3
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -154,8 +157,207 @@ def evaluate_biometric_state(
     }
 
 
+def scan_database(
+    db_path: Path,
+    target_date_str: str,
+    device_source: str = "auto",
+) -> Dict[str, Any]:
+    """Scan health.db tables to extract 28-day baseline, 7-day evaluation, and workout load."""
+    if not db_path.exists():
+        return {"status": "ERROR", "reason": f"Database file not found: {db_path}"}
+
+    target_dt = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+    eval_start = (target_dt - timedelta(days=7)).isoformat()
+    eval_end = target_dt.isoformat()
+    base_start = (target_dt - timedelta(days=35)).isoformat()
+    base_end = eval_start
+    prior_day = (target_dt - timedelta(days=1)).isoformat()
+
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    try:
+        tables = {
+            r[0]
+            for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type IN ('table', 'view')"
+            ).fetchall()
+        }
+
+        # 1. Autonomic metric series (Samsung RMSSD vs Apple SDNN)
+        hrv_base: List[float] = []
+        hrv_eval: List[float] = []
+        metric_name = "unknown"
+
+        if "hrv_window" in tables and device_source in ("auto", "samsung"):
+            metric_name = "nocturnal_rmssd"
+            rows_base = conn.execute(
+                """
+                SELECT AVG(rmssd_mean) as val
+                FROM hrv_window
+                WHERE substr(start_utc, 1, 10) >= ? AND substr(start_utc, 1, 10) < ?
+                  AND rmssd_mean > 0 AND rmssd_mean < 250
+                GROUP BY substr(start_utc, 1, 10)
+                ORDER BY substr(start_utc, 1, 10)
+                """,
+                (base_start, base_end),
+            ).fetchall()
+            hrv_base = [r["val"] for r in rows_base if r["val"] is not None]
+
+            rows_eval = conn.execute(
+                """
+                SELECT AVG(rmssd_mean) as val
+                FROM hrv_window
+                WHERE substr(start_utc, 1, 10) >= ? AND substr(start_utc, 1, 10) < ?
+                  AND rmssd_mean > 0 AND rmssd_mean < 250
+                GROUP BY substr(start_utc, 1, 10)
+                ORDER BY substr(start_utc, 1, 10)
+                """,
+                (eval_start, eval_end),
+            ).fetchall()
+            hrv_eval = [r["val"] for r in rows_eval if r["val"] is not None]
+
+        elif "hrv_sdnn" in tables and device_source in ("auto", "apple"):
+            metric_name = "hrv_sdnn"
+            rows_base = conn.execute(
+                """
+                SELECT AVG(value) as val
+                FROM hrv_sdnn
+                WHERE substr(ts, 1, 10) >= ? AND substr(ts, 1, 10) < ?
+                GROUP BY substr(ts, 1, 10)
+                ORDER BY substr(ts, 1, 10)
+                """,
+                (base_start, base_end),
+            ).fetchall()
+            hrv_base = [r["val"] for r in rows_base if r["val"] is not None]
+
+            rows_eval = conn.execute(
+                """
+                SELECT AVG(value) as val
+                FROM hrv_sdnn
+                WHERE substr(ts, 1, 10) >= ? AND substr(ts, 1, 10) < ?
+                GROUP BY substr(ts, 1, 10)
+                ORDER BY substr(ts, 1, 10)
+                """,
+                (eval_start, eval_end),
+            ).fetchall()
+            hrv_eval = [r["val"] for r in rows_eval if r["val"] is not None]
+
+        # 2. Resting Heart Rate series
+        rhr_base: List[float] = []
+        rhr_eval: List[float] = []
+        if "resting_hr" in tables:
+            rows_base = conn.execute(
+                """
+                SELECT AVG(value) as val
+                FROM resting_hr
+                WHERE substr(date, 1, 10) >= ? AND substr(date, 1, 10) < ?
+                GROUP BY substr(date, 1, 10)
+                ORDER BY substr(date, 1, 10)
+                """,
+                (base_start, base_end),
+            ).fetchall()
+            rhr_base = [r["val"] for r in rows_base if r["val"] is not None]
+
+            rows_eval = conn.execute(
+                """
+                SELECT AVG(value) as val
+                FROM resting_hr
+                WHERE substr(date, 1, 10) >= ? AND substr(date, 1, 10) < ?
+                GROUP BY substr(date, 1, 10)
+                ORDER BY substr(date, 1, 10)
+                """,
+                (eval_start, eval_end),
+            ).fetchall()
+            rhr_eval = [r["val"] for r in rows_eval if r["val"] is not None]
+
+        # 3. Workout context
+        prior_kcal = 0.0
+        prior_duration = 0.0
+        base_avg_kcal = 400.0
+
+        if "workouts" in tables:  # Apple schema
+            row = conn.execute(
+                """
+                SELECT SUM(energy_kcal) as kcal, SUM(duration_min) as duration
+                FROM workouts
+                WHERE substr(start, 1, 10) = ?
+                """,
+                (prior_day,),
+            ).fetchone()
+            if row and row["kcal"] is not None:
+                prior_kcal = float(row["kcal"])
+                prior_duration = float(row["duration"] or 0.0)
+
+            base_row = conn.execute(
+                """
+                SELECT AVG(daily_kcal) as avg_kcal FROM (
+                    SELECT SUM(energy_kcal) as daily_kcal
+                    FROM workouts
+                    WHERE substr(start, 1, 10) >= ? AND substr(start, 1, 10) < ?
+                    GROUP BY substr(start, 1, 10)
+                )
+                """,
+                (base_start, base_end),
+            ).fetchone()
+            if base_row and base_row["avg_kcal"]:
+                base_avg_kcal = float(base_row["avg_kcal"])
+
+        elif "workout" in tables:  # Samsung schema
+            row = conn.execute(
+                """
+                SELECT SUM(calorie) as kcal, SUM(duration_s / 60.0) as duration
+                FROM workout
+                WHERE substr(start_utc, 1, 10) = ?
+                """,
+                (prior_day,),
+            ).fetchone()
+            if row and row["kcal"] is not None:
+                prior_kcal = float(row["kcal"])
+                prior_duration = float(row["duration"] or 0.0)
+
+            base_row = conn.execute(
+                """
+                SELECT AVG(daily_kcal) as avg_kcal FROM (
+                    SELECT SUM(calorie) as daily_kcal
+                    FROM workout
+                    WHERE substr(start_utc, 1, 10) >= ? AND substr(start_utc, 1, 10) < ?
+                    GROUP BY substr(start_utc, 1, 10)
+                )
+                """,
+                (base_start, base_end),
+            ).fetchone()
+            if base_row and base_row["avg_kcal"]:
+                base_avg_kcal = float(base_row["avg_kcal"])
+
+    finally:
+        conn.close()
+
+    workout_context = {
+        "prior_day_kcal": prior_kcal,
+        "prior_day_duration_mins": prior_duration,
+        "baseline_avg_kcal": base_avg_kcal,
+        "persistent_dip_days": 1,
+    }
+
+    result = evaluate_biometric_state(
+        rmssd_base=hrv_base,
+        rmssd_eval=hrv_eval,
+        rhr_base=rhr_base if rhr_base else None,
+        rhr_eval=rhr_eval if rhr_eval else None,
+        workout_context=workout_context,
+    )
+    result["target_date"] = target_date_str
+    result["metric_name"] = metric_name
+    result["base_samples"] = len(hrv_base)
+    result["eval_samples"] = len(hrv_eval)
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description="Baseline math and athletic confounder engine")
+    parser.add_argument("--db", type=str, help="Path to SQLite health DB for direct table scan")
+    parser.add_argument("--date", type=str, help="Target evaluation date (YYYY-MM-DD) for database scan")
+    parser.add_argument("--source", type=str, default="auto", choices=["auto", "samsung", "apple"], help="Device source")
     parser.add_argument("--rmssd-base", type=str, help="JSON list of baseline RMSSD readings")
     parser.add_argument("--rmssd-eval", type=str, help="JSON list of evaluation RMSSD readings")
     parser.add_argument("--rhr-base", type=str, help="Optional JSON list of baseline RHR readings")
@@ -166,6 +368,19 @@ def main():
     parser.add_argument("--json", action="store_true", help="Output JSON result")
 
     args = parser.parse_args()
+
+    if args.db and args.date:
+        res = scan_database(Path(args.db).expanduser(), args.date, device_source=args.source)
+        if args.json:
+            print(json.dumps(res, indent=2))
+        else:
+            print(f"Target Date: {res.get('target_date')}")
+            print(f"Metric: {res.get('metric_name')}")
+            print(f"Status: {res['status']}")
+            print(f"Category: {res.get('category', 'N/A')}")
+            print(f"Suppress Outreach: {res.get('suppress_outreach', True)}")
+            print(f"Reason: {res.get('reason', 'N/A')}")
+        sys.exit(0)
 
     if not args.rmssd_base or not args.rmssd_eval:
         parser.print_help()
