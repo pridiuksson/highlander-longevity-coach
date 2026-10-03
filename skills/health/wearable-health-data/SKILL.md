@@ -39,6 +39,10 @@ consumer wearables into storage on the Hermes Linux server (headless, no Android
 
 - **The user asks to import, parse, store, or analyze Samsung Health / Galaxy Watch
   (or other wearable) export data on the server.
+- **Detecting autonomic slope breaks or filtering athletic workout confounders**
+  (rolling 28-day baseline, slope-not-level evaluation, workout kcal/duration vs. unexplained
+  autonomic drops): read `references/slope-break-heuristics.md` FIRST and run
+  `scripts/baseline_math.py` to evaluate personal trend breaks against individual baselines.
 - **Cross-device or decade-spanning analysis** (Garmin↔Samsung comparison,
   bedtime/duration trends, year-over-year): read
   `references/cross-device-sleep-analysis.md` FIRST — timestamp conventions
