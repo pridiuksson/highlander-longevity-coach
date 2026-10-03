@@ -29,10 +29,10 @@ CONTRIBUTING.md
 | **Ingest** | `apple-health-import`, `samsung-health-import`, `garmin-import`, `wearable-health-data` |
 | **Verify** | `evidence-loop`, `find-evidence`, `memory-reality-check` |
 | **Interpret** | `nutrition-advisory`, `supplement-spec-verification`, `meal-planning`, `swedish-food-nutrition` |
-| **Decide** | `peer-review` → `grill` → `deliberate` |
+| **Decide** | `stress-dialogue` (pre-decide triage) → `peer-review` → `grill` → `deliberate` |
 | **Plan** | `plan`, `schedule-management` |
 | **Deliver** | `proactive-coach` |
-| **Learn** | `proactive-coach` ledger, `eval-health`, `loop` |
+| **Learn** | `proactive-coach` ledger, `biometric-recovery-ledger`, `eval-health`, `loop` |
 | **Onboard** | `demo` — a fresh box's tour guide: runs real skills on the user's own questions, learns the user slowly (max 3 questions per session, skip allowed), rewards every answer instantly, retires itself at graduation |
 
 Two things make it a loop rather than a toolbox: **nothing reaches interpretation unverified**, and
