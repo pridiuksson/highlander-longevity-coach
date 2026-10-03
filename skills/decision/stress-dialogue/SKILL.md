@@ -20,6 +20,14 @@ metadata:
         description: "Local crisis resources provided if acute distress is detected"
         default: "988 (US/Canada), 112 (Europe), 116 123 (UK)"
         prompt: "Local crisis resources provided if acute distress is detected"
+      - key: stress.voice_enabled
+        description: "Allow voice note input/output during appraisal dialogue"
+        default: "true"
+        prompt: "Allow voice note input/output during appraisal dialogue"
+      - key: stress.voice_scratch_dir
+        description: "Ephemeral scratch directory for decrypted voice notes"
+        default: "~/health/temp/audio"
+        prompt: "Ephemeral scratch directory for decrypted voice notes"
     tags: [stress, cognitive-appraisal, triage, decision, mental-health-first-aid]
 ---
 
@@ -60,6 +68,17 @@ This skill acts as an early triage filter ahead of `Decide`:
 | **Uncertain** | Ambiguous Context | 5-Minute Grounding Walk / Water Pause |
 
 See `references/cognitive-appraisal-taxonomy.md` for full taxonomy and clinical grounding.
+
+## Mobile Voice Gateway
+
+For nocturnal waking or high emotional friction, users may communicate via short voice notes over WhatsApp, Telegram, or Signal rather than typing on a mobile keyboard.
+
+- **Sovereign Local Stack:** Runs local `faster-whisper` for speech-to-text and `piper-tts` for text-to-speech. Zero audio leaves the host machine.
+- **Acoustic Fail-Safe:** If an incoming voice note is muffled, whispered, or distorted under emotional distress, the engine triggers an acoustic fail-safe: emits gentle grounding and direct crisis helpline resources.
+- **Guaranteed Ephemeral Scratch Purge:** Decrypted voice notes are staged in RAM-disk (`/dev/shm`) and immediately shredded upon transcription.
+- **Anti-Rumination Cap:** Voice check-ins maintain the strict $\le 3$ turn limit.
+
+See `references/voice-gateway-setup.md` for full bridge configuration, tmpfs RAM-disk setup, and fail-safe directives.
 
 ## Execution
 
