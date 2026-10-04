@@ -155,6 +155,27 @@ command_allowlist:
 ```
 And pass `Environment="HERMES_ACCEPT_HOOKS=1"` and `Environment="HERMES_YOLO_MODE=1"` into their systemd service units.
 
+## Messaging Platform Display Configuration (Quiet Experience)
+
+To suppress intermediate tool calls, hide raw reasoning tokens (`<thought>`), and silence mid-turn commentary so mobile messaging users get a clean, quiet experience, configure `display.platforms` in `config.yaml`:
+
+```yaml
+display:
+  platforms:
+    telegram:
+      tool_progress: "off"                 # Completely strips tool calls from chat
+      show_reasoning: false                # Hides <thought> / Chain-of-Thought blocks
+      interim_assistant_messages: false   # Strips mid-turn commentary between tool calls
+      cleanup_progress: true               # Auto-deletes temporary progress bubbles upon completion
+      streaming: true                      # Uses smooth native draft streaming for final text
+
+    whatsapp:
+      tool_progress: "off"                 # Completely strips tool calls
+      show_reasoning: false                # Hides reasoning blocks
+      interim_assistant_messages: false   # Only delivers the final response
+      streaming: false                     # Delivers single clean final message (WhatsApp cannot edit drafts)
+```
+
 ## Persona Naming Architecture
 
 All `SOUL.md` templates ship with the `<AGENT_NAME>` placeholder rather than a fixed default persona name.
