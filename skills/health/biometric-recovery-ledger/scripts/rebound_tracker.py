@@ -60,8 +60,12 @@ def record_intervention(
     attributed_cause: Optional[str] = None,
     subjective_rating: Optional[int] = None,
 ) -> str:
-    """Record a new intervention check-in event in pending state."""
-    event_id = f"evt_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}"
+    try:
+        parsed_dt = datetime.strptime(date_str, "%Y-%m-%d")
+    except (ValueError, TypeError):
+        raise ValueError(f"date_str must be strictly formatted as YYYY-MM-DD, got {date_str!r}")
+    date_prefix = parsed_dt.strftime("%Y%m%d")
+    event_id = f"evt_{date_prefix}_{uuid.uuid4().hex[:8]}"
     created_ts = int(time.time())
 
     with get_connection(db_path) as conn:
@@ -287,14 +291,15 @@ def generate_report(db_path: Path) -> Dict[str, Any]:
         entry = by_type[itype]
         entry["total"] += 1
         status = r["status"]
-        if status == "resolved":
-            entry["resolved_unconfounded"] += 1
+        if status in ("resolved", "unresolved"):
+            if status == "resolved":
+                entry["resolved_unconfounded"] += 1
+            else:
+                entry["unresolved"] += 1
             if r["rebound_sigma"] is not None:
                 entry["unconfounded_rebound_sigmas"].append(r["rebound_sigma"])
             if r["rebound_delta_sigma"] is not None:
                 entry["unconfounded_rebound_deltas"].append(r["rebound_delta_sigma"])
-        elif status == "unresolved":
-            entry["unresolved"] += 1
         elif status == "confounded":
             entry["confounded"] += 1
         elif status == "expired":
@@ -332,6 +337,7 @@ def generate_report(db_path: Path) -> Dict[str, Any]:
         )
         summary[itype] = {
             "total_events": data["total"],
+            "unconfounded_observation_count": data["resolved_unconfounded"] + data["unresolved"],
             "unconfounded_rebound_count": data["resolved_unconfounded"],
             "unresolved_count": data["unresolved"],
             "confounded_count": data["confounded"],
@@ -353,13 +359,15 @@ def get_verified_hypotheses(
     report = generate_report(db_path)
     hypotheses = []
     for itype, stats in report["interventions"].items():
-        if stats["unconfounded_rebound_count"] >= min_observations:
+        if stats["unconfounded_observation_count"] >= min_observations:
             avg_delta = stats["avg_unconfounded_rebound_delta_sigma"]
             if avg_delta is not None and avg_delta >= min_rebound_delta_sigma:
                 delta_str = f"{avg_delta:+.2f}σ"
                 hypotheses.append({
                     "intervention_type": itype,
-                    "unconfounded_n": stats["unconfounded_rebound_count"],
+                    "unconfounded_n": stats["unconfounded_observation_count"],
+                    "unconfounded_rebound_count": stats["unconfounded_rebound_count"],
+                    "unresolved_count": stats["unresolved_count"],
                     "avg_rebound_delta_sigma": avg_delta,
                     "avg_rebound_sigma": stats["avg_unconfounded_rebound_sigma"],
                     "avg_subjective_rating": stats["avg_subjective_rating"],
@@ -371,13 +379,67 @@ def get_verified_hypotheses(
     return hypotheses
 
 
+def generate_weekly_recap(
+    db_path: Path,
+    min_observations: int = 10,
+    min_rebound_delta_sigma: float = 1.0,
+) -> str:
+    """Generate a single 1-line somatic recovery recap adhering to minimum sample rules."""
+    hypotheses = get_verified_hypotheses(
+        db_path,
+        min_observations=min_observations,
+        min_rebound_delta_sigma=min_rebound_delta_sigma,
+    )
+    if hypotheses:
+        top = sorted(hypotheses, key=lambda h: h["avg_rebound_delta_sigma"], reverse=True)[0]
+        name = top["intervention_type"]
+        delta = top["avg_rebound_delta_sigma"]
+        n = top["unconfounded_n"]
+        rebounds = top["unconfounded_rebound_count"]
+        sign = "+" if delta >= 0 else ""
+        return (
+            f"Weekly Somatic Recap: {name} associated with {sign}{delta:.2f}σ recovery rebound "
+            f"({rebounds}/{n} recovery rate across {n} unconfounded verified observations)."
+        )
+
+    report = generate_report(db_path)
+    interventions = report.get("interventions", {})
+    if not interventions:
+        return "Weekly Somatic Recap: Insufficient unconfounded somatic recovery trials to summarize a trend."
+
+    top_candidate = sorted(
+        interventions.items(),
+        key=lambda x: (x[1]["unconfounded_observation_count"], x[1]["avg_unconfounded_rebound_delta_sigma"] or -99),
+        reverse=True,
+    )[0]
+    c_name, c_stats = top_candidate
+    n_obs = c_stats["unconfounded_observation_count"]
+    avg_delta = c_stats["avg_unconfounded_rebound_delta_sigma"]
+
+    if n_obs < min_observations:
+        return (
+            f"Weekly Somatic Recap: {c_name} recorded {n_obs} unconfounded check-in(s) "
+            f"(preliminary; awaiting ≥{min_observations} observations for habit hypothesis promotion)."
+        )
+    elif avg_delta is not None and avg_delta < min_rebound_delta_sigma:
+        sign = "+" if avg_delta >= 0 else ""
+        return (
+            f"Weekly Somatic Recap: {c_name} reached {n_obs} observations but average rebound delta "
+            f"({sign}{avg_delta:.2f}σ) is below promotion threshold (+{min_rebound_delta_sigma:.1f}σ)."
+        )
+
+    return "Weekly Somatic Recap: Insufficient unconfounded somatic recovery trials to summarize a trend."
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Biometric recovery and rebound ledger")
-    parser.add_argument("--db", type=str, default="~/.hermes/data/health.db", help="Path to SQLite health DB")
+    db_parent = argparse.ArgumentParser(add_help=False)
+    db_parent.add_argument("--db", type=str, default="~/.hermes/data/health.db", help="Path to SQLite health DB")
+
+    parser = argparse.ArgumentParser(description="Biometric recovery and rebound ledger", parents=[db_parent])
     subparsers = parser.add_subparsers(dest="command")
 
     # Record
-    rec_p = subparsers.add_parser("record")
+    rec_p = subparsers.add_parser("record", parents=[db_parent])
     rec_p.add_argument("--date", type=str, required=True)
     rec_p.add_argument("--metric", type=str, default="nocturnal_rmssd")
     rec_p.add_argument("--baseline-mean", type=float, required=True)
@@ -389,27 +451,32 @@ def main():
     rec_p.add_argument("--rating", type=int)
 
     # Verify
-    ver_p = subparsers.add_parser("verify")
+    ver_p = subparsers.add_parser("verify", parents=[db_parent])
     ver_p.add_argument("--event-id", type=str, required=True)
     ver_p.add_argument("--next-rmssd", type=float, required=True)
     ver_p.add_argument("--confounders-json", type=str, help='JSON: {"alcohol": false, "late_meal": true}')
 
     # Auto-Verify (direct from DB)
-    auto_p = subparsers.add_parser("auto-verify")
+    auto_p = subparsers.add_parser("auto-verify", parents=[db_parent])
     auto_p.add_argument("--event-id", type=str, required=True)
     auto_p.add_argument("--confounders-json", type=str, help='Optional JSON manual confounders (e.g. alcohol)')
 
     # Expire
-    exp_p = subparsers.add_parser("expire")
+    exp_p = subparsers.add_parser("expire", parents=[db_parent])
     exp_p.add_argument("--hours", type=int, default=48)
 
     # Report
-    subparsers.add_parser("report")
+    subparsers.add_parser("report", parents=[db_parent])
 
     # Hypotheses
-    hyp_p = subparsers.add_parser("hypotheses")
+    hyp_p = subparsers.add_parser("hypotheses", parents=[db_parent])
     hyp_p.add_argument("--min-n", type=int, default=10)
     hyp_p.add_argument("--min-delta", type=float, default=1.0)
+
+    # Recap
+    recap_p = subparsers.add_parser("recap", parents=[db_parent])
+    recap_p.add_argument("--min-n", type=int, default=10)
+    recap_p.add_argument("--min-delta", type=float, default=1.0)
 
     args = parser.parse_args()
     db_path = Path(args.db).expanduser()
@@ -450,6 +517,14 @@ def main():
                     min_rebound_delta_sigma=args.min_delta,
                 ),
                 indent=2,
+            )
+        )
+    elif args.command == "recap":
+        print(
+            generate_weekly_recap(
+                db_path,
+                min_observations=args.min_n,
+                min_rebound_delta_sigma=args.min_delta,
             )
         )
     else:

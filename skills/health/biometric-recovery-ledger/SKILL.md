@@ -100,3 +100,9 @@ python3 ${HERMES_SKILL_DIR}/scripts/rebound_tracker.py hypotheses \
   --min-n 10 \
   --min-delta 1.0
 ```
+
+Generate 1-line somatic recap for weekly crunch:
+
+```bash
+python3 ${HERMES_SKILL_DIR}/scripts/rebound_tracker.py recap --db ${health.db}
+```
