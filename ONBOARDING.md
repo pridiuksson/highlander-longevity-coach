@@ -181,6 +181,31 @@ When a skill loads, its resolved values are injected into the message as a `[Ski
 That is why nothing under `skills/` needs hand-editing: a clone can live anywhere, and no path is
 baked into an installed file.
 
+### Messaging display settings (quiet experience for Telegram and WhatsApp)
+
+Mobile coaching interactions over Telegram or WhatsApp should feel like talking to a human coach, not a CLI console. By default, messaging platforms can show intermediate tool executions, model thought tokens (`<thought>`), or mid-turn narration ("I will now check...").
+
+Hermes includes a per-platform display resolver (`display_config.py`). Configure `display.platforms` in `config.yaml` (`~/.hermes/config.yaml` or a tenant's `~/.hermes/profiles/<name>/config.yaml`) to suppress intermediate chatter:
+
+```yaml
+display:
+  platforms:
+    telegram:
+      tool_progress: "off"                 # Completely strips tool calls from chat
+      show_reasoning: false                # Hides <thought> / Chain-of-Thought blocks
+      interim_assistant_messages: false   # Strips mid-turn commentary between tool calls
+      cleanup_progress: true               # Auto-deletes temporary progress bubbles upon completion
+      streaming: true                      # Uses smooth native draft streaming for final text
+
+    whatsapp:
+      tool_progress: "off"                 # Completely strips tool calls
+      show_reasoning: false                # Hides reasoning blocks
+      interim_assistant_messages: false   # Only delivers the final response
+      streaming: false                     # Delivers single clean final message (WhatsApp cannot edit drafts)
+```
+
+For multi-tenant setups, ensure this block is mirrored in each tenant's `~/.hermes/profiles/<name>/config.yaml`.
+
 ### Memory provider (optional)
 
 The kit's memory is three plain files — `SOUL.md`, `USER.md`, `MEMORY.md` (step 7) — plus your
@@ -653,6 +678,8 @@ systemctl --user daemon-reload
 systemctl --user enable --now hermes-gateway-<tenant>.service
 ```
 *(Keep the unit stopped until pairing completes: preflight requires `session/creds.json` on disk; starting before pairing exits `78/CONFIG`).*
+
+Make sure the tenant's `~/.hermes/profiles/<tenant>/config.yaml` includes the quiet `display.platforms` configuration (from Step 5) and autonomous execution (`approvals: mode: "off"`, `command_allowlist`) so the tenant experiences a clean mobile inbox without intermediate tool noise or blocking approval prompts.
 
 ### Handover State Sanitization
 
