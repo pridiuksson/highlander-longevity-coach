@@ -15,6 +15,7 @@ from rebound_tracker import (
     expire_stale_events,
     generate_report,
     get_verified_hypotheses,
+    generate_weekly_recap,
     get_connection,
 )
 
@@ -215,6 +216,141 @@ class TestReboundTracker(unittest.TestCase):
         )
         marginal_low = [h for h in hyp_low if h["intervention_type"] == "marginal_stretch"]
         self.assertEqual(len(marginal_low), 1)
+
+    def test_generate_weekly_recap(self):
+        """Test weekly 1-line recap across empty, preliminary, and promoted states."""
+        # 1. Empty DB
+        empty_recap = generate_weekly_recap(self.db_path)
+        self.assertIn("Insufficient unconfounded", empty_recap)
+
+        # 2. Preliminary trials (3 observations)
+        for i in range(3):
+            eid = record_intervention(
+                db_path=self.db_path,
+                date_str=f"2026-06-{i+1:02d}",
+                trigger_metric="nocturnal_rmssd",
+                baseline_mean=60.0,
+                baseline_std=5.0,
+                deviation_sigma=-1.8,
+                intervention_id=f"act_prelim_{i}",
+                intervention_type="single_task_lock",
+            )
+            verify_next_day_rebound(
+                db_path=self.db_path,
+                event_id=eid,
+                next_night_rmssd=60.0,
+                confounder_flags={"alcohol": False},
+            )
+        prelim_recap = generate_weekly_recap(self.db_path, min_observations=10)
+        self.assertIn("3 unconfounded check-in(s)", prelim_recap)
+        self.assertIn("preliminary", prelim_recap)
+
+        # 3. Reach 10 observations with positive rebound delta >= 1.0 sigma
+        for i in range(3, 10):
+            eid = record_intervention(
+                db_path=self.db_path,
+                date_str=f"2026-06-{i+1:02d}",
+                trigger_metric="nocturnal_rmssd",
+                baseline_mean=60.0,
+                baseline_std=5.0,
+                deviation_sigma=-1.8,
+                intervention_id=f"act_prelim_{i}",
+                intervention_type="single_task_lock",
+            )
+            verify_next_day_rebound(
+                db_path=self.db_path,
+                event_id=eid,
+                next_night_rmssd=60.0,
+                confounder_flags={"alcohol": False},
+            )
+        promoted_recap = generate_weekly_recap(self.db_path, min_observations=10, min_rebound_delta_sigma=1.0)
+        self.assertIn("single_task_lock", promoted_recap)
+        self.assertIn("10 unconfounded verified observations", promoted_recap)
+
+    def test_unresolved_included_in_unconfounded_observations(self):
+        """Unresolved events (verified confounder-free but failed to rebound) must count toward unconfounded observations."""
+        # Record 5 resolved (+1.5 delta) and 5 unresolved (-0.5 delta)
+        for i in range(5):
+            eid = record_intervention(
+                db_path=self.db_path,
+                date_str=f"2026-05-{i+1:02d}",
+                trigger_metric="nocturnal_rmssd",
+                baseline_mean=60.0,
+                baseline_std=5.0,
+                deviation_sigma=-1.5,
+                intervention_id=f"act_mix_{i}",
+                intervention_type="mixed_action",
+            )
+            # Rebounds to 60.0 (z=0.0, delta=+1.5)
+            verify_next_day_rebound(self.db_path, eid, 60.0, {"alcohol": False})
+
+        for i in range(5, 10):
+            eid = record_intervention(
+                db_path=self.db_path,
+                date_str=f"2026-05-{i+1:02d}",
+                trigger_metric="nocturnal_rmssd",
+                baseline_mean=60.0,
+                baseline_std=5.0,
+                deviation_sigma=-1.5,
+                intervention_id=f"act_mix_{i}",
+                intervention_type="mixed_action",
+            )
+            # Dips further to 50.0 (z=-2.0, delta=-0.5, unresolved)
+            verify_next_day_rebound(self.db_path, eid, 50.0, {"alcohol": False})
+
+        rep = generate_report(self.db_path)
+        stats = rep["interventions"]["mixed_action"]
+        self.assertEqual(stats["unconfounded_observation_count"], 10)
+        self.assertEqual(stats["unconfounded_rebound_count"], 5)
+        self.assertEqual(stats["unresolved_count"], 5)
+        # Average delta across all 10 unconfounded observations is (5*1.5 + 5*(-0.5)) / 10 = +0.5 sigma
+        self.assertEqual(stats["avg_unconfounded_rebound_delta_sigma"], 0.5)
+
+    def test_strict_date_validation(self):
+        """Invalid date formats must raise ValueError."""
+        with self.assertRaises(ValueError):
+            record_intervention(
+                db_path=self.db_path,
+                date_str="2026/10/03",
+                trigger_metric="nocturnal_rmssd",
+                baseline_mean=60.0,
+                baseline_std=5.0,
+                deviation_sigma=-1.5,
+                intervention_id="act_bad_date",
+                intervention_type="single_task_lock",
+            )
+        with self.assertRaises(ValueError):
+            record_intervention(
+                db_path=self.db_path,
+                date_str="",
+                trigger_metric="nocturnal_rmssd",
+                baseline_mean=60.0,
+                baseline_std=5.0,
+                deviation_sigma=-1.5,
+                intervention_id="act_bad_date",
+                intervention_type="single_task_lock",
+            )
+
+    def test_cli_subparser_db_argument(self):
+        """CLI must accept --db after subcommand without unrecognized argument errors."""
+        import subprocess
+        script_path = SKILL_ROOT / "scripts" / "rebound_tracker.py"
+        cmd = [
+            sys.executable,
+            str(script_path),
+            "record",
+            "--db", str(self.db_path),
+            "--date", "2026-10-04",
+            "--metric", "nocturnal_rmssd",
+            "--baseline-mean", "60.0",
+            "--baseline-std", "5.0",
+            "--deviation-sigma", "-1.8",
+            "--intervention-id", "cli_test_01",
+            "--intervention-type", "single_task_lock",
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"CLI record failed: {res.stderr}")
+        self.assertIn("Recorded event: evt_20261004_", res.stdout)
 
 
 if __name__ == "__main__":

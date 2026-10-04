@@ -56,15 +56,19 @@ Two modes:
    what the output will look like (structure, not numbers), then show the exact command the user
    runs when they have the real export.
 2. **Facts go where other skills read — nowhere else.** Health facts (weight, diet, constraints,
-   sleep window, supplements, goals) → `health.baseline_doc` (default `~/health/baseline.md`,
-   or wherever `skills.config.health.baseline_doc` points — read the config, don't assume the
-   default), using its existing section structure; unknowns stay `<unknown>` — never a guess.
-   Identity/preference facts (city, language, role, reply style) → `~/.hermes/memories/USER.md`.
-   Demo's own plumbing — a **pointer ledger only** (which fact lives where, ask timestamps,
-   budget) — goes to `$HERMES_HOME/data/demo/state.json`; fact **values** are never duplicated
-   into state.json, so there is exactly one source of truth and no PII copy outside the homes
-   the kit already uses. **Nothing user-specific ever lands inside the skill directory or this
-   repo.**
+   sleep window, supplements, goals, cognitive friction/stress patterns) → `health.baseline_doc`
+   (default `~/health/baseline.md`, or wherever `skills.config.health.baseline_doc` points — read
+   the config, don't assume the default), using its existing section structure; unknowns stay
+   `<unknown>` — never a guess. Identity/preference facts (city, language, role, reply style) →
+   `~/.hermes/memories/USER.md`. Demo's own plumbing — a **pointer ledger only** (which fact lives
+   where, ask timestamps, budget) — goes to `$HERMES_HOME/data/demo/state.json`; fact **values** are
+   never duplicated into state.json, so there is exactly one source of truth and no PII copy outside
+   the homes the kit already uses. **Nothing user-specific ever lands inside the skill directory or
+   this repo.**
+   2b. **Crisis Interlock Overrides Fact Storage:** If running a `stress-dialogue` demo triggers
+   `CRISIS_HALT`, the demo halts immediately, emits emergency crisis helpline resources, and
+   writes **nothing** to `baseline.md`, `USER.md`, or `state.json`. Zero persistence on crisis
+   strictly overrides fact recording.
 3. **Max 3 questions per session, skip always an option.** A skipped question is recorded as
    `unknown` with the date — it may be re-offered once after 14 days, never twice.
    3b. **Daily cap across both modes**: tour questions and learn-cron asks draw from one shared
@@ -94,7 +98,7 @@ Dispatch strictly to the corresponding track:
 |---|---|---|
 | **Track 1: Athletic / Performance** (Strength, Cardio, Endurance, Wearables) | `apple-health-import`, `garmin-import`, `samsung-health-import`, `nutrition-advisory` (protein targets & periodization) | Swedish grocery store pricing / `swedish-food-nutrition` |
 | **Track 2: Metabolic / Nutrition** (Diet, Blood Sugar, Weight, Everyday Meals) | `swedish-food-nutrition` (live store search & pricing), `meal-planning`, `supplement-spec-verification` | Heavy wearable telemetry pipelines |
-| **Track 3: Sleep / Cognitive / Deliberation** (Recovery, Stress, Executive Decisions) | `proactive-coach` (quiet-hours preview & recovery digest), `deliberate` / `grill` / `peer-review` | Grocery pricing |
+| **Track 3: Sleep / Cognitive / Deliberation** (Recovery, Stress, Executive Decisions) | `stress-dialogue` (pre-Decide cognitive appraisal & anti-rumination triage), `biometric-recovery-ledger` (closed-loop somatic rebound tracking), `proactive-coach` (quiet-hours preview & recovery digest), `deliberate` / `grill` / `peer-review` | Grocery pricing |
 
 ### First-Day Plain-English Metric Grounding (Anti-Jargon Rule)
 
@@ -108,13 +112,15 @@ When introducing biometric indicators or clinical concepts for the first time du
 | **Sleep Stages (Deep / REM)** | *"Deep sleep is physical restoration (tissue repair and growth hormone release); REM sleep is neurological restoration (memory consolidation and emotional calibration)."* |
 | **GERD / TLESR** | *"Transient relaxations of your lower esophageal sphincter — acid washing upward because the muscular valve temporarily loosens, triggered by sugar or large late meals."* |
 | **Concurrent Interference (AMPK vs mTORC1)** | *"The muscle vs endurance cellular signal clash — heavy lifting tells muscles to grow, while long cardio right next to it sends an endurance signal that can blunt that growth."* |
+| **Cognitive Appraisal Triage** | *"Categorizing stress by perceived control and physical state — distinguishing eustress (focus challenge), distress (threat), recovery drain (sleep deficit), or uncertain ambiguity to pick exactly one micro-action."* |
+| **Autonomic Rebound Delta** | *"The measured physiological recovery of your nervous system (HRV/sleep) relative to the dip trough following an unconfounded night."* |
 
 Once grounded during the onboarding tour, steady-state conversations transition to dense, concise reporting without repeating explanatory definitions.
 
 | Tier | Skills | Demo style |
 |---|---|---|
-| **A — live** | swedish-food-nutrition, find-evidence, supplement-spec-verification, nutrition-advisory, meal-planning, deliberate, grill, peer-review, loop, plan, ticket/commit/create-pr/work, schedule-management | Run for real on the user's own question matching their goal track. |
-| **B — shadow** | apple-health-import, garmin-import, samsung-health-import, wearable-health-data, evidence-loop, proactive-coach, eval-health | Show the pipeline + redacted reference docs; name the one export/command that turns it live. Label it clearly: "this runs when you have X". **Pitch each Tier-B skill at most once ever** (tracked via the facts map's `pitched_once` flag, catalog §state) — after that, only if the user asks about it |
+| **A — live** | swedish-food-nutrition, find-evidence, supplement-spec-verification, nutrition-advisory, meal-planning, stress-dialogue, deliberate, grill, peer-review, loop, plan, ticket/commit/create-pr/work, schedule-management | Run for real on the user's own question matching their goal track. |
+| **B — shadow** | apple-health-import, garmin-import, samsung-health-import, wearable-health-data, biometric-recovery-ledger, evidence-loop, proactive-coach, eval-health | Show the pipeline + redacted reference docs; name the one export/command that turns it live. Label it clearly: "this runs when you have X". **Pitch each Tier-B skill at most once ever** (tracked via the facts map's `pitched_once` flag, catalog §state) — after that, only if the user asks about it |
 
 Tour session shape:
 

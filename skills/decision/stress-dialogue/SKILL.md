@@ -67,7 +67,7 @@ This skill acts as an early triage filter ahead of `Decide`:
 | **Recovery Drain** | Low Control, Depleted | Early Sleep Window; training deload; zero guilt |
 | **Uncertain** | Ambiguous Context | 5-Minute Grounding Walk / Water Pause |
 
-See `references/cognitive-appraisal-taxonomy.md` for full taxonomy and clinical grounding.
+See `references/cognitive-appraisal-taxonomy.md` for full taxonomy and `references/therapeutic-frameworks.md` for clinical psychotherapy inspirations, normative modeling foundations, and non-negotiable clinical scope boundaries.
 
 ## Mobile Voice Gateway
 

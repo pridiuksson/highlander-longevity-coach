@@ -50,6 +50,12 @@ Every entry: what it shows, `min_facts` (needed before it can run for real), and
   lands harder than any explanation. Mention `deliberate` for multi-domain health calls and
   `peer-review` as the 15-second reflex.
 
+### stress-dialogue (Track 3 Flagship: Cognitive Appraisal & Stress Triage)
+
+- **min_facts:** user mentions acute overwhelm, cognitive friction, or a deadline threat.
+- **tour:** run `stress-dialogue` in text triage mode (`dialogue_triage.py --text "<USER_INPUT>"`); note that without telemetry flags, triage operates in text-appraisal mode. Show warm validation, structured appraisal, and commitment to exactly 1 tactical micro-action (`60-Minute Focus Boundary`, `Cyclic Physiological Sighing`, `Early Sleep Window`, or `5-Minute Grounding Pause`).
+- **reward for `stress_pattern`:** run `dialogue_triage.py` on the friction context, previewing its classified appraisal quadrant and single recommended micro-action.
+
 ### ticket → work → commit → create-pr (workflow)
 
 - **min_facts:** any repo on the box.
@@ -75,6 +81,13 @@ Every entry: what it shows, `min_facts` (needed before it can run for real), and
 - **reward for `wearable_hardware`:** configure ingestion pipeline and preview recovery metric baselines.
 - **Close with:** the exact command the user runs when they have the export, and the gate suite
   that must pass before any number is trusted.
+
+### biometric-recovery-ledger
+
+- **Shows:** closed-loop outcome verification, tracking next-night autonomic rebound (HRV/sleep) after a coaching micro-action, filtering out alcohol, late dinner, bedtime drift, and heavy training confounders, requiring $N \ge 10$ unconfounded trials ($\Delta\sigma \ge +1.0$) for habit promotion.
+- **min_facts:** `wearable_hardware` + an imported health database or completed triage event.
+- **tour/reward:** preview the recovery ledger verification pipeline and unconfounded rebound delta tracking.
+- **Close with:** `python3 skills/health/biometric-recovery-ledger/scripts/rebound_tracker.py auto-verify --event-id <EVENT_ID>` (turns live when export is ingested).
 
 ### evidence-loop
 
@@ -115,6 +128,7 @@ Every entry: what it shows, `min_facts` (needed before it can run for real), and
 3. `wearable_hardware` / recovery tracking preference (reward: HRV/RHR wearable tracking preview)
 4. `evening_winddown_constraint` (reward: caffeine/screen cutoff schedule preview)
 5. `supplements` / sleep stack (reward: spec verification via `supplement-spec-verification`)
+6. `stress_pattern` / primary cognitive friction (reward: run `dialogue_triage.py` on the friction context, previewing its classified appraisal quadrant and single recommended micro-action)
 
 ## State schema (`$HERMES_HOME/data/demo/state.json`)
 
