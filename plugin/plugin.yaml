@@ -28,8 +28,8 @@ config_schema:
   proactive.quiet_hours:
     type: str
     default: "08:00-21:00"
-    description: "Local window for DIGEST delivery"
+    description: "Delivery window for DIGEST messages (HH:MM-HH:MM). Messages delivered ONLY inside this window. Default = daytime delivery."
   proactive.timezone:
     type: str
     default: ""
-    description: "IANA timezone for quiet hours"
+    description: "IANA timezone (e.g. Europe/Stockholm). Empty = UTC; set this to avoid midnight delivery."

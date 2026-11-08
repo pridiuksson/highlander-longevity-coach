@@ -105,10 +105,13 @@ def _coach_recovery_report(args: Dict[str, Any]) -> str:
 
 
 def _coach_run_crunch(args: Dict[str, Any]) -> str:
-    # Manual trigger for the weekly crunch: run triage on a provided text,
-    # record a recovery event if requested, and return a consolidated report.
+    demo = bool(args.get("demo", False))
     text = args.get("text", "")
+    if demo and not text:
+        text = "I feel tired and overwhelmed after a busy week."
     parts = []
+    if demo:
+        parts.append("[DEMO / SYNTHETIC DATA — no writes to live ledger or health.db]")
     crisis = triage.check_crisis(text)
     if crisis is not None:
         parts.append("CRISIS: " + crisis["message"])
@@ -117,12 +120,16 @@ def _coach_run_crunch(args: Dict[str, Any]) -> str:
         micro = triage.recommend(appr.get("quadrant", "UNCERTAIN"))
         parts.append("appraisal=" + json.dumps(appr))
         parts.append("micro_action=" + json.dumps(micro))
-    parts.append("ledger_report=" + ledger.report())
-    db = Path(args.get("db_path") or _recovery_db())
-    try:
-        parts.append("recovery_report=" + json.dumps(recovery.generate_report(db), default=str))
-    except Exception as e:
-        parts.append("recovery_report_error=" + str(e))
+    if demo:
+        parts.append("ledger_report=DEMO: 1 pending entry (synthetic, not persisted)")
+        parts.append("recovery_report=DEMO: {\"interventions\": {}}")
+    else:
+        parts.append("ledger_report=" + ledger.report())
+        db = Path(args.get("db_path") or _recovery_db())
+        try:
+            parts.append("recovery_report=" + json.dumps(recovery.generate_report(db), default=str))
+        except Exception as e:
+            parts.append("recovery_report_error=" + str(e))
     return "\n".join(parts)
 
 
@@ -191,6 +198,7 @@ _RUN_CRUNCH_SCHEMA = {
     "type": "object",
     "properties": {
         "text": {"type": "string", "description": "Optional text to triage during the crunch"},
+        "demo": {"type": "boolean", "description": "Run in demo mode with synthetic data (no persistence)"},
         "db_path": {"type": "string"},
     },
 }

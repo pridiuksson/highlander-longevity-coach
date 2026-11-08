@@ -14,9 +14,24 @@ This repo ships a Hermes Agent plugin (`plugin/`, entry longevity-coach) for the
 
 **Disclosure:** This plugin sends health-related values to whichever model provider your Hermes session uses. Health data stays on your device; only the values referenced in prompts leave the box, subject to your provider's policy. The `weekly-crunch` blueprint is self-contained; the full coaching loop (stress triage, recovery scoring) is enhanced if you also have the on-disk `proactive-coach` and `stress-dialogue` skills installed.
 
+## Plugin Onboarding (3 steps, ~3 min)
+
+1. **Install + enable:** `hermes plugins install longevity-coach` (or from this repo's `plugin/` subdir). Verify with `hermes plugins doctor`.
+2. **First value:** Say to Hermes: *"Run the longevity crunch in demo mode"* (or invoke `coach_run_crunch` with `demo=true`). This runs on bundled synthetic data — no writes to your live ledger or health database. You will see an appraisal, a micro-action, and a report. That is the "it works" moment.
+3. **Explore:** Copy-paste prompts to try:
+   - *"Use longevity-coach:grill to decide: should I adopt X?"*
+   - *"Load longevity-coach:plan and help me plan my week."*
+   - *"What skills are in the longevity-coach bundle?"*
+
+**Going further (full coaching loop):** The plugin ships 9 standalone skills + tools + a blueprint. For the full proactive coaching loop (stress triage, recovery scoring, evidence verification, proactive delivery), you also need the on-disk skills from this repo's `skills/` directory: `proactive-coach`, `stress-dialogue`, `evidence-loop`, `biometric-recovery-ledger`, `nutrition-advisory`, `wearable-health-data`. Install them with `cp -r skills/* ~/.hermes/skills/` and set `skills.config.*` keys (see ONBOARDING.md in the repo). The `weekly-crunch` blueprint works standalone; the full loop is enhanced with those skills.
+
+**Blueprint activation:** After install, run `/suggestions` to see the pending `longevity-coach:weekly-crunch` blueprint, then `/suggestions accept <n>` to create the weekly job. Set `proactive.timezone` to your IANA timezone first.
+
+**Config defaults:** `health.db` defaults to `${HERMES_HOME}/data/health.db`, `health.health_dir` to `~/health`, `proactive.quiet_hours` to `08:00-21:00` (delivery window — DIGEST messages go out only inside this window), `proactive.timezone` to empty (UTC — set your IANA timezone to avoid midnight delivery).
+
 **Trust model:** Tools accept a `db_path` argument for flexibility; in normal Hermes use the model passes the configured `health.db` path. As with any Hermes tool, the active session can read/write files the profile can access — treat the plugin's tool calls with the same trust as built-in file/SQLite tools.
 
-See `~/.hermes/plugin-contest.md` for the build plan and `plugin/plugin.yaml` for the manifest.
+See `plugin/plugin.yaml` for the manifest.
 
 ```
 skills/       the coaching skills, grouped by the stage of the loop they serve
