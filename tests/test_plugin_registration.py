@@ -69,6 +69,31 @@ def _load_plugin():
     return mod
 
 
+import hashlib
+
+
+def _md5(path):
+    return hashlib.md5(Path(path).read_bytes()).hexdigest()
+
+
+def test_vendored_impls_match_sources():
+    """Vendored copies in plugin/tools/ must stay byte-identical to source skill scripts."""
+    pairs = [
+        (PLUGIN_DIR / "tools" / "_ledger_impl.py",
+         REPO_ROOT / "skills" / "proactive" / "proactive-coach" / "scripts" / "ledger.py"),
+        (PLUGIN_DIR / "tools" / "_triage_impl.py",
+         REPO_ROOT / "skills" / "decision" / "stress-dialogue" / "scripts" / "dialogue_triage.py"),
+        (PLUGIN_DIR / "tools" / "_recovery_impl.py",
+         REPO_ROOT / "skills" / "health" / "biometric-recovery-ledger" / "scripts" / "rebound_tracker.py"),
+    ]
+    for vendored, source in pairs:
+        assert vendored.exists(), f"missing vendored copy: {vendored}"
+        assert source.exists(), f"missing source: {source}"
+        assert _md5(vendored) == _md5(source), (
+            f"drift: {vendored} != {source}"
+        )
+
+
 def test_registration_matches_manifest():
     declared = set(_read_provides_tools())
     plugin = _load_plugin()
