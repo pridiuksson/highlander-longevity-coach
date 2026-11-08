@@ -1,5 +1,9 @@
 # Onboarding — from clone to a working coach
 
+> **Plugin user?** If you installed via `hermes plugins install longevity-coach`, follow the
+> 3-step quickstart in [README.md](./README.md) instead. This document covers the full
+> repo/operator setup (profile distribution, data import, tenant onboarding, troubleshooting).
+
 This takes you from a clean Hermes box to a health coach that ingests your data, verifies it, and
 reaches out when — and only when — something is worth saying.
 
