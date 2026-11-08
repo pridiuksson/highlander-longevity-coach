@@ -37,7 +37,9 @@ metadata:
 
 # Demo — Show it working, learn the user, get out of the way
 
-A fresh adopter has 22 skills and zero data. This skill exists to close that gap by doing, not
+> **Plugin dependency:** 8 of the skills this tour demos (grill, find-evidence, supplement-spec-verification, meal-planning, swedish-food-nutrition, schedule-management, and the plan/loop helpers) now ship via the `longevity-coach` Hermes plugin, not the on-disk bundle. Install the plugin first (`hermes plugins install longevity-coach`) or those demos will not resolve.
+
+A fresh adopter has the kit and zero data. This skill exists to close that gap by doing, not
 describing: every demo is a **real skill run on the user's own input**, and every fact learned is
 written **where the other skills already read**. When the profile is complete, this skill retires
 itself and hands the user to `proactive-coach`.

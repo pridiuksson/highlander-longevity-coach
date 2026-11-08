@@ -1,5 +1,5 @@
 name: highlander-longevity-coach
-version: "2026.09.21-0"
+version: "2026.11.08-0"
 description: >
   Health-coach kit for the Hermes agent: a reusable skills bundle plus profile
   templates (Catalyst, Visionary, Operator, Scholar, Guide, Concise, Rebuilder,
@@ -12,25 +12,23 @@ hermes_requires: ">=0.21.0"
 license: MIT
 author: highlander-longevity-coach contributors
 distribution_owned:
-  # Skills (the published kit — 24 committed SKILL.md files in 9 stages)
+  # Skills (on-disk set: 18 config-dependent + peer-review).
+  # The 8 config-free skills (grill, loop, plan, find-evidence,
+  # supplement-spec-verification, meal-planning, swedish-food-nutrition,
+  # schedule-management) ship via the Hermes plugin (plugin/) and are NOT
+  # distributed here. peer-review stays on-disk (intentionally divergent).
   - skills/decision/deliberate
-  - skills/decision/grill
-  - skills/decision/loop
   - skills/decision/peer-review
-  - skills/decision/plan
+  - skills/decision/stress-dialogue
   - skills/evidence/evidence-loop
-  - skills/evidence/find-evidence
   - skills/evidence/memory-reality-check
-  - skills/evidence/supplement-spec-verification
   - skills/health/apple-health-import
+  - skills/health/biometric-recovery-ledger
   - skills/health/garmin-import
   - skills/health/nutrition-advisory
   - skills/health/samsung-health-import
   - skills/health/wearable-health-data
-  - skills/nutrition/meal-planning
-  - skills/nutrition/swedish-food-nutrition
   - skills/onboarding/demo
-  - skills/planning/schedule-management
   - skills/proactive/proactive-coach
   - skills/quality/eval-health
   - skills/workflow/commit

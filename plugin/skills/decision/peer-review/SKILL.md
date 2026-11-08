@@ -168,7 +168,7 @@ The key innovation: give each reviewer facts NOT in the document being reviewed.
 2. Verify the highest-severity findings yourself before patching
 3. Patch all documents, then re-verify with a second round
 
-**Validated results (health documents):** a multi-document audit found errors that single-pass review missed — including a document recommending iron supplementation at a threshold that contradicted its own source deliberation's expert consensus (NO supplement), because it cited the wrong deliberation ID. External-facts injection (providing the correct deliberation ID and consensus) is what caught it.
+**Example (health documents):** a multi-document audit found errors that single-pass review missed — including a document recommending iron supplementation at a threshold that contradicted its own source deliberation's expert consensus (NO supplement), because it cited the wrong deliberation ID. External-facts injection (providing the correct deliberation ID and consensus) is what caught it.
 
 **Verify the auditor:** An audit document inherits the same false authority it's supposed to cut through. An auditor can misidentify a source (e.g., claiming a Cochrane review was a heart-failure review when it was actually CVD primary-prevention) or fabricate a study-design claim. Had these "corrections" been merged blindly, the document would have been made *worse*. **Rule: before merging any audit finding tagged as a factual error, independently verify the auditor's claim against the primary source — not just the document's claim.** Factual-error findings are the highest-risk to act on because they come packaged as authoritative corrections, making disagreement feel like defiance. Check anyway. The auditor is a document too.
 
