@@ -16,8 +16,8 @@ jobs:
       - name: Install Hermes
         run: |
           git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /tmp/hermes-agent
-          cd /tmp/hermes-agent && pip install -e . --quiet 2>&1 | tail -5
-          pip install ruamel.yaml pyyaml 2>&1 | tail -3
+          cd /tmp/hermes-agent && pip install -e . 2>&1 | tail -10
+          pip install ruamel.yaml 2>&1 | tail -3
       - name: Validate plugin
         run: hermes plugins validate ./plugin --install-deps
       - name: Run tests
