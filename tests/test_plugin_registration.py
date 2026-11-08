@@ -30,10 +30,8 @@ def _read_provides_tools():
             elif stripped == "" or stripped.startswith("#"):
                 continue
             else:
-                # new top-level key
                 if not line.startswith(" ") and not line.startswith("\t"):
                     break
-                # indented non-list means end of list
                 if not stripped.startswith("-"):
                     break
     return tools
@@ -95,23 +93,26 @@ def test_vendored_impls_match_sources():
 
 
 def test_vendored_skills_match_sources():
-    """Bundled skills in plugin/skills/ must stay byte-identical to root skills/
-    (except peer-review, which is deliberately sanitized for the public plugin)."""
-    import hashlib
-    def _md5(p):
-        return hashlib.md5(Path(p).read_bytes()).hexdigest()
-    # 8 of 9 are byte-identical; peer-review is intentionally sanitized
-    # (plugin version strips personal paths and dangerous reference docs).
-    identical = ["grill", "loop", "plan", "find-evidence",
-                 "supplement-spec-verification", "meal-planning",
-                 "swedish-food-nutrition", "schedule-management"]
-    for name in identical:
-        root_matches = list((REPO_ROOT / "skills").rglob(f"{name}/SKILL.md"))
-        plug_matches = list((PLUGIN_DIR / "skills").rglob(f"{name}/SKILL.md"))
-        assert root_matches and plug_matches, f"missing: {name}"
-        assert _md5(root_matches[0]) == _md5(plug_matches[0]), (
-            f"drift: {name} root != plugin"
-        )
+    """Bundled skills in plugin/skills/ must be exactly the allowlisted set.
+
+    The 8 config-free skills are plugin-canonical: they no longer live in
+    root skills/ (removed in the plugin-first refactor). peer-review is also
+    bundled but its plugin copy is deliberately sanitized, so it is allowed
+    to differ from the on-disk copy.
+    """
+    expected = {"grill", "loop", "plan", "find-evidence",
+                "supplement-spec-verification", "meal-planning",
+                "swedish-food-nutrition", "schedule-management",
+                "peer-review"}
+    actual = {p.parent.name for p in (PLUGIN_DIR / "skills").rglob("SKILL.md")}
+    assert actual == expected, f"bundled skill set mismatch: {actual} != {expected}"
+
+    for name in expected:
+        matches = list((PLUGIN_DIR / "skills").rglob(f"{name}/SKILL.md"))
+        assert matches, f"missing bundled skill: {name}"
+        text = matches[0].read_text()
+        assert text.lstrip().startswith("---"), f"no frontmatter: {name}"
+        assert f"name: {name}" in text, f"frontmatter name mismatch: {name}"
 
 
 def test_registration_matches_manifest():

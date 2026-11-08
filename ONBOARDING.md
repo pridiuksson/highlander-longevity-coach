@@ -93,6 +93,15 @@ hermes gateway restart
 
 ## 3. Install the skills
 
+Plugin-first: the 8 config-free skills (grill, loop, plan, find-evidence, supplement-spec-verification, meal-planning, swedish-food-nutrition, schedule-management) now ship via the Hermes plugin — install it first:
+
+```bash
+hermes plugins install longevity-coach   # or: hermes plugins install ./plugin
+hermes plugins doctor
+```
+
+The on-disk bundle below adds the 18 config-dependent skills (proactive-coach, stress-dialogue, evidence-loop, etc.) plus peer-review for the full coaching loop (19 total):
+
 ```bash
 hermes gateway stop       # optional, but the catalogue is cached at startup — this is the clean window
 mkdir -p ~/.hermes/skills
@@ -523,7 +532,7 @@ clone — `scripts/` is scaffolding and ships only in the repo.
 - **Prevent stock skill pollution:** Place `.no-bundled-skills` in the tenant profile immediately
   (`touch ~/.hermes/profiles/<tenant>/.no-bundled-skills`). Without this marker, subsequent
   Hermes updates re-seed unversioned stock skills (including macOS-only tools on Linux) into
-  the tenant's `skills/` tree, diluting Highlander's curated 24-skill set.
+  the tenant's `skills/` tree, diluting Highlander's curated 19-skill on-disk set.
 - Step 7's three files go in **that profile's** home —
   `~/.hermes/profiles/<tenant>/{SOUL.md,memories/USER.md,memories/MEMORY.md}`.
 - If another profile on the box already runs a WhatsApp bridge, allocate an explicit port:
@@ -705,8 +714,18 @@ git pull && git rev-parse HEAD        # new version — record it
 1. Re-run the **collision check** from step 2. A new release can add a name that now collides with
    something on your box.
 2. `cp -r skills/* ~/.hermes/skills/` — this **overwrites** the installed skills, which is what you
-   want. Your settings live in `config.yaml` and your profile in `~/.hermes/{SOUL.md,memories/}`,
-   so neither is touched. That is exactly why no path is hand-edited into a skill.
+   want. The on-disk bundle now ships only the 18 config-dependent skills (+ peer-review, 19 total); the 8
+   config-free skills (grill, loop, plan, find-evidence, supplement-spec-verification, meal-planning,
+   swedish-food-nutrition, schedule-management) come from the plugin — update the plugin separately
+   (`hermes plugins update longevity-coach`). Because `cp -r` does NOT delete removed directories,
+   remove the stale dirs first if upgrading from a pre-refactor clone:
+     rm -rf ~/.hermes/skills/decision/{grill,loop,plan}
+     rm -rf ~/.hermes/skills/evidence/{find-evidence,supplement-spec-verification}
+     rm -rf ~/.hermes/skills/nutrition/{meal-planning,swedish-food-nutrition}
+     rm -rf ~/.hermes/skills/planning/schedule-management
+   Otherwise stale copies shadow the plugin versions. Your settings live in `config.yaml` and your
+   profile in `~/.hermes/{SOUL.md,memories/}`, so neither is touched. That is exactly why no path
+   is hand-edited into a skill.
 3. `hermes gateway restart`.
 
 **Distribution-managed profiles update differently.** If the tenant's profile was created
