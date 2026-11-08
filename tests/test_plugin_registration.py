@@ -94,6 +94,26 @@ def test_vendored_impls_match_sources():
         )
 
 
+def test_vendored_skills_match_sources():
+    """Bundled skills in plugin/skills/ must stay byte-identical to root skills/
+    (except peer-review, which is deliberately sanitized for the public plugin)."""
+    import hashlib
+    def _md5(p):
+        return hashlib.md5(Path(p).read_bytes()).hexdigest()
+    # 8 of 9 are byte-identical; peer-review is intentionally sanitized
+    # (plugin version strips personal paths and dangerous reference docs).
+    identical = ["grill", "loop", "plan", "find-evidence",
+                 "supplement-spec-verification", "meal-planning",
+                 "swedish-food-nutrition", "schedule-management"]
+    for name in identical:
+        root_matches = list((REPO_ROOT / "skills").rglob(f"{name}/SKILL.md"))
+        plug_matches = list((PLUGIN_DIR / "skills").rglob(f"{name}/SKILL.md"))
+        assert root_matches and plug_matches, f"missing: {name}"
+        assert _md5(root_matches[0]) == _md5(plug_matches[0]), (
+            f"drift: {name} root != plugin"
+        )
+
+
 def test_registration_matches_manifest():
     declared = set(_read_provides_tools())
     plugin = _load_plugin()

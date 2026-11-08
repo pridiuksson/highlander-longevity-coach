@@ -14,6 +14,12 @@ metadata:
 
 # Peer-Review — Quick AI Gut Check
 
+> **Sanitized plugin copy.** This is a sanitized copy of the root `skills/decision/peer-review/SKILL.md`.
+> It differs from the root version: personal paths (`~/.mimocode`, `~/devops-agent`) and the
+> `references/cli-quirks.md` file (which contained curl/sudo examples) have been removed
+> to pass the catalog security scan. The root version retains the full content.
+> Keep both in sync for content changes; the sanitization is the only intentional difference.
+
 Bounce an idea off a different LLM. Quick sanity check, not deep adversarial analysis.
 
 ## Do this
