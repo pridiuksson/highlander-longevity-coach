@@ -1,4 +1,4 @@
-# Vertical Gate Pattern — Session 2026-09-11
+# Vertical Gate Pattern
 
 Derived from the design document (`P0-G1`→`G5`) and the phase-1 / phase-2 plans.
 

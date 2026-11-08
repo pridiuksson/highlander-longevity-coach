@@ -1,6 +1,6 @@
 # Swedish Grocery Endpoint Map
 
-Verified live 2026-06-20. When an endpoint breaks, re-check Kronixion/matval spiders.
+Verified live. When an endpoint breaks, re-check Kronixion/matval spiders.
 
 ## Axfood (Hemköp & Willys) — no auth
 

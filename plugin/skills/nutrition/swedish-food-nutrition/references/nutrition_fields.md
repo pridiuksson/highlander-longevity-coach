@@ -58,7 +58,7 @@ Flat list, usually carries **only energy**. Use only if `nutrientHeaders` is emp
 Loose Class 1 produce (onions, potatoes, loose mushrooms sold by weight) may return
 **empty nutrition payload** — stores don't attach GS1 data to unpackaged goods.
 
-**Verified 2026-06-20:** Canned/jarred produce (e.g. "Kantareller i Vatten") DOES return
+**Verified:** Canned/jarred produce (e.g. "Kantareller i Vatten") DOES return
 nutrition. Truly loose produce is untested — if you hit an empty payload, fall back to:
 1. ICA recipe nutrition (per-serving, from the recipe page)
 2. Livsmedelsverket open food database (not yet integrated)

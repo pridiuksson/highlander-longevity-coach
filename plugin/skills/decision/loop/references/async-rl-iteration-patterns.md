@@ -1,6 +1,6 @@
 # Async RL Iteration Patterns
 
-Condensed findings from researching GLM-5/slime/SkyRL (Jun 2026) for iteration loop improvements. Only patterns that survived peer-review as genuinely transferable to text-based agent loops are included.
+Condensed findings from researching GLM-5/slime/SkyRL for iteration loop improvements. Only patterns that survived peer-review as genuinely transferable to text-based agent loops are included.
 
 ## Sources
 

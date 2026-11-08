@@ -68,9 +68,9 @@ printf '%s\n' "$PROMPT" > "$TMPFILE"
 # `timeout` is GNU coreutils; stock macOS ships neither it nor coreutils' gtimeout
 # alias, so every tier died with exit 127 before the CLI was even invoked — the
 # chain then reported "all failed" on a machine where all three CLIs are installed
-# (observed 2026-09-13, dogfooding the chain on macOS). Fall back to gtimeout,
-# then to a perl alarm: perl is already this repo's documented macOS fallback
-# engine (the leak gate uses it the same way), and the alarm survives exec.
+# (macOS lacks both). Fall back to gtimeout, then to a perl alarm: perl is
+# already this repo's documented macOS fallback engine (the leak gate uses it
+# the same way), and the alarm survives exec.
 # KEEP IN SYNC with peer-review.sh's run_timeout — same helper, same reasoning.
 run_timeout() {
     if command -v timeout >/dev/null 2>&1; then

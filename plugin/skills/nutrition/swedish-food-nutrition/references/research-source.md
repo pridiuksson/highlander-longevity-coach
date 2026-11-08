@@ -1,6 +1,6 @@
 # Swedish Grocery APIs — Original Research
 
-Source research document that informed this skill. Verified 2026-06-20.
+Source research document that informed this skill. Verified against live endpoints.
 Preserved here for maintenance context — when endpoints break or chains change,
 the analysis patterns and GitHub repo references below are the starting point.
 

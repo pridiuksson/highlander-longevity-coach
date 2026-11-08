@@ -1,6 +1,6 @@
 # Champion-Challenger Loop Pattern
 
-Adapted from 0xJeff's "Hermes Sensei Loop" (Jun 2026), originally sourced from Matthew Berman's Loop Library (signals.forwardfuture.ai).
+Adapted from 0xJeff's "Hermes Sensei Loop", originally sourced from Matthew Berman's Loop Library (signals.forwardfuture.ai).
 
 ## The Problem It Solves
 

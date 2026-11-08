@@ -52,7 +52,7 @@ recipe lookups). Café/restaurant-chain nutrition is out of scope for this kit.
    `web_search("site:handla.ica.se <product name>")` (or the chain's equivalent), then curl the page.
    - **`handla.ica.se/produkt/<id>` serves full static HTML to plain curl** (with browser UA):
      complete "Näringsdeklaration" table marked "Information från leverantör" (supplier-fed — data
-     originates from the manufacturer), plus net weight in the page title. Verified 2026-08-29
+     originates from the manufacturer), plus net weight in the page title. Verified against the live page.
      (product 2159035, Marabou Never Stop Crunchy Corn 110g).
    - **The ICA search endpoint (`/sok?q=`) is dead to curl** (0 bytes / 404) — always route around it
      via web_search to get the product ID first. A failed ICA *search* does NOT mean ICA product

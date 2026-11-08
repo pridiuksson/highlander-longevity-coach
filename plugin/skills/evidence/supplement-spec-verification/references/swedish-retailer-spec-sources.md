@@ -1,7 +1,7 @@
 # Swedish Retailer Spec Sources — Reliability, Fetch Recipe, Vocabulary
 
 Site-by-site notes for verifying supplement per-unit specs, plus the verified
-Aug 2026 8-product snapshot from a real shelf audit.
+8-product snapshot from a real shelf audit.
 
 ## Where per-unit spec tables live
 
@@ -9,13 +9,13 @@ Aug 2026 8-product snapshot from a real shelf audit.
 |---|---|---|
 | apotea.se product page | ✅ best | Full `Innehåll Per dagsdos` table + `Ingredienser:` list in **static HTML** — no JS, no cookie wall for a plain urllib fetch. Often lists EAN. |
 | apotekhjartat.se, apohem.se, meds.se, proteinbolaget.se, kronansapotek.se | ✅ good | Same tables, also static. Cross-check a second retailer before declaring CONFIRMED. |
-| Manufacturer sites | ⚠️ mixed | biosalma.se: marketing text + ingredients but **no per-unit numbers** (as of Aug 2026). holistic.se and narokallan.se: full dual-column tables. Never conclude "unverifiable" from a missing manufacturer table — check retailers. |
+| Manufacturer sites | ⚠️ mixed | biosalma.se: marketing text + ingredients but **no per-unit numbers**. holistic.se and narokallan.se: full dual-column tables. Never conclude "unverifiable" from a missing manufacturer table — check retailers. |
 | Search-result snippets | ✅ lead only | Brave/Google descriptions of retailer pages frequently embed the entire nutrition table verbatim. Use as a lead; confirm by fetching the page. |
 
 ## Fetch fallback (when web_extract is a search-only backend)
 
 ```python
-# python3, stdlib only — worked on every Swedish retailer page tried (Aug 2026)
+# python3, stdlib only — worked on Swedish retailer pages
 import re, urllib.request, html
 req = urllib.request.Request(url, headers={
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36',
@@ -43,7 +43,7 @@ may live under `/products/<slug>/` (biosalma.se), not `/produkt/<slug>/`.
 - `DRI` — dagligt referensintag; all % values are vs DRI
 - Lithuanian (Ecosh/ecosh.lt): `Vienoje kapsulėje` = per capsule, `Sudėtis` = composition
 
-## Verified snapshot — 8-product Swedish shelf (Aug 2026)
+## Verified snapshot — Swedish supplement shelf
 
 Per-unit values, hidden co-formulations in **bold**. All verified against the
 listed page unless noted; apotea.se/apotekhjartat.se numbers cross-checked
