@@ -57,8 +57,8 @@ recipe lookups). Café/restaurant-chain nutrition is out of scope for this kit.
    - **The ICA search endpoint (`/sok?q=`) is dead to curl** (0 bytes / 404) — always route around it
      via web_search to get the product ID first. A failed ICA *search* does NOT mean ICA product
      pages are blocked.
-   - willys.se, coop.se, mathem.se: HTML search and guessed `/api/...` paths were blocked to curl
-     (2026-08-29). If ICA fails, try the swedish-food-nutrition Axfood scripts (Willys/Hemköp JSON API)
+   - willys.se, coop.se, mathem.se: HTML search and guessed `/api/...` paths were blocked to curl.
+     If ICA fails, try the swedish-food-nutrition Axfood scripts (Willys/Hemköp JSON API)
      before giving up on the retailer tier.
 5. **Wholesale/distributor shops** — Torebrings, OutOfHome (outofhome.se), Matsmart, godis wholesalers.
    They reproduce the legal declaration verbatim and confirm net weight; excellent independent
@@ -88,7 +88,7 @@ recipe lookups). Café/restaurant-chain nutrition is out of scope for this kit.
 - **Search results for the brand alone return only the famous bars** (Mjölkchoklad, Mörk) — the
   niche line (corn, popcorn) needs the family keyword from the official listing page.
 
-## Worked example (2026-08-29)
+## Worked example
 
 Marabou Never Stop Crunchy Corn (roasted corn kernels 24% in milk chocolate, sharing bag):
 <size> g bag · <kcal> kcal & <kJ> kJ per 100 g → ≈<kcal>/bag · protein <g>/100 g (≈<g>/bag) — always convert per-100 g to per-package before advising.
