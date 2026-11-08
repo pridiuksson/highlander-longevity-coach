@@ -172,5 +172,5 @@ See `references/champion-challenger-loop.md` for the full pattern, state file ex
 
 ## Reference
 - `references/hermes-observability-and-delegation.md` — Native Hermes solutions for subagent observability, Kanban vs delegate_task, hook system, steer mode, no-agent cron, context engine plugins. Load when designing delegation strategies or choosing between loop/Kanban/shell hooks.
-- `references/champion-challenger-loop.md` — Holdout-validation pattern for recurring output quality improvement. Champion vs challenger with unseen test data, promotion margin, local maximum stop condition, Feedback Sweep companion. Adapted from 0xJeff's Hermes Sensei Loop (Jun 2026).
-- `references/async-rl-iteration-patterns.md` — Condensed findings from GLM-5/slime/SkyRL research (Jun 2026). Clean eval principle, diagnostic capture at failure boundaries, and documented forced analogies to prevent re-derivation.
+- `references/champion-challenger-loop.md` — Holdout-validation pattern for recurring output quality improvement. Champion vs challenger with unseen test data, promotion margin, local maximum stop condition, Feedback Sweep companion. Adapted from 0xJeff's Hermes Sensei Loop.
+- `references/async-rl-iteration-patterns.md` — Condensed findings from GLM-5/slime/SkyRL research. Clean eval principle, diagnostic capture at failure boundaries, and documented forced analogies to prevent re-derivation.

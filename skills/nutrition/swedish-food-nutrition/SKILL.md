@@ -142,7 +142,7 @@ Axfood returns nutrition as `nutrientHeaders[0].nutrientDetails[]` with **Swedis
 
 All values are **per 100g**. See references/nutrition_fields.md for full details.
 
-Fresh produce gap (confirmed 2026-06-20): loose produce like vitlök (garlic) and gul lök (onions) return **no nutrition** from the detail endpoint. Packaged items (rice, cheese, canned mushrooms) always return complete data. For fresh produce nutrition, use ICA recipe nutrition (per-serving) or Livsmedelsverket's open database.
+Fresh produce gap: loose produce like vitlök (garlic) and gul lök (onions) return **no nutrition** from the detail endpoint. Packaged items (rice, cheese, canned mushrooms) always return complete data. For fresh produce nutrition, use ICA recipe nutrition (per-serving) or Livsmedelsverket's open database.
 
 ICA recipe nutrition is **per serving** (not per 100g) — already portion-adjusted.
 
@@ -170,7 +170,7 @@ ICA recipe nutrition is **per serving** (not per 100g) — already portion-adjus
 
 - **When an endpoint breaks:** re-check [Kronixion/matval](https://github.com/Kronixion/matval) spiders — they track breakage.
 - **Run verify.py** as a smoke test to confirm API health.
-- **Prices verified:** 2026-06-20. Re-verify if results look stale.
+- **Prices:** verify against the live site; re-check if results look stale.
 - **Full research context:** see references/research-source.md for the original analysis, repo comparisons, and anti-pattern rationale.
 
 ## Source modes

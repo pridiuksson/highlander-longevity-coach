@@ -78,7 +78,7 @@ confident-sounding nonsense.
   error, fetch with plain `python3` + urllib, browser UA, `Accept-Language:
   sv`, strip script/style/tags, then print ~320-char windows around keywords
   (`Innehåll per`, `varav`, `Ingredienser`, `DRI`). This also keeps page noise
-  out of context. Worked on every Swedish retailer page tried (Aug 2026).
+  out of context. Works on Swedish retailer pages.
 - **Unit tables aren't per-unit:** products marketed as capsules may be
   tablets (or vice versa) — note the actual form.
 
@@ -94,6 +94,6 @@ previous product).
 
 - `references/swedish-retailer-spec-sources.md` — site-by-site reliability for
   spec tables, fetch-fallback recipe, Swedish table vocabulary, and the
-  verified Aug 2026 snapshot of an 8-product Swedish supplement shelf
+  verified snapshot of a Swedish supplement shelf
   (BioSalma, Holistic, Närokällan, Ecosh, AfteNova, Hjärtats) with hidden
   co-formulations marked.
