@@ -51,7 +51,7 @@ CONTRIBUTING.md
 |---|---|
 | **Ingest** | `apple-health-import`, `samsung-health-import`, `garmin-import`, `wearable-health-data` |
 | **Verify** | `evidence-loop`, `find-evidence`, `memory-reality-check` |
-| **Interpret** | `nutrition-advisory`, `supplement-spec-verification`, `meal-planning`, `swedish-food-nutrition` |
+| **Interpret** | `nutrition-advisory` (on-disk) + plugin: supplement-spec-verification, meal-planning, swedish-food-nutrition |
 | **Decide** | `stress-dialogue` (pre-decide triage) → `peer-review` → `grill` → `deliberate` |
 | **Plan** | `plan`, `schedule-management` |
 | **Deliver** | `proactive-coach` |
