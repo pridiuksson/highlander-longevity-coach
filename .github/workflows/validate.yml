@@ -1,0 +1,21 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Hermes
+        run: pip install hermes-agent 2>/dev/null || true
+      - name: Validate plugin
+        run: hermes plugins validate ./plugin --install-deps
+      - name: Run tests
+        run: python -m pytest tests/ -q

@@ -33,7 +33,7 @@ REFLECT_MIN_SAMPLES = 5   # settled deliveries a source needs before a shift is 
 REFLECT_RECENCY_DAYS = 30  # ... inside this window, so a stale habit cannot drive it
 REFLECT_FAST_LATENCY_H = 4  # ... with a median bookkeeping age at or under this
 REFLECT_SHIFT_HOURS = 2   # one step from the recorded baseline, never cumulative
-VALID_OUTCOMES = {"acted", "ignored", "corrected", "dropped"}
+VALID_OUTCOMES = {"acted", "ignored", "corrected", "dropped", "silent"}
 
 
 def _load():
@@ -134,7 +134,7 @@ def _analyze(entries, now):
     `report` and `reflect` share this so the ignore-streak rule, the ALERT-class
     exclusion and the pending ages cannot drift apart between the two commands.
     """
-    per = defaultdict(lambda: {"acted": 0, "ignored": 0, "corrected": 0, "dropped": 0, "pending": 0})
+    per = defaultdict(lambda: {"acted": 0, "ignored": 0, "corrected": 0, "dropped": 0, "pending": 0, "silent": 0})
     # track ignore streaks in delivery order
     ordered = sorted([e for e in entries if e["status"] != "pending"], key=lambda e: e["ts"])
     streak = defaultdict(int)       # consecutive ignored DIGEST deliveries, reset by acted/corrected

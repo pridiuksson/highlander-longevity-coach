@@ -8,7 +8,15 @@ together, and profile templates to instantiate.
 It is a coach, not a dashboard. The skills collect and verify data; the loop decides what is worth
 saying and learns from whether it landed.
 
-## What is in here
+## Hermes Plugin
+
+This repo ships a Hermes Agent plugin (`plugin/`, entry longevity-coach) for the Hermes Plugin Hackathon. Install via the catalog (once listed) or from this repo's `plugin/` subdirectory.
+
+**Disclosure:** This plugin sends health-related values to whichever model provider your Hermes session uses. Health data stays on your device; only the values referenced in prompts leave the box, subject to your provider's policy. The `weekly-crunch` blueprint is self-contained; the full coaching loop (stress triage, recovery scoring) is enhanced if you also have the on-disk `proactive-coach` and `stress-dialogue` skills installed.
+
+**Trust model:** Tools accept a `db_path` argument for flexibility; in normal Hermes use the model passes the configured `health.db` path. As with any Hermes tool, the active session can read/write files the profile can access — treat the plugin's tool calls with the same trust as built-in file/SQLite tools.
+
+See `~/.hermes/plugin-contest.md` for the build plan and `plugin/plugin.yaml` for the manifest.
 
 ```
 skills/       the coaching skills, grouped by the stage of the loop they serve

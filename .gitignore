@@ -6,4 +6,6 @@ __pycache__/
 .env
 .mimocode/
 .commandcode/
-.agents/
+
+# Contest working notes (local only)
+/plugin-contest.md

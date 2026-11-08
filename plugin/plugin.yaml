@@ -1,0 +1,35 @@
+name: longevity-coach
+version: "0.1.0"
+author: pridiuksson
+license: MIT
+description: "Health coaching loop for Hermes: 9 config-free skills, weekly proactive-coach crunch automation blueprint, insight outcome ledger, stress triage, and biometric recovery scoring. Local-first; health data stays on device. Disclosure: values are sent to whichever model provider your Hermes session uses."
+requires_hermes: ">=0.23.0"
+provides_tools:
+  - coach_ledger_add
+  - coach_ledger_resolve
+  - coach_ledger_report
+  - coach_ledger_reflect
+  - coach_stress_triage
+  - coach_recovery_record
+  - coach_recovery_verify
+  - coach_recovery_report
+  - coach_run_crunch
+provides_hooks: []
+capabilities: []
+config_schema:
+  health.db:
+    type: str
+    default: "${HERMES_HOME}/data/health.db"
+    description: "SQLite DB with imported wearable telemetry"
+  health.health_dir:
+    type: str
+    default: "~/health"
+    description: "Root of device exports and verified-data docs"
+  proactive.quiet_hours:
+    type: str
+    default: "08:00-21:00"
+    description: "Local window for DIGEST delivery"
+  proactive.timezone:
+    type: str
+    default: ""
+    description: "IANA timezone for quiet hours"
