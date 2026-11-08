@@ -12,12 +12,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.14'
       - name: Install Hermes
         run: |
           git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /tmp/hermes-agent
           cd /tmp/hermes-agent && pip install -e . 2>&1 | tail -10
-          pip install ruamel.yaml 2>&1 | tail -3
       - name: Validate plugin
         run: hermes plugins validate ./plugin --install-deps
       - name: Run tests
