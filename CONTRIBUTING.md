@@ -150,8 +150,7 @@ for: the ruleset grants no bypass, and that is deliberate.
 
 ## Privacy — the part that is not negotiable
 
-Treat everything you commit as public. The repository is private today, but the intent is to
-publish it, and git history is forever. Do not put personal health data into it, ever:
+Treat everything you commit as public. This repository is public and git history is effectively forever. Do not put personal health data into it, ever:
 
 - not into a skill body, even as a "worked example"
 - not into a fixture

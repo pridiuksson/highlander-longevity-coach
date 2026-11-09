@@ -1,7 +1,7 @@
 # Onboarding — from clone to a working coach
 
 > **Plugin user?** If you installed via `hermes plugins install longevity-coach`, follow the
-> 3-step quickstart in [README.md](./README.md) instead. This document covers the full
+> 3-step quickstart in [README.md](./README.md) instead. It covers the full
 > repo/operator setup (profile distribution, data import, tenant onboarding, troubleshooting).
 
 This takes you from a clean Hermes box to a health coach that ingests your data, verifies it, and
@@ -29,7 +29,7 @@ reaches out when — and only when — something is worth saying.
 | **A machine to run on** | no box yet? Point your agent at [Box/Nebius/](./Box/Nebius/nebius-cpu-box-cookbook.md) or [Box/Matrix/](./Box/Matrix/matrix-box-cookbook.md) — they stand one up from zero, stopping only where a human must act |
 | **Hermes agent** (v0.21.0+) | hosts the skills and the loops. Verify with `hermes --version` |
 | **Python ≥ 3.11** (tested on 3.12) | import/analysis scripts |
-| **`git`, with access to this repo** | the repo is private; an HTTPS clone needs a credential (`gh auth login`, or a token) |
+| **`git`, with access to this repo** | clone access depends on your auth setup (the repo is public; a fork/private mirror may need `gh auth login` or a token) |
 | **`gitleaks`** | **required.** It is the secrets half of the leak gate. Without it `leak-scan.sh` exits `2` rather than claiming a pass — a "clean" that never ran the secrets scan is not a clean tree |
 | *optional, recommended* `pre-commit` framework | runs the leak gate and the value-layer check on every local commit — the only check that fires *before* a leaky commit exists. `pipx install pre-commit && pre-commit install` wires `.pre-commit-config.yaml` into git; without that step the committed hook config runs nowhere. CI and the pre-push gates still catch a leak, but at push time — fixing it then means rewriting history |
 | *conditional* PCRE engine — GNU `grep` or `perl` | the gate's patterns are PCRE: GNU grep (`-P`) is used when present, else perl, else the gate exits `2` rather than guess. macOS: stock grep has no `-P`, so the pre-shipped perl is the engine — nothing to install. Linux: GNU grep is normally already there |
@@ -93,14 +93,14 @@ hermes gateway restart
 
 ## 3. Install the skills
 
-Plugin-first: the 8 config-free skills (grill, loop, plan, find-evidence, supplement-spec-verification, meal-planning, swedish-food-nutrition, schedule-management) now ship via the Hermes plugin — install it first:
+Plugin-first: 9 config-free skills ship in the Hermes plugin (`plugin/skills/`: grill, loop, peer-review, plan, find-evidence, supplement-spec-verification, meal-planning, swedish-food-nutrition, schedule-management). Install the plugin first:
 
 ```bash
 hermes plugins install longevity-coach   # or: hermes plugins install ./plugin
 hermes plugins doctor
 ```
 
-The on-disk bundle below adds the 18 config-dependent skills (proactive-coach, stress-dialogue, evidence-loop, etc.) plus peer-review for the full coaching loop (19 total):
+The on-disk bundle below adds 19 config-dependent/workflow/loop skills for the full coaching loop (including the on-disk `peer-review`; the plugin also ships a sanitized `peer-review` copy — intentional, keep both):
 
 ```bash
 hermes gateway stop       # optional, but the catalogue is cached at startup — this is the clean window
@@ -217,7 +217,7 @@ display:
       streaming: false                     # Delivers single clean final message (WhatsApp cannot edit drafts)
 ```
 
-For multi-tenant setups, ensure this block is mirrored in each tenant's `~/.hermes/profiles/<name>/config.yaml`.
+For multi-tenant setups, mirror this block in each tenant's `~/.hermes/profiles/<name>/config.yaml`.
 
 ### Memory provider (optional)
 
@@ -382,9 +382,9 @@ Highlander is engineered around a 30-day progressive onboarding lifecycle that t
   - **First Weekly Digest (`proactive-coach`):** Evaluates rolling weekly trends against personal baselines within the preferred quiet-hours delivery window. Checks progress toward Vitality Ceiling targets (e.g. Zone 2 volume, loaded carries) while verifying Clinical Floor safety parameters. If there is nothing meaningful to say, the coach stays silent.
 - **Day 30 (Graduation & Autonomous Stewardship):**
   - **`demo` Graduation:** Upon reaching 21 asks or 30 days, the `demo` skill automatically retires its learn-cron and transfers all proactive responsibilities to `proactive-coach`.
-  - **Longitudinal Audit (`eval-health`):** Comprehensive 30-day evaluation of biomarkers and training trends against the scaffold's two layers (e.g. autonomic recovery trends, resting heart rate, strength metrics).
+  - **Longitudinal Audit (`eval-health`):** 30-day evaluation of biomarkers and training trends against the scaffold's two layers (e.g. autonomic recovery trends, resting heart rate, strength metrics).
   - **State vs. Trait Graduation Review:** Users who began in acute recovery or anxious states (`Rebuilder`, `Protector`) assess whether baseline stability warrants graduating to high-agency sparring (`Operator`), streak acceleration (`Catalyst`), or clinical biohacking (`Scholar`).
-  - **Memory Rent Audit:** Prune and consolidate `MEMORY.md` working state to ensure active feedback loops pay rent and prevent context saturation.
+  - **Memory Rent Audit:** Prune and consolidate `MEMORY.md` working state so active feedback loops keep paying rent.
 
 ## 8. First run
 
@@ -532,7 +532,7 @@ clone — `scripts/` is scaffolding and ships only in the repo.
 - **Prevent stock skill pollution:** Place `.no-bundled-skills` in the tenant profile immediately
   (`touch ~/.hermes/profiles/<tenant>/.no-bundled-skills`). Without this marker, subsequent
   Hermes updates re-seed unversioned stock skills (including macOS-only tools on Linux) into
-  the tenant's `skills/` tree, diluting Highlander's curated 19-skill on-disk set.
+  the tenant's `skills/` tree, diluting the on-disk skill set.
 - Step 7's three files go in **that profile's** home —
   `~/.hermes/profiles/<tenant>/{SOUL.md,memories/USER.md,memories/MEMORY.md}`.
 - If another profile on the box already runs a WhatsApp bridge, allocate an explicit port:
@@ -714,9 +714,7 @@ git pull && git rev-parse HEAD        # new version — record it
 1. Re-run the **collision check** from step 2. A new release can add a name that now collides with
    something on your box.
 2. `cp -r skills/* ~/.hermes/skills/` — this **overwrites** the installed skills, which is what you
-   want. The on-disk bundle now ships only the 18 config-dependent skills (+ peer-review, 19 total); the 8
-   config-free skills (grill, loop, plan, find-evidence, supplement-spec-verification, meal-planning,
-   swedish-food-nutrition, schedule-management) come from the plugin — update the plugin separately
+   want. The on-disk bundle ships 19 config-dependent/workflow/loop skills; 9 config-free skills come from the plugin — update the plugin separately
    (`hermes plugins update longevity-coach`). Because `cp -r` does NOT delete removed directories,
    remove the stale dirs first if upgrading from a pre-refactor clone:
      rm -rf ~/.hermes/skills/decision/{grill,loop,plan}
@@ -753,7 +751,7 @@ is the failure the repo's versioning design exists to prevent.
 
 | Symptom | Cause |
 |---|---|
-| `git clone` 404s | the repo is private. Authenticate (`gh auth login`) or use a token |
+| `git clone` 404s | check the URL and your auth; if using a private fork/mirror, authenticate (`gh auth login`) or use a token |
 | A skill is not listed | Wrong layout. At the install root it must be `skills/<name>/SKILL.md` or `skills/<stage>/<name>/SKILL.md`. Then restart the gateway |
 | A skill is listed, but the *other* version is running | Duplicate names: one shadows the other, alphabetically-first parent wins, and the list looks fine. `python3 scripts/validate-skills.py ~/.hermes` names both |
 | A skill is listed but will not load | Its frontmatter is invalid, or a `references/` target is missing. The validator reports both |
