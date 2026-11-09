@@ -11,9 +11,9 @@ This repo ships a native Hermes Agent plugin that registers **9 config-free skil
 ## Getting Started
 
 1. **Install/load** the plugin from this repo’s `plugin/`. Verify: `hermes plugins doctor`.
-2. **Run the demo crunch:** in a Hermes session say: *“Run the longevity crunch in demo mode”* (or call `coach_run_crunch` with `demo=true`).  
+2. **Run the demo crunch:** in a Hermes session say: *“Run the longevity crunch in demo mode”* (or call `coach_run_crunch` with `demo=true`).
    Expected output includes `[DEMO / SYNTHETIC DATA — no writes to live ledger or health.db]`, an `appraisal` (quadrant), a `micro_action`, and demo ledger/recovery placeholders.
-3. **Setup proactivity”**: run `/suggestions` and accept `longevity-coach:weekly-crunch` (after setting `proactive.timezone`), **or** run a typed tool chain such as `coach_ledger_add` → `coach_ledger_report`.
+3. **Set up proactivity:** run `/suggestions` and accept `longevity-coach:weekly-crunch` (after setting `proactive.timezone`), **or** run a typed tool chain such as `coach_ledger_add` → `coach_ledger_report`.
 
 Copy-paste prompts:
 - *“Run the longevity crunch in demo mode.”*
@@ -29,7 +29,7 @@ Configured via plugin settings (`plugins.entries.longevity-coach.settings.*` whe
 
 **Trust model:** tools accept an optional `db_path` for flexibility. As with any Hermes tool, the active session can access files the profile can access — treat plugin tool calls like built-in file/SQLite tools.
 
-## Full coaching loop (optional)
+## Full coaching loop
 
 The plugin is self-contained. The full proactive coaching loop is enhanced if you also install on-disk skills from this repo (`cp -r skills/* ~/.hermes/skills/`) and configure `skills.config.*`: `proactive-coach`, `stress-dialogue`, `evidence-loop`, `biometric-recovery-ledger`, `nutrition-advisory`, `wearable-health-data`. Use [ONBOARDING.md](./ONBOARDING.md) runbook. Manifest: [`plugin/plugin.yaml`](./plugin/plugin.yaml).
 
@@ -52,15 +52,14 @@ CONTRIBUTING.md
 |---|---|
 | **Ingest** | `apple-health-import`, `samsung-health-import`, `garmin-import`, `wearable-health-data` |
 | **Verify** | `evidence-loop`, `find-evidence`, `memory-reality-check` |
-| **Interpret** | `nutrition-advisory` (on-disk) + plugin: supplement-spec-verification, meal-planning, swedish-food-nutrition |
+| **Interpret** | `nutrition-advisory` + plugin: supplement-spec-verification, meal-planning, swedish-food-nutrition |
 | **Decide** | `stress-dialogue` (pre-decide triage) → `peer-review` → `grill` → `deliberate` |
 | **Plan** | `plan`, `schedule-management` |
 | **Deliver** | `proactive-coach` |
 | **Learn** | `proactive-coach` ledger, `biometric-recovery-ledger`, `eval-health`, `loop` |
 | **Onboard** | `demo` — a fresh box's tour guide: runs real skills on the user's own questions, learns the user slowly (max 3 questions per session, skip allowed), rewards every answer instantly, retires itself at graduation |
 
-Two things make it a loop rather than a toolbox: **nothing reaches interpretation unverified**, and
-the outcome of every proactive message writes back to memory. A silent week is a successful week —
+Two things make it a loop: **nothing reaches interpretation unverified**, and the outcome of every proactive message writes back to memory. A silent week is a successful week —
 `proactive-coach` exists to decide when *not* to speak.
 
 ### Contributor workflow
@@ -69,13 +68,12 @@ The `skills/workflow/` stage serves the people and agents working **on** this re
 loop: `commit` (leak-gated conventional commits), `create-pr` (push and open a PR without moving
 HEAD), `ticket` (author an agent-ready GitHub issue), `work` (execute an issue end-to-end), and
 `contributions` (send locally-proven improvements back upstream — capture the reason at edit time,
-decide at a deliberate monthly check). They
-end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the full flow.
+decide at a deliberate monthly check). They end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the full flow.
 
-## Install
+## Install together with Hermes agent on a bare VM
 
-See **[ONBOARDING.md](./ONBOARDING.md)**. No machine yet? Point your agent at
-[Box/Nebius/](./Box/Nebius/nebius-cpu-box-cookbook.md) — it stands one up from zero, agent-executed.
+See **[ONBOARDING.md](./ONBOARDING.md)**. Point your agent at
+[Box/Nebius/](./Box/Nebius/nebius-cpu-box-cookbook.md).
 
 ## Privacy
 
@@ -100,12 +98,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the rest of the pre-push checks.
 
 ## Status
 
-Public, pre-release. **No tagged release yet** — pin by commit (`git rev-parse HEAD`) rather than
-by `main`, which moves. Validated against Hermes Agent v0.21.0 (2026.8.31). All changes land as
-pull requests: `main` is branch-protected, and the leak-gate check must pass before merge.
-
-The sanitization method and the per-file dispositions are recorded in the authoring workspace,
-which is not published.
+Plugin validated against Hermes Agent v0.23.x (`plugin/plugin.yaml` requires `>=0.23.0`). All changes land as pull requests: `main` is branch-protected, and the leak-gate check must pass before merge.
 
 ## License
 

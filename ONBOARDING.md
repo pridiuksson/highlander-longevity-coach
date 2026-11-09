@@ -7,12 +7,7 @@
 This takes you from a clean Hermes box to a health coach that ingests your data, verifies it, and
 reaches out when — and only when — something is worth saying.
 
-> **Two versions, and they are not the same thing.**
-> **Hermes Agent** v0.21.0 (2026.8.31) is what this kit was validated against — check with
-> `hermes --version`; a newer version will almost certainly work, an older one might not.
-> **This repo** has no tagged release yet, so "latest" is whatever `main` is when you clone. Step 1
-> has you record the commit: that is the only way to say what you are actually running, and the
-> thing you will need to tell whether an update is safe.
+> **Hermes Agent version:** the plugin is validated against **Hermes Agent v0.23.x** (`plugin.yaml` requires `>=0.23.0`). The on-disk/operator runbook retains some field notes from v0.21.x; prefer a current Hermes release and check `hermes --version`.
 
 ## One doc, three ways in
 
