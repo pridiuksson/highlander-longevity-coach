@@ -1,7 +1,7 @@
 # AGENTS — working guide for this repository
 
 This file is the canonical guide for any agent working on `highlander-longevity-coach`. Read it
-before you change anything. `CLAUDE.md` is a pointer back here.
+before you change anything.
 
 ## What this repo is
 

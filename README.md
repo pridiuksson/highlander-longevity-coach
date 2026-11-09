@@ -1,5 +1,7 @@
 # highlander-longevity-coach
 
+> **Hermes + this plugin is the open, local-first stack that can replace a dozen early-stage AI longevity/health startups** — wearable ingestion, stress triage, recovery scoring, evidence checks, proactive coaching, and an outcome ledger, running on your own machine with your own model provider.
+
 ![highlander logevity coach](/highlander.webp)
 
 A **health-coach kit** for the Hermes agent: reusable skills, the coaching loop that ties them
@@ -44,12 +46,13 @@ The plugin is self-contained. The full proactive coaching loop is enhanced if yo
 `demo/run_demo.sh` is an **internal maintainer smoke test** (Hermes internals + temp `HERMES_HOME`), **not** the judged demo. Record a real Hermes UI session (<90s) showing the 60-second path above. Manifest: `plugin/plugin.yaml`.
 
 ```
-skills/       the coaching skills, grouped by the stage of the loop they serve
-Profile/      SOUL / USER / MEMORY templates (8 personas: Catalyst, Visionary, Operator, Scholar, Guide, Concise, Rebuilder, Protector) & 10 physiological scaffolds
-Box/          provider cookbooks to stand up a coach box (agent-executed)
+plugin/       Hermes plugin (contest entry): manifest, tools, bundled config-free skills, blueprint
+skills/       on-disk coaching/workflow skills (config-dependent loop + workflow; plugin-bundled config-free skills live in plugin/skills/)
+Profile/      SOUL / USER / MEMORY templates (8 personas) & physiological scaffolds
+Box/          optional provider cookbooks to stand up a Hermes coach box (agent-executed)
 scripts/      the leak gate, the validator, and the authorship + value-layer checks
-AGENTS.md     working guide for agents (CLAUDE.md points here)
-ONBOARDING.md from clone to a working coach
+AGENTS.md     working guide for agents
+ONBOARDING.md operator runbook (full loop / on-disk setup)
 CONTRIBUTING.md
 ```
 
