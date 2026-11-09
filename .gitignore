@@ -8,5 +8,6 @@ __pycache__/
 .mimocode/
 .commandcode/
 
-# Contest working notes (local only)
+# Contest/internal working notes (local only)
 /plugin-contest.md
+/demo/
