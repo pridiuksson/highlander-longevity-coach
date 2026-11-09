@@ -12,7 +12,7 @@ saying and learns from whether it landed.
 
 ## Hermes Plugin (contest entry)
 
-This repo ships a native Hermes Agent plugin at `plugin/` (`name: longevity-coach`, MIT, stdlib-only, local-first, no credentials/hooks/capabilities). It registers **9 config-free skills**, **9 typed tools**, and the **`weekly-crunch` automation blueprint** — designed to do more than a prompt or skill.
+This repo ships a native Hermes Agent plugin at `plugin/` (`name: longevity-coach`, MIT, stdlib-only, local-first, no credentials/hooks/capabilities). It registers **9 config-free skills**, **9 typed tools**, and the **`weekly-crunch` automation blueprint** — more than a prompt or skill.
 
 **Disclosure:** health-related values referenced in prompts/tool calls are sent to whichever model provider your Hermes session uses. Data stays on your device; only referenced values leave the box, subject to your provider policy. Demo mode uses synthetic in-memory data and does not write to your live ledger or `health.db`.
 
@@ -43,13 +43,13 @@ The plugin is self-contained. The full proactive coaching loop is enhanced if yo
 
 ## Contest demo note
 
-`demo/run_demo.sh` is an **internal maintainer smoke test** (Hermes internals + temp `HERMES_HOME`), **not** the judged demo. Record a real Hermes UI session (<90s) showing the 60-second path above. Manifest: `plugin/plugin.yaml`.
+`demo/run_demo.sh` is an **internal maintainer smoke test** (Hermes internals + temp `HERMES_HOME`), **not** the judged demo. Record a real Hermes UI session (<90s) showing the 60-second path above. Manifest: [`plugin/plugin.yaml`](./plugin/plugin.yaml).
 
 ```
 plugin/       Hermes plugin (contest entry): manifest, tools, bundled config-free skills, blueprint
 skills/       on-disk coaching/workflow skills (config-dependent loop + workflow; plugin-bundled config-free skills live in plugin/skills/)
 Profile/      SOUL / USER / MEMORY templates (8 personas) & physiological scaffolds
-Box/          optional provider cookbooks to stand up a Hermes coach box (agent-executed)
+Box/          optional provider cookbooks for standing up a Hermes coach box
 scripts/      the leak gate, the validator, and the authorship + value-layer checks
 AGENTS.md     working guide for agents
 ONBOARDING.md operator runbook (full loop / on-disk setup)

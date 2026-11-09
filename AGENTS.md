@@ -9,8 +9,7 @@ A health-coach kit for the Hermes agent: reusable skills, the coaching loop that
 and profile templates to instantiate. It is a coach, not a dashboard — the skills collect and verify
 data; the loop decides what is worth saying and learns from whether it landed.
 
-**Publish boundary.** `skills/` is the published kit. `Box/`, `Profile/`, `scripts/`, and the root docs are
-scaffolding around it. The repo is public, so everything here is written for public eyes.
+**Publish boundary.** `skills/` is the published kit. `Box/`, `Profile/`, `scripts/`, and the root docs are scaffolding around it. The repo is public, so treat every file, commit message, and branch name as public.
 
 ## The one rule: the leak gate
 
@@ -105,7 +104,7 @@ publication. Every commit carries it forever, and no content pattern can reach i
   put the relevant part in its prompt. Constrain its output too: a delegated agent that narrates at
   length can exhaust its budget before shipping anything — require terse progress and a bounded
   final report.
-- **Stay lean.** Offload durable facts into the docs rather than long-lived scratch files.
+- Put durable facts in docs, not long-lived scratch files.
 
 ## Docs index
 
