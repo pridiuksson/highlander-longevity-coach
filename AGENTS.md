@@ -69,15 +69,17 @@ before acting on an assumption), `grill` (adversarial, null hypothesis = no, for
 
 ## Pre-push checks
 
-`@create-pr` runs a diff check plus the five checks below. The tree gate, the skill validator, the
-history identity scan, and the authorship check are mandatory. The fifth — secrets over the full
-history — needs `gitleaks` installed; if it is missing, report the secrets checks as **unverified**,
+`@create-pr` runs a diff check plus the checks below. The tree gate, the skill validator, tests, the
+history identity scan, and the authorship check are mandatory. Secrets over the full
+history needs `gitleaks` installed; if it is missing, report the secrets checks as **unverified**,
 never as clean.
 
 ```bash
 ./scripts/leak-scan.sh .                     # tree: identity / path / health + secrets
 
 python3 scripts/validate-skills.py .         # skill structure + README consistency
+
+python3 -m pytest tests/ -q                   # required; CI runs .github/workflows/validate.yml
 
 git log -p HEAD -- . \
   ':(exclude)scripts/leak-patterns.tsv' ':(exclude)scripts/leak-scan.sh' \
@@ -89,6 +91,8 @@ git log -p HEAD -- . \
 
 gitleaks detect --source . --log-opts="--all"  # secrets, every commit
 ```
+
+**Tests are required.** Run relevant tests for the area you changed; `pytest tests/` is the repo baseline and CI gate. For `plugin/` changes also run `hermes plugins validate ./plugin --install-deps`. Do not claim a change is done without passing tests or stating what could not run.
 
 The authorship check is separate because authorship is the one thing that cannot be edited after
 publication. Every commit carries it forever, and no content pattern can reach it.
