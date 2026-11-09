@@ -17,5 +17,6 @@ Token Factory) are already an option in the cookbooks' credential step.
 | Matrix | [Matrix/](./Matrix/matrix-box-cookbook.md) — Matrix OS computer via the Matrix CLI (`@finnaai/matrix`) |
 | Nebius | [Nebius/](./Nebius/nebius-cpu-box-cookbook.md) — CPU-only VM from zero via the `nebius` CLI |
 
-To add a provider, copy the shape of an existing cookbook and keep the contract: agent-executable,
-human only at stop-points, teardown included, leak-gate clean.
+To add a provider, copy an existing cookbook. Keep it agent-executable, stop only for human actions (⛔), include teardown, and keep it leak-gate clean.
+
+> Optional for the Hermes plugin contest: judges only need `plugin/`. Box cookbooks are for running the full coach loop on your own machine.

@@ -1,45 +1,46 @@
 # highlander-longevity-coach
 
+> **Hermes + this plugin is the open, local-first stack that can replace a dozen early-stage AI longevity/health startups** — wearable ingestion, stress triage, recovery scoring, evidence checks, proactive coaching, and an outcome ledger, running on your own machine with your own model provider.
+
 ![highlander logevity coach](/highlander.webp)
 
-A **health-coach kit** for the Hermes agent: reusable skills, the coaching loop that ties them
-together, and profile templates to instantiate.
+This repo ships a native Hermes Agent plugin that registers **9 config-free skills**, **9 typed tools**, and the **`weekly-crunch` automation blueprint**.
 
-It is a coach, not a dashboard. The skills collect and verify data; the loop decides what is worth
-saying and learns from whether it landed.
+**Private health data:** health-related values referenced in prompts/tool calls are sent to whichever model provider your Hermes session uses. Data stays on your device; only referenced values leave the box, subject to your provider policy. Demo mode uses synthetic in-memory data and does not write to your live ledger or `health.db`.
 
-## Hermes Plugin
+## Getting Started
 
-This repo ships a Hermes Agent plugin (`plugin/`, entry longevity-coach) for the Hermes Plugin Hackathon. Install via the catalog (once listed) or from this repo's `plugin/` subdirectory.
+1. **Install/load** the plugin from this repo’s `plugin/`. Verify: `hermes plugins doctor`.
+2. **Run the demo crunch:** in a Hermes session say: *“Run the longevity crunch in demo mode”* (or call `coach_run_crunch` with `demo=true`).
+   Expected output includes `[DEMO / SYNTHETIC DATA — no writes to live ledger or health.db]`, an `appraisal` (quadrant), a `micro_action`, and demo ledger/recovery placeholders.
+3. **Set up proactivity:** run `/suggestions` and accept `longevity-coach:weekly-crunch` (after setting `proactive.timezone`), **or** run a typed tool chain such as `coach_ledger_add` → `coach_ledger_report`.
 
-**Disclosure:** This plugin sends health-related values to whichever model provider your Hermes session uses. Health data stays on your device; only the values referenced in prompts leave the box, subject to your provider's policy. The `weekly-crunch` blueprint is self-contained; the full coaching loop (stress triage, recovery scoring) is enhanced if you also have the on-disk `proactive-coach` and `stress-dialogue` skills installed.
+Copy-paste prompts:
+- *“Run the longevity crunch in demo mode.”*
+- *“Use `longevity-coach:grill` to decide: should I adopt X?”*
+- *“Load `longevity-coach:plan` and help me plan my week.”*
 
-## Plugin Onboarding (3 steps, ~3 min)
+## Default Config
 
-1. **Install + enable:** `hermes plugins install longevity-coach` (or from this repo's `plugin/` subdir). Verify with `hermes plugins doctor`.
-2. **First value:** Say to Hermes: *"Run the longevity crunch in demo mode"* (or invoke `coach_run_crunch` with `demo=true`). This runs on bundled synthetic data — no writes to your live ledger or health database. You will see an appraisal, a micro-action, and a report. That is the "it works" moment.
-3. **Explore:** Copy-paste prompts to try:
-   - *"Use longevity-coach:grill to decide: should I adopt X?"*
-   - *"Load longevity-coach:plan and help me plan my week."*
-   - *"What skills are in the longevity-coach bundle?"*
+Configured via plugin settings (`plugins.entries.longevity-coach.settings.*` when supported by Hermes):
+- `health.db` (default `${HERMES_HOME}/data/health.db`): SQLite path used by recovery tools when `db_path` is not provided. Current tools honor this via plugin config when available, with env/default fallback.
+- `health.health_dir` (default `~/health`): reserved for future plugin surfaces; **not consumed by current tools**.
+- `proactive.quiet_hours` (default `08:00-21:00`, `HH:MM-HH:MM`) and `proactive.timezone` (default empty = UTC): **advisory scheduling hints**. This plugin does **not** enforce delivery timing; set timezone to avoid midnight scheduling.
 
-**Going further (full coaching loop):** The plugin ships 9 standalone skills + tools + a blueprint. For the full proactive coaching loop (stress triage, recovery scoring, evidence verification, proactive delivery), you also need the on-disk skills from this repo's `skills/` directory: `proactive-coach`, `stress-dialogue`, `evidence-loop`, `biometric-recovery-ledger`, `nutrition-advisory`, `wearable-health-data`. Install them with `cp -r skills/* ~/.hermes/skills/` and set `skills.config.*` keys (see ONBOARDING.md in the repo). The `weekly-crunch` blueprint works standalone; the full loop is enhanced with those skills.
+**Trust model:** tools accept an optional `db_path` for flexibility. As with any Hermes tool, the active session can access files the profile can access — treat plugin tool calls like built-in file/SQLite tools.
 
-**Blueprint activation:** After install, run `/suggestions` to see the pending `longevity-coach:weekly-crunch` blueprint, then `/suggestions accept <n>` to create the weekly job. Set `proactive.timezone` to your IANA timezone first.
+## Full coaching loop
 
-**Config defaults:** `health.db` defaults to `${HERMES_HOME}/data/health.db`, `health.health_dir` to `~/health`, `proactive.quiet_hours` to `08:00-21:00` (delivery window — DIGEST messages go out only inside this window), `proactive.timezone` to empty (UTC — set your IANA timezone to avoid midnight delivery).
-
-**Trust model:** Tools accept a `db_path` argument for flexibility; in normal Hermes use the model passes the configured `health.db` path. As with any Hermes tool, the active session can read/write files the profile can access — treat the plugin's tool calls with the same trust as built-in file/SQLite tools.
-
-See `plugin/plugin.yaml` for the manifest.
+The plugin is self-contained. The full proactive coaching loop is enhanced if you also install on-disk skills from this repo (`cp -r skills/* ~/.hermes/skills/`) and configure `skills.config.*`: `proactive-coach`, `stress-dialogue`, `evidence-loop`, `biometric-recovery-ledger`, `nutrition-advisory`, `wearable-health-data`. Use [ONBOARDING.md](./ONBOARDING.md) runbook. Manifest: [`plugin/plugin.yaml`](./plugin/plugin.yaml).
 
 ```
-skills/       the coaching skills, grouped by the stage of the loop they serve
-Profile/      SOUL / USER / MEMORY templates (8 personas: Catalyst, Visionary, Operator, Scholar, Guide, Concise, Rebuilder, Protector) & 10 physiological scaffolds
-Box/          provider cookbooks to stand up a coach box (agent-executed)
+plugin/       Hermes plugin (contest entry): manifest, tools, bundled config-free skills, blueprint
+skills/       on-disk coaching/workflow skills (config-dependent loop + workflow; plugin-bundled config-free skills live in plugin/skills/)
+Profile/      SOUL / USER / MEMORY templates (8 personas) & physiological scaffolds
+Box/          optional provider cookbooks for standing up a Hermes coach box
 scripts/      the leak gate, the validator, and the authorship + value-layer checks
-AGENTS.md     working guide for agents (CLAUDE.md points here)
-ONBOARDING.md from clone to a working coach
+AGENTS.md     working guide for agents
+ONBOARDING.md operator runbook (full loop / on-disk setup)
 CONTRIBUTING.md
 ```
 
@@ -51,15 +52,14 @@ CONTRIBUTING.md
 |---|---|
 | **Ingest** | `apple-health-import`, `samsung-health-import`, `garmin-import`, `wearable-health-data` |
 | **Verify** | `evidence-loop`, `find-evidence`, `memory-reality-check` |
-| **Interpret** | `nutrition-advisory` (on-disk) + plugin: supplement-spec-verification, meal-planning, swedish-food-nutrition |
+| **Interpret** | `nutrition-advisory` + plugin: supplement-spec-verification, meal-planning, swedish-food-nutrition |
 | **Decide** | `stress-dialogue` (pre-decide triage) → `peer-review` → `grill` → `deliberate` |
 | **Plan** | `plan`, `schedule-management` |
 | **Deliver** | `proactive-coach` |
 | **Learn** | `proactive-coach` ledger, `biometric-recovery-ledger`, `eval-health`, `loop` |
 | **Onboard** | `demo` — a fresh box's tour guide: runs real skills on the user's own questions, learns the user slowly (max 3 questions per session, skip allowed), rewards every answer instantly, retires itself at graduation |
 
-Two things make it a loop rather than a toolbox: **nothing reaches interpretation unverified**, and
-the outcome of every proactive message writes back to memory. A silent week is a successful week —
+Two things make it a loop: **nothing reaches interpretation unverified**, and the outcome of every proactive message writes back to memory. A silent week is a successful week —
 `proactive-coach` exists to decide when *not* to speak.
 
 ### Contributor workflow
@@ -68,13 +68,12 @@ The `skills/workflow/` stage serves the people and agents working **on** this re
 loop: `commit` (leak-gated conventional commits), `create-pr` (push and open a PR without moving
 HEAD), `ticket` (author an agent-ready GitHub issue), `work` (execute an issue end-to-end), and
 `contributions` (send locally-proven improvements back upstream — capture the reason at edit time,
-decide at a deliberate monthly check). They
-end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the full flow.
+decide at a deliberate monthly check). They end at the ship gate `@commit → @create-pr`. [AGENTS.md](./AGENTS.md) has the full flow.
 
-## Install
+## Install together with Hermes agent on a bare VM
 
-See **[ONBOARDING.md](./ONBOARDING.md)**. No machine yet? Point your agent at
-[Box/Nebius/](./Box/Nebius/nebius-cpu-box-cookbook.md) — it stands one up from zero, agent-executed.
+See **[ONBOARDING.md](./ONBOARDING.md)**. Point your agent at
+[Box/Nebius/](./Box/Nebius/nebius-cpu-box-cookbook.md).
 
 ## Privacy
 
@@ -99,12 +98,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the rest of the pre-push checks.
 
 ## Status
 
-Public, pre-release. **No tagged release yet** — pin by commit (`git rev-parse HEAD`) rather than
-by `main`, which moves. Validated against Hermes Agent v0.21.0 (2026.8.31). All changes land as
-pull requests: `main` is branch-protected, and the leak-gate check must pass before merge.
-
-The sanitization method and the per-file dispositions are recorded in the authoring workspace,
-which is not published.
+Plugin validated against Hermes Agent v0.23.x (`plugin/plugin.yaml` requires `>=0.23.0`). All changes land as pull requests: `main` is branch-protected, and the leak-gate check must pass before merge.
 
 ## License
 

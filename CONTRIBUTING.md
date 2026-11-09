@@ -84,13 +84,16 @@ shapes it looks for — and its own example text. The scanner's own self-exclusi
 is still scanned; every verdict prints how many files were excluded. `--no-gitleaks` because piping
 raw patches through gitleaks is mostly noise; run the secrets pass over history directly instead.
 
-Two more pre-push checks:
+More pre-push checks:
 
 ```bash
 python3 scripts/validate-skills.py .            # frontmatter, unique names, refs, config keys,
                                                # token taxonomy, py_compile, doc consistency
+python3 -m pytest tests/ -q                    # tests (required). CI runs this via .github/workflows/validate.yml
 gitleaks detect --source . --log-opts="--all"   # secrets, over every commit
 ```
+
+**Tests are required.** Run `python3 -m pytest tests/ -q` before opening or updating a PR, and run the tests relevant to what you changed (skill-local checks if the skill ships them, plus plugin/contract tests for `plugin/` changes). CI’s `validate` workflow runs pytest on pushes and PRs; a change that breaks tests is not ready to merge. The same rule applies to agents: do not claim a change is done until the relevant tests pass, or explain exactly what could not be run.
 
 And one that looks at something the scan above structurally cannot see:
 
@@ -126,8 +129,7 @@ enabled for real: two copies drift.
 
 ### Merging — what the ruleset requires
 
-`main` is guarded by a ruleset, and it is deliberately unbypassable — there is no admin escape
-hatch, for the same reason the gate has no silence flag. Three requirements bind every merge:
+`main` is guarded by a ruleset — there is no admin escape hatch, for the same reason the gate has no silence flag. Three requirements bind every merge:
 
 1. **`leak-gate` green** on the head commit — the workflow's check runs report under exactly
    that name.
@@ -150,8 +152,7 @@ for: the ruleset grants no bypass, and that is deliberate.
 
 ## Privacy — the part that is not negotiable
 
-Treat everything you commit as public. The repository is private today, but the intent is to
-publish it, and git history is forever. Do not put personal health data into it, ever:
+Treat everything you commit as public. This repository is public and git history is effectively forever. Do not put personal health data into it, ever:
 
 - not into a skill body, even as a "worked example"
 - not into a fixture
@@ -226,7 +227,7 @@ issue end-to-end, `@commit` then `@create-pr` to ship. By hand:
 1. Branch.
 2. Edit **inside that skill's directory**. If a change is needed in two skills, make the case for
    the duplication or for a pointer — do not create a shared import.
-3. Run the gate, plus any test the skill ships.
+3. Run the gate, relevant tests, and `python3 -m pytest tests/ -q`. For `plugin/` changes also run `hermes plugins validate ./plugin --install-deps`.
 4. **One change, one reason.** In the commit, say what the change is *for*, not just what it does.
 5. Open a PR.
 

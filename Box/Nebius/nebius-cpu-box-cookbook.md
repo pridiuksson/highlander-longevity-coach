@@ -299,11 +299,10 @@ curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-
 bash -lc 'hermes --version'
 ```
 
-Require **≥ 0.21.2**: the kit is validated on v0.21.0, but 0.21.0 has a known state.db fragility
-fixed in 0.21.2 — no reason to ship a new box on the older one. Install reference:
+Use a current Hermes Agent release (this repo/plugin targets v0.23.x; see `plugin/plugin.yaml` / `distribution.yaml`). Avoid stale installs; verify `hermes --version` after install. Install reference:
 [Hermes installation](https://hermes-agent.nousresearch.com/docs/getting-started/installation/).
 
-Then install the gateway — a fresh install does **not** register it (verified on v0.21.2), and
+Then install the gateway — a fresh install may not register it automatically, and
 ONBOARDING steps 3 and 9 assume it exists:
 
 ```bash
@@ -314,7 +313,7 @@ bash -lc 'hermes gateway status'    # expect: active (running)
 ### B3 — ⛔ model credentials (human: interactive, from your own terminal)
 
 The agent **cannot** run this step: `hermes setup --portal` requires an interactive TTY and
-refuses to start otherwise (verified on v0.21.2). The **human** runs it from their own terminal:
+refuses to start otherwise. The **human** runs it from their own terminal:
 
 ```bash
 ssh -t -i <SSH_KEY_PATH> <VM_USERNAME>@<PUBLIC_IP> hermes setup --portal
@@ -414,7 +413,7 @@ secrets, but a stale IP/ID pair invites confusion later.
 | `git clone` 404s | credential lacks repo read — B4, not networking |
 | `nebius` rejects a flag from this file | flag drift, the expected kind — re-run `--help` and re-resolve (top rule) |
 | OAuth URL "doesn't work" | it printed on the headless box — open it on your laptop, not over SSH |
-| `hermes --version` < 0.21.2 | re-run the installer without `--skip-setup`, or pin per its docs; do not onboard onto 0.21.0 |
+| `hermes --version` too old for this kit/plugin (`< 0.23.0`) | upgrade Hermes before onboarding; re-run the installer or follow Hermes upgrade docs |
 | `hermes: command not found` over ssh | non-interactive shells skip `~/.profile` — `ssh <user>@<host> "bash -lc 'hermes …'"`, or export a PATH that includes `$HOME/.local/bin` (ONBOARDING step 0) |
 | WhatsApp bridge crash-loops with `EADDRINUSE` on 127.0.0.1:3000 | a self-hosted WhatsApp gateway (GOWA/WAHA) already binds that port — stop it before pairing Hermes' native bridge (ONBOARDING tenant flow, WhatsApp) |
 

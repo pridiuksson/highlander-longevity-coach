@@ -8,7 +8,7 @@ description: >
   This distribution carries the skills and templates only — per-tenant
   personal data (SOUL.md, USER.md, MEMORY.md, health records) lives in
   the tenant's profile directory and is never distributed.
-hermes_requires: ">=0.21.0"
+hermes_requires: ">=0.23.0"
 license: MIT
 author: highlander-longevity-coach contributors
 distribution_owned:

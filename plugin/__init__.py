@@ -8,13 +8,16 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Dict, Optional
 
 from . import tools
 from .tools import ledger, triage, recovery
 
 _REPO_ROOT = Path(__file__).resolve().parent
 _SKILLS_DIR = _REPO_ROOT / "skills"
+
+# Populated by register(); handlers use it to honor plugin config when Hermes provides it.
+_PLUGIN_CTX: Optional[Any] = None
 
 
 def _skill_path(name: str) -> Path:
@@ -32,14 +35,37 @@ _BUNDLED_SKILLS = [
 ]
 
 
+def _cfg(key: str, default: Any) -> Any:
+    """Read plugin-relative config if available; fall back to default."""
+    ctx = _PLUGIN_CTX
+    if ctx is not None and hasattr(ctx, "get_config"):
+        try:
+            return ctx.get_config(key, default)
+        except Exception:
+            return default
+    return default
+
+
+def _expand_path(value: Any) -> Path:
+    s = os.path.expandvars(os.path.expanduser(str(value)))
+    return Path(s)
+
+
+def _hermes_home() -> Path:
+    return Path(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")))
+
+
 def _ledger_db() -> Path:
-    home = Path(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")))
-    return home / "scripts" / ".state" / "insight-ledger.jsonl"
+    # Ledger is plugin-local durable state (no config key); keep under HERMES_HOME.
+    return _hermes_home() / "scripts" / ".state" / "insight-ledger.jsonl"
 
 
-def _recovery_db() -> Path:
-    home = Path(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")))
-    return home / "data" / "health.db"
+def _recovery_db(args: Optional[Dict[str, Any]] = None) -> Path:
+    args = args or {}
+    if args.get("db_path"):
+        return _expand_path(args["db_path"])
+    configured = _cfg("health.db", str(_hermes_home() / "data" / "health.db"))
+    return _expand_path(configured)
 
 
 # ---- tool handlers ----
@@ -76,7 +102,7 @@ def _coach_stress_triage(args: Dict[str, Any]) -> str:
 
 
 def _coach_recovery_record(args: Dict[str, Any]) -> str:
-    db = Path(args.get("db_path") or _recovery_db())
+    db = _recovery_db(args)
     eid = recovery.record_intervention(
         db_path=db,
         date_str=args["date_str"],
@@ -93,13 +119,13 @@ def _coach_recovery_record(args: Dict[str, Any]) -> str:
 
 
 def _coach_recovery_verify(args: Dict[str, Any]) -> str:
-    db = Path(args.get("db_path") or _recovery_db())
-    res = recovery.auto_verify_event(db, args["event_id"])
+    db = _recovery_db(args)
+    res = recovery.auto_verify_event(db, args["event_id"], manual_confounders=args.get("manual_confounders"))
     return json.dumps(res, ensure_ascii=False, default=str)
 
 
 def _coach_recovery_report(args: Dict[str, Any]) -> str:
-    db = Path(args.get("db_path") or _recovery_db())
+    db = _recovery_db(args)
     rep = recovery.generate_report(db)
     return json.dumps(rep, ensure_ascii=False, default=str)
 
@@ -125,7 +151,7 @@ def _coach_run_crunch(args: Dict[str, Any]) -> str:
         parts.append("recovery_report=DEMO: {\"interventions\": {}}")
     else:
         parts.append("ledger_report=" + ledger.report())
-        db = Path(args.get("db_path") or _recovery_db())
+        db = _recovery_db(args)
         try:
             parts.append("recovery_report=" + json.dumps(recovery.generate_report(db), default=str))
         except Exception as e:
@@ -184,7 +210,11 @@ _RECOVERY_VERIFY_SCHEMA = {
     "type": "object",
     "properties": {
         "event_id": {"type": "string"},
-        "db_path": {"type": "string"},
+        "db_path": {"type": "string", "description": "Optional SQLite DB path override (defaults to configured health.db)."},
+        "manual_confounders": {
+            "type": "object",
+            "description": "Optional confounder flags, e.g. {\"alcohol\": true, \"late_meal\": false}.",
+        },
     },
     "required": ["event_id"],
 }
@@ -205,6 +235,9 @@ _RUN_CRUNCH_SCHEMA = {
 
 
 def register(ctx) -> None:
+    global _PLUGIN_CTX
+    _PLUGIN_CTX = ctx
+
     # ---- skills ----
     for skill_name in _BUNDLED_SKILLS:
         skill_md = _skill_path(skill_name)
@@ -214,12 +247,15 @@ def register(ctx) -> None:
     ctx.register_automation_blueprint(
         "weekly-crunch",
         title="Weekly health crunch",
-        description="Weekly proactive coaching crunch: stress triage, recovery scoring, ledger report.",
+        description="Weekly proactive coaching crunch using registered longevity-coach tools.",
         category="health",
         schedule_template="{minute} {hour} * * 1",
         prompt_template=(
-            "Run the weekly health crunch: triage recent autonomic data with stress-dialogue, "
-            "score biometric recovery, and report the insight ledger. Deliver one insight or stay silent."
+            "Run the weekly health crunch using longevity-coach tools: "
+            "1) use coach_stress_triage on the most relevant recent context you have (or a short check-in), "
+            "2) use coach_recovery_report with configured/default health.db (treat missing/empty data as 'no recovery data yet'), "
+            "3) use coach_ledger_report to summarize outcomes. "
+            "Deliver one concrete, non-alarming insight or micro-action; if there is nothing meaningful, stay silent."
         ),
         slots=[
             {"name": "time", "type": "time", "label": "What time?", "default": "09:00"},
