@@ -15,8 +15,9 @@ def verify_next_day_rebound(db_path: Path, event_id: str, **kw) -> Dict[str, Any
     return _mod.verify_next_day_rebound(db_path, event_id, **kw)
 
 
-def auto_verify_event(db_path: Path, event_id: str) -> Dict[str, Any]:
-    return _mod.auto_verify_event(db_path, event_id)
+def auto_verify_event(db_path: Path, event_id: str, manual_confounders: Any = None) -> Dict[str, Any]:
+    """Verify an event against next-night data. manual_confounders (optional dict) is passed through."""
+    return _mod.auto_verify_event(db_path, event_id, manual_confounders=manual_confounders)
 
 
 def expire_stale_events(db_path: Path, max_age_hours: int = 48) -> int:

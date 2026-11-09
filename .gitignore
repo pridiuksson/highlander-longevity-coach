@@ -1,8 +1,9 @@
-/staging/
-/.tmp/
-__pycache__/
-*.pyc
+staging/
+test-*.mjs
 .DS_Store
+demo-output/
+*.pyc
+__pycache__/
 .env
 .mimocode/
 .commandcode/

@@ -8,30 +8,40 @@ together, and profile templates to instantiate.
 It is a coach, not a dashboard. The skills collect and verify data; the loop decides what is worth
 saying and learns from whether it landed.
 
-## Hermes Plugin
+## Hermes Plugin (contest entry)
 
-This repo ships a Hermes Agent plugin (`plugin/`, entry longevity-coach) for the Hermes Plugin Hackathon. Install via the catalog (once listed) or from this repo's `plugin/` subdirectory.
+This repo ships a native Hermes Agent plugin at `plugin/` (`name: longevity-coach`, MIT, stdlib-only, local-first, no credentials/hooks/capabilities). It registers **9 config-free skills**, **9 typed tools**, and the **`weekly-crunch` automation blueprint** — designed to do more than a prompt or skill.
 
-**Disclosure:** This plugin sends health-related values to whichever model provider your Hermes session uses. Health data stays on your device; only the values referenced in prompts leave the box, subject to your provider's policy. The `weekly-crunch` blueprint is self-contained; the full coaching loop (stress triage, recovery scoring) is enhanced if you also have the on-disk `proactive-coach` and `stress-dialogue` skills installed.
+**Disclosure:** health-related values referenced in prompts/tool calls are sent to whichever model provider your Hermes session uses. Data stays on your device; only referenced values leave the box, subject to your provider policy. Demo mode uses synthetic in-memory data and does not write to your live ledger or `health.db`.
 
-## Plugin Onboarding (3 steps, ~3 min)
+## 60-second judge path (plugin-first)
 
-1. **Install + enable:** `hermes plugins install longevity-coach` (or from this repo's `plugin/` subdir). Verify with `hermes plugins doctor`.
-2. **First value:** Say to Hermes: *"Run the longevity crunch in demo mode"* (or invoke `coach_run_crunch` with `demo=true`). This runs on bundled synthetic data — no writes to your live ledger or health database. You will see an appraisal, a micro-action, and a report. That is the "it works" moment.
-3. **Explore:** Copy-paste prompts to try:
-   - *"Use longevity-coach:grill to decide: should I adopt X?"*
-   - *"Load longevity-coach:plan and help me plan my week."*
-   - *"What skills are in the longevity-coach bundle?"*
+1. **Install/load** the plugin from this repo’s `plugin/` subdirectory (or catalog, once listed). Verify: `hermes plugins doctor`.
+2. **Run the demo crunch** (safe, synthetic, no writes). In a Hermes session say: *“Run the longevity crunch in demo mode”* (or call `coach_run_crunch` with `demo=true`).  
+   Expected output includes `[DEMO / SYNTHETIC DATA — no writes to live ledger or health.db]`, an `appraisal` (quadrant), a `micro_action`, and demo ledger/recovery placeholders.
+3. **Show “more than a prompt/skill”**: run `/suggestions` and accept `longevity-coach:weekly-crunch` (after setting `proactive.timezone`), **or** run a typed tool chain such as `coach_ledger_add` → `coach_ledger_report`.
 
-**Going further (full coaching loop):** The plugin ships 9 standalone skills + tools + a blueprint. For the full proactive coaching loop (stress triage, recovery scoring, evidence verification, proactive delivery), you also need the on-disk skills from this repo's `skills/` directory: `proactive-coach`, `stress-dialogue`, `evidence-loop`, `biometric-recovery-ledger`, `nutrition-advisory`, `wearable-health-data`. Install them with `cp -r skills/* ~/.hermes/skills/` and set `skills.config.*` keys (see ONBOARDING.md in the repo). The `weekly-crunch` blueprint works standalone; the full loop is enhanced with those skills.
+Copy-paste prompts:
+- *“Run the longevity crunch in demo mode.”*
+- *“Use `longevity-coach:grill` to decide: should I adopt X?”*
+- *“Load `longevity-coach:plan` and help me plan my week.”*
 
-**Blueprint activation:** After install, run `/suggestions` to see the pending `longevity-coach:weekly-crunch` blueprint, then `/suggestions accept <n>` to create the weekly job. Set `proactive.timezone` to your IANA timezone first.
+## Config (honest defaults)
 
-**Config defaults:** `health.db` defaults to `${HERMES_HOME}/data/health.db`, `health.health_dir` to `~/health`, `proactive.quiet_hours` to `08:00-21:00` (delivery window — DIGEST messages go out only inside this window), `proactive.timezone` to empty (UTC — set your IANA timezone to avoid midnight delivery).
+Configured via plugin settings (`plugins.entries.longevity-coach.settings.*` when supported by Hermes):
+- `health.db` (default `${HERMES_HOME}/data/health.db`): SQLite path used by recovery tools when `db_path` is not provided. Current tools honor this via plugin config when available, with env/default fallback.
+- `health.health_dir` (default `~/health`): reserved for future plugin surfaces; **not consumed by current tools**.
+- `proactive.quiet_hours` (default `08:00-21:00`, `HH:MM-HH:MM`) and `proactive.timezone` (default empty = UTC): **advisory scheduling hints**. This plugin does **not** enforce delivery timing; set timezone to avoid midnight scheduling.
 
-**Trust model:** Tools accept a `db_path` argument for flexibility; in normal Hermes use the model passes the configured `health.db` path. As with any Hermes tool, the active session can read/write files the profile can access — treat the plugin's tool calls with the same trust as built-in file/SQLite tools.
+**Trust model:** tools accept an optional `db_path` for flexibility. As with any Hermes tool, the active session can access files the profile can access — treat plugin tool calls like built-in file/SQLite tools.
 
-See `plugin/plugin.yaml` for the manifest.
+## Full coaching loop (optional, on-disk)
+
+The plugin is self-contained. The full proactive coaching loop is enhanced if you also install on-disk skills from this repo (`cp -r skills/* ~/.hermes/skills/`) and configure `skills.config.*`: `proactive-coach`, `stress-dialogue`, `evidence-loop`, `biometric-recovery-ledger`, `nutrition-advisory`, `wearable-health-data`. See [ONBOARDING.md](./ONBOARDING.md) (operator runbook).
+
+## Contest demo note
+
+`demo/run_demo.sh` is an **internal maintainer smoke test** (Hermes internals + temp `HERMES_HOME`), **not** the judged demo. Record a real Hermes UI session (<90s) showing the 60-second path above. Manifest: `plugin/plugin.yaml`.
 
 ```
 skills/       the coaching skills, grouped by the stage of the loop they serve
