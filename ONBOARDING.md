@@ -7,7 +7,7 @@
 This takes you from a clean Hermes box to a health coach that ingests your data, verifies it, and
 reaches out when — and only when — something is worth saying.
 
-> **Hermes Agent version:** the plugin is validated against **Hermes Agent v0.23.x** (`plugin.yaml` requires `>=0.23.0`). The on-disk/operator runbook retains some field notes from v0.21.x; prefer a current Hermes release and check `hermes --version`.
+> **Hermes Agent version:** validated against **Hermes Agent v0.23.x**. `plugin/plugin.yaml` requires `>=0.23.0` and `distribution.yaml` targets `>=0.23.0`; use a current Hermes release and check `hermes --version`.
 
 ## One doc, three ways in
 
