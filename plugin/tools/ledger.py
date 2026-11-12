@@ -36,4 +36,6 @@ def pending() -> str:
 
 
 def ledger_path() -> str:
+    if hasattr(_mod, "_ledger_path"):
+        return _mod._ledger_path()
     return _mod.LEDGER

@@ -51,20 +51,18 @@ def _expand_path(value: Any) -> Path:
     return Path(s)
 
 
-def _hermes_home() -> Path:
-    return Path(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")))
+def _get_hermes_home() -> Path:
+    """Resolve Hermes home at call time (profile-aware)."""
+    try:
+        from hermes_constants import get_hermes_home  # type: ignore
+        return Path(get_hermes_home())
+    except Exception:
+        return Path(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")))
 
 
-def _ledger_db() -> Path:
-    # Ledger is plugin-local durable state (no config key); keep under HERMES_HOME.
-    return _hermes_home() / "scripts" / ".state" / "insight-ledger.jsonl"
-
-
-def _recovery_db(args: Optional[Dict[str, Any]] = None) -> Path:
-    args = args or {}
-    if args.get("db_path"):
-        return _expand_path(args["db_path"])
-    configured = _cfg("health.db", str(_hermes_home() / "data" / "health.db"))
+def _recovery_db() -> Path:
+    """Configured health DB path (user-set via health.db), resolved at call time."""
+    configured = _cfg("health.db", str(_get_hermes_home() / "data" / "health.db"))
     return _expand_path(configured)
 
 
@@ -102,7 +100,7 @@ def _coach_stress_triage(args: Dict[str, Any]) -> str:
 
 
 def _coach_recovery_record(args: Dict[str, Any]) -> str:
-    db = _recovery_db(args)
+    db = _recovery_db()
     eid = recovery.record_intervention(
         db_path=db,
         date_str=args["date_str"],
@@ -119,13 +117,13 @@ def _coach_recovery_record(args: Dict[str, Any]) -> str:
 
 
 def _coach_recovery_verify(args: Dict[str, Any]) -> str:
-    db = _recovery_db(args)
+    db = _recovery_db()
     res = recovery.auto_verify_event(db, args["event_id"], manual_confounders=args.get("manual_confounders"))
     return json.dumps(res, ensure_ascii=False, default=str)
 
 
 def _coach_recovery_report(args: Dict[str, Any]) -> str:
-    db = _recovery_db(args)
+    db = _recovery_db()
     rep = recovery.generate_report(db)
     return json.dumps(rep, ensure_ascii=False, default=str)
 
@@ -151,7 +149,7 @@ def _coach_run_crunch(args: Dict[str, Any]) -> str:
         parts.append("recovery_report=DEMO: {\"interventions\": {}}")
     else:
         parts.append("ledger_report=" + ledger.report())
-        db = _recovery_db(args)
+        db = _recovery_db()
         try:
             parts.append("recovery_report=" + json.dumps(recovery.generate_report(db), default=str))
         except Exception as e:
@@ -200,7 +198,6 @@ _RECOVERY_RECORD_SCHEMA = {
         "intervention_type": {"type": "string"},
         "attributed_cause": {"type": "string"},
         "subjective_rating": {"type": "integer"},
-        "db_path": {"type": "string"},
     },
     "required": ["date_str", "trigger_metric", "baseline_mean", "baseline_std",
                  "deviation_sigma", "intervention_id", "intervention_type"],
@@ -210,7 +207,6 @@ _RECOVERY_VERIFY_SCHEMA = {
     "type": "object",
     "properties": {
         "event_id": {"type": "string"},
-        "db_path": {"type": "string", "description": "Optional SQLite DB path override (defaults to configured health.db)."},
         "manual_confounders": {
             "type": "object",
             "description": "Optional confounder flags, e.g. {\"alcohol\": true, \"late_meal\": false}.",
@@ -221,7 +217,7 @@ _RECOVERY_VERIFY_SCHEMA = {
 
 _RECOVERY_REPORT_SCHEMA = {
     "type": "object",
-    "properties": {"db_path": {"type": "string"}},
+    "properties": {},
 }
 
 _RUN_CRUNCH_SCHEMA = {
@@ -229,7 +225,6 @@ _RUN_CRUNCH_SCHEMA = {
     "properties": {
         "text": {"type": "string", "description": "Optional text to triage during the crunch"},
         "demo": {"type": "boolean", "description": "Run in demo mode with synthetic data (no persistence)"},
-        "db_path": {"type": "string"},
     },
 }
 
@@ -253,7 +248,7 @@ def register(ctx) -> None:
         prompt_template=(
             "Run the weekly health crunch using longevity-coach tools: "
             "1) use coach_stress_triage on the most relevant recent context you have (or a short check-in), "
-            "2) use coach_recovery_report with configured/default health.db (treat missing/empty data as 'no recovery data yet'), "
+            "2) use coach_recovery_report with the configured health.db (treat missing/empty data as 'no recovery data yet'), "
             "3) use coach_ledger_report to summarize outcomes. "
             "Deliver one concrete, non-alarming insight or micro-action; if there is nothing meaningful, stay silent."
         ),
@@ -278,10 +273,10 @@ def register(ctx) -> None:
     ctx.register_tool("coach_stress_triage", "longevity-coach", _STRESS_TRIAGE_SCHEMA, _coach_stress_triage,
                       description="Stress triage: crisis check + appraisal + micro-action.")
     ctx.register_tool("coach_recovery_record", "longevity-coach", _RECOVERY_RECORD_SCHEMA, _coach_recovery_record,
-                      description="Record a biometric recovery intervention event.")
+                      description="Record a biometric recovery intervention event (uses configured health.db).")
     ctx.register_tool("coach_recovery_verify", "longevity-coach", _RECOVERY_VERIFY_SCHEMA, _coach_recovery_verify,
-                      description="Auto-verify a recovery event against next-night data.")
+                      description="Auto-verify a recovery event against next-night data (uses configured health.db).")
     ctx.register_tool("coach_recovery_report", "longevity-coach", _RECOVERY_REPORT_SCHEMA, _coach_recovery_report,
-                      description="Generate a recovery intervention report.")
+                      description="Generate a recovery intervention report (uses configured health.db).")
     ctx.register_tool("coach_run_crunch", "longevity-coach", _RUN_CRUNCH_SCHEMA, _coach_run_crunch,
                       description="Manual trigger for the weekly health crunch (demo).")

@@ -20,7 +20,7 @@ config_schema:
   health.db:
     type: str
     default: "${HERMES_HOME}/data/health.db"
-    description: "SQLite DB path used by recovery tools when db_path is not provided (supports ${HERMES_HOME} and ~)."
+    description: "SQLite DB path used by recovery tools (supports ${HERMES_HOME} and ~)."
   health.health_dir:
     type: str
     default: "~/health"

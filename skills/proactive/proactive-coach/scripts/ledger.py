@@ -11,7 +11,8 @@ Usage:
   ledger.py reflect [--json]                  # schedule recommendations (read-only)
   ledger.py pending                           # unresolved entries
 
-Stdlib only. Concurrency-safe via fcntl lock. File: $HERMES_HOME/scripts/.state/insight-ledger.jsonl
+Stdlib only. Concurrency-safe via fcntl lock.
+File (profile-aware): <HERMES_HOME>/scripts/.state/insight-ledger.jsonl
 """
 import datetime as dt
 import fcntl
@@ -19,11 +20,8 @@ import json
 import os
 import sys
 from collections import defaultdict
+from pathlib import Path
 
-LEDGER = os.environ.get(
-    "HERMES_LEDGER", os.path.expanduser(os.path.join(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")), "scripts/.state/insight-ledger.jsonl"))
-)
-LOCK = LEDGER + ".lock"
 PRUNE_DAYS = 90
 PAUSE_STREAK = 3          # consecutive ignored ...
 PAUSE_SPAN_DAYS = 7       # ... AND streak must span at least this many days
@@ -36,11 +34,34 @@ REFLECT_SHIFT_HOURS = 2   # one step from the recorded baseline, never cumulativ
 VALID_OUTCOMES = {"acted", "ignored", "corrected", "dropped", "silent"}
 
 
+def _get_hermes_home() -> Path:
+    """Resolve Hermes home at call time (profile-aware)."""
+    try:
+        from hermes_constants import get_hermes_home  # type: ignore
+        return Path(get_hermes_home())
+    except Exception:
+        return Path(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")))
+
+
+def _ledger_path() -> str:
+    return str(_get_hermes_home() / "scripts" / ".state" / "insight-ledger.jsonl")
+
+
+def _lock_path(ledger: str) -> str:
+    return ledger + ".lock"
+
+
+# Backward-compatible aliases (resolved at access/call time by helpers below).
+LEDGER = None
+LOCK = None
+
+
 def _load():
-    if not os.path.exists(LEDGER):
+    ledger = _ledger_path()
+    if not os.path.exists(ledger):
         return []
     entries = []
-    with open(LEDGER, encoding="utf-8") as f:
+    with open(ledger, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -52,16 +73,19 @@ def _load():
 
 
 def _save(entries):
-    tmp = LEDGER + ".tmp"
+    ledger = _ledger_path()
+    os.makedirs(os.path.dirname(ledger), exist_ok=True)
+    tmp = ledger + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         for e in entries:
             f.write(json.dumps(e, ensure_ascii=False) + "\n")
-    os.replace(tmp, LEDGER)
+    os.replace(tmp, ledger)
 
 
 def _locked(fn):
-    os.makedirs(os.path.dirname(LEDGER), exist_ok=True)
-    with open(LOCK, "w") as lk:
+    ledger = _ledger_path()
+    os.makedirs(os.path.dirname(ledger), exist_ok=True)
+    with open(_lock_path(ledger), "w") as lk:
         fcntl.flock(lk, fcntl.LOCK_EX)
         return fn()
 
@@ -88,7 +112,9 @@ def cmd_add(source, cls, headline, dedup_key=None):
         }
         if dedup_key:
             entry["dedup_key"] = dedup_key
-        with open(LEDGER, "a", encoding="utf-8") as f:
+        ledger = _ledger_path()
+        os.makedirs(os.path.dirname(ledger), exist_ok=True)
+        with open(ledger, "a", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         return entry["id"]
