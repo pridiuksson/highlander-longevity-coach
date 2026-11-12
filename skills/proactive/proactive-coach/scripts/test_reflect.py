@@ -24,12 +24,11 @@ DAY = 86400
 
 def load_module(ledger_path):
     """Import ledger.py fresh, pointed at a throwaway ledger file."""
-    os.environ["HERMES_LEDGER"] = ledger_path
     spec = importlib.util.spec_from_file_location("ledger_under_test", LEDGER_PY)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    mod.LEDGER = ledger_path
-    mod.LOCK = ledger_path + ".lock"
+    # ledger path is resolved at call time; pin it to the throwaway file for tests.
+    mod._ledger_path = lambda: ledger_path
     return mod
 
 
